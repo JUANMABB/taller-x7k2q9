@@ -226,6 +226,9 @@ button.btn.primary { background: var(--walnut); border-color: var(--walnut); col
 .sumline { font-size: 13.5px; color: var(--muted); margin: 0; }
 .sumline b { color: var(--ink); }
 footer { font-size: 12px; color: var(--muted); max-width: 90ch; }
+.failcard h2 { font-size: 12px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); font-weight: 700; }
+.frow { display: flex; gap: 8px; align-items: center; justify-content: space-between; padding: 6px 0; border-top: 1px solid var(--line); }
+.frow .mv { font-family: var(--font-mono); font-weight: 700; }
 /* ---------- top switch between training and statistics ---------- */
 .mainnav { display: flex; gap: 4px; background: var(--panel); border: 1px solid var(--line); padding: 4px; border-radius: 12px; width: fit-content; max-width: 100%; flex-wrap: wrap; }
 .mainnav button { all: unset; cursor: pointer; padding: 8px 16px; border-radius: 8px; font-weight: 700; font-size: 15px; color: var(--muted); }
@@ -2158,6 +2161,7 @@ if (typeof define !== 'undefined')
         <div class="card" id="recExplain" hidden></div>
       </div>
       <div id="notesLines" class="notes">
+      <div class="card failcard" id="failCard"></div>
       <div class="card plan" id="planCard"></div>
       <div>
         <h2>Dónde te sales tú</h2>
@@ -2178,6 +2182,7 @@ if (typeof define !== 'undefined')
   <div class="subnav" role="tablist" aria-label="Secciones de estadísticas">
     <button type="button" role="tab" data-sv="sum" aria-selected="true">Informe</button>
     <button type="button" role="tab" data-sv="evo" aria-selected="false">Evolución</button>
+    <button type="button" role="tab" data-sv="trn" aria-selected="false">Mis fallos</button>
     <button type="button" role="tab" data-sv="tac" aria-selected="false">Tácticas</button>
     <button type="button" role="tab" data-sv="puz" aria-selected="false">Problemas</button>
     <button type="button" role="tab" data-sv="ope" aria-selected="false">Aperturas</button>
@@ -2242,6 +2247,13 @@ if (typeof define !== 'undefined')
     <details style="margin-top:12px"><summary style="cursor:pointer;font-weight:600">Ver los datos en tabla</summary><div class="tblwrap" id="evoTable" style="margin-top:8px"></div></details>
   </div>
 
+  <div data-sp="trn" hidden>
+    <p class="note" style="font-size:13px;color:var(--muted);margin:0 0 8px">Las jugadas que fallas al entrenar en el Taller (líneas, respuestas clave y repasos). Cuenta como fallo si te equivocas o pides pista antes de acertar. Cada lunes empieza una semana nueva; las anteriores se guardan para ver la evolución.</p>
+    <div class="kpis" id="trnKpis"></div>
+    <div class="cgrid" id="trnCharts" style="margin-top:12px"></div>
+    <div class="cgrid" id="trnLists" style="margin-top:12px"></div>
+  </div>
+
   <div data-sp="tac" hidden>
     <p class="note" style="font-size:13px;color:var(--muted);margin:0 0 8px">Tácticas que aparecieron en tus partidas y qué porcentaje encontraste, según Insights. Ordenadas de peor a mejor en el último año. Pulsa una fila para ver su evolución por trimestre.</p>
     <div class="tblwrap" id="tacTable"></div>
@@ -2281,7 +2293,7 @@ if (typeof define !== 'undefined')
 </section>
 
 
-  <footer>Las líneas son las de tu plan de aperturas; a partir de donde acaban, guíate por el plan de la apertura, no por jugadas memorizadas. Datos: tus últimas 20 partidas blitz de cada apertura en Chess.com (hasta el 13-10-2026). Valoraciones con Stockfish 17 a profundidad 20, en centésimas de peón desde tu lado. Piezas cburnett (CC BY-SA 3.0). El progreso se guarda solo en este navegador. <span class="ipadver">Versión 2026-10-15b</span></footer>
+  <footer>Las líneas son las de tu plan de aperturas; a partir de donde acaban, guíate por el plan de la apertura, no por jugadas memorizadas. Datos: tus últimas 20 partidas blitz de cada apertura en Chess.com (hasta el 13-10-2026). Valoraciones con Stockfish 17 a profundidad 20, en centésimas de peón desde tu lado. Piezas cburnett (CC BY-SA 3.0). El progreso se guarda solo en este navegador. <span class="ipadver">Versión 2026-10-15c</span></footer>
 </div>
 
 <script>
@@ -7248,6 +7260,7 @@ function start(id) {
   renderNotes(o);
   renderRack();
   updateGoal();
+  renderFailCard();
   setMsg('info', 'Tu turno', 'Haz las jugadas de tu plan. Debajo del tablero verás para qué sirve cada jugada.');
   autoPlay();
 }
@@ -7428,11 +7441,13 @@ function tryMove(from, to) {
   if (cur.mode === 'key') return tryKey(uci, from, to);
   var ch = children();
   if (ch.includes(uci)) {
+    logPos(cur.o.id, cur.seq.slice(), uci, cur.hintLvl > 0 || cur.wrongHere, cur.firstWrong);
     play(uci);
     cur.myCount++;
     cur.miss[cur.myCount - 1] = cur.hintLvl > 0 || cur.wrongHere;
     cur.hintLvl = 0;
     cur.wrongHere = false;
+    cur.firstWrong = null;
     clearFlash();
     var idea = IDEAS[cur.seq.join(' ')];
     var san = sanLine([uci], cur.seq.slice(0, -1))[0];
@@ -7456,6 +7471,7 @@ function tryMove(from, to) {
   } else {
     cur.misses++;
     cur.wrongHere = true;
+    if (!cur.firstWrong) cur.firstWrong = uci;
     var _san = sanLine([uci], cur.seq)[0];
     var known = cur.o.devs.find(function (d) {
       return d.who === 'yo' && d.pre === cur.seq.join(' ') && d.played === uci;
@@ -7499,6 +7515,7 @@ function hint() {
   if (!ch.length) return;
   cur.hintLvl++;
   cur.wrongHere = true;
+  if (!cur.firstWrong) cur.firstWrong = 'pista';
   var m = ch[0];
   if (cur.hintLvl === 1) setMsg('info', 'Pista', "Mueve la pieza marcada en ".concat(m.slice(0, 2), "."));else setMsg('info', 'Solución', "La jugada del plan es ".concat(sanLine([m], cur.seq)[0], "."));
   render();
@@ -8070,6 +8087,204 @@ document.getElementById('askForm').addEventListener('submit', /*#__PURE__*/funct
   };
 }());
 
+// ---------- weekly log of failed positions ----------
+var p2 = function p2(n) {
+  return (n < 10 ? '0' : '') + n;
+};
+function weekKey(d) {
+  d = d || new Date();
+  var x = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  x.setDate(x.getDate() - (x.getDay() + 6) % 7);
+  return x.getFullYear() + '-' + p2(x.getMonth() + 1) + '-' + p2(x.getDate());
+}
+var FAILS = store.get('fails', {}); // week -> { "opId|seq": [attempts, fails, {played: n}, want] }
+function keyOp(c) {
+  if (c.o && c.o.id && byId[c.o.id]) return c.o.id;
+  var g = c.k && c.k.group;
+  var o = DATA.opens.find(function (x) {
+    return x.name === g;
+  }) || (g && g.indexOf('Siciliana') === 0 ? byId.sic : null);
+  return o ? o.id : 'g:' + (g || 'Respuestas clave');
+}
+function opLabel(id) {
+  return byId[id] ? byId[id].name : id.slice(2);
+}
+function opColor(id) {
+  if (byId[id]) return byId[id].color;
+  var k = KEYS.find(function (x) {
+    return 'g:' + x.group === id;
+  });
+  return k ? k.color : 'w';
+}
+function logPos(opId, seq, want, failed, played) {
+  var w = weekKey(),
+    W = FAILS[w] || (FAILS[w] = {}),
+    key = opId + '|' + seq.join(' ');
+  var r = W[key] || (W[key] = [0, 0, {}, want]);
+  r[0]++;
+  r[3] = want;
+  if (failed) {
+    r[1]++;
+    var pl = played || 'pista';
+    r[2][pl] = (r[2][pl] || 0) + 1;
+  }
+  store.set('fails', FAILS);
+  renderFailCard();
+}
+function failPos(key) {
+  var i = key.indexOf('|');
+  return {
+    op: key.slice(0, i),
+    seq: key.slice(i + 1) ? key.slice(i + 1).split(' ') : []
+  };
+}
+function failRows(week, opId) {
+  var W = FAILS[week] || {};
+  return Object.keys(W).map(function (key) {
+    var p = failPos(key),
+      r = W[key];
+    return {
+      key: key,
+      op: p.op,
+      seq: p.seq,
+      att: r[0],
+      fails: r[1],
+      played: r[2],
+      want: r[3]
+    };
+  }).filter(function (x) {
+    return !opId || x.op === opId;
+  });
+}
+function moveTxt(seq, uci) {
+  return tag(seq.length) + sanLine([uci], seq)[0];
+}
+function playedTxt(x) {
+  return Object.keys(x.played).sort(function (a, b) {
+    return x.played[b] - x.played[a];
+  }).map(function (u) {
+    return u === 'pista' ? 'pediste pista' : sanLine([u], x.seq)[0] + (x.played[u] > 1 ? ' ×' + x.played[u] : '');
+  }).join(', ');
+}
+function renderFailCard() {
+  var el = document.getElementById('failCard');
+  if (!el || !cur || !cur.o || !cur.o.id) return;
+  var id = cur.mode === 'key' ? keyOp(cur) : cur.o.id;
+  var wk = weekKey(),
+    rows = failRows(wk, id).filter(function (x) {
+      return x.fails;
+    }).sort(function (a, b) {
+      return b.fails - a.fails || a.seq.length - b.seq.length;
+    }).slice(0, 6);
+  var att = failRows(wk, id).reduce(function (a, x) {
+      return a + x.att;
+    }, 0),
+    nf = failRows(wk, id).reduce(function (a, x) {
+      return a + x.fails;
+    }, 0);
+  var prev = weekKey(new Date(Date.now() - 7 * 864e5)),
+    pr = failRows(prev, id),
+    patt = pr.reduce(function (a, x) {
+      return a + x.att;
+    }, 0),
+    pf = pr.reduce(function (a, x) {
+      return a + x.fails;
+    }, 0);
+  el.innerHTML = "<div class=\"row\" style=\"justify-content:space-between\"><h2 style=\"margin:0\">Tus fallos esta semana</h2>".concat(att ? "<span class=\"chip ".concat(nf / att > .2 ? 'bad' : nf / att > .08 ? 'warn' : 'ok', "\">").concat(nf, " de ").concat(att, " jugadas</span>") : '', "</div>") + (rows.length ? rows.map(function (x) {
+    return "<div class=\"frow\"><div><span class=\"mv\">".concat(moveTxt(x.seq, x.want), "</span> <span class=\"ctx\">").concat(x.fails, " de ").concat(x.att, " \xB7 ").concat(playedTxt(x), "</span></div><button type=\"button\" class=\"btn small\" data-fk=\"").concat(x.key, "\">Practicar</button></div>");
+  }).join('') : "<p class=\"empty\">".concat(att ? 'Ningún fallo en esta apertura esta semana.' : 'Aún no has practicado esta apertura esta semana.', " La lista empieza de cero cada lunes.</p>")) + (patt ? "<p class=\"ctx\" style=\"margin:0\">Semana pasada: ".concat(pf, " fallos en ").concat(patt, " jugadas (").concat(Math.round(100 * pf / patt), " %).</p>") : '');
+  el.querySelectorAll('[data-fk]').forEach(function (b) {
+    return b.onclick = function () {
+      return practiceFail(b.dataset.fk);
+    };
+  });
+}
+function practiceFail(key) {
+  var p = failPos(key),
+    wk = weekKey(),
+    r = FAILS[wk] && FAILS[wk][key] || null;
+  var want = r ? r[3] : null;
+  if (!want) Object.keys(FAILS).forEach(function (w) {
+    if (FAILS[w][key]) want = FAILS[w][key][3];
+  });
+  if (!want) return;
+  var o = byId[p.op],
+    color = opColor(p.op),
+    name = opLabel(p.op);
+  var idea = IDEAS[p.seq.concat([want]).join(' ')];
+  var k = {
+    id: 'fail-' + key,
+    group: name,
+    color: color,
+    title: name + ' · ' + tag(p.seq.length),
+    uci: p.seq,
+    ans: want,
+    follow: [],
+    why: idea ? idea.t : 'Es la jugada de tu plan en esta posición.',
+    reasons: idea && idea.q ? idea.q : [],
+    ctx: numbered(p.seq),
+    ansSan: sanLine([want], p.seq)[0]
+  };
+  setMode('lines');
+  document.getElementById('prog').hidden = true;
+  document.getElementById('ideabox').hidden = true;
+  document.getElementById('varbar').hidden = true;
+  document.getElementById('crumb').hidden = true;
+  document.getElementById('varpills').hidden = true;
+  cur = {
+    mode: 'key',
+    k: k,
+    o: {
+      color: color,
+      name: name,
+      id: p.op
+    },
+    game: new Chess(),
+    seq: [],
+    myCount: 0,
+    misses: 0,
+    hintLvl: 0,
+    done: false,
+    wrong: [],
+    last: null,
+    miss: [],
+    firstWrong: null
+  };
+  k.uci.forEach(play);
+  selected = null;
+  legal = [];
+  document.getElementById('opTitle').textContent = name + ' · repasa un fallo';
+  document.getElementById('goal').innerHTML = r ? "Esta semana fallaste aqu\xED ".concat(r[1], " de ").concat(r[0], " veces.") : 'Posición que fallaste otras semanas.';
+  setMsg('info', 'Tu turno', 'Haz la jugada de tu plan en esta posición.');
+  document.getElementById('quiz').hidden = true;
+  if (o) renderNotes(o);
+  render();
+  renderFailCard();
+  if (document.getElementById('viewStats') && !document.getElementById('viewStats').hidden) document.querySelector('[data-main="train"]').click();
+  document.querySelector('.stage').scrollIntoView({
+    block: 'start',
+    behavior: 'smooth'
+  });
+}
+function nextFail() {
+  var wk = weekKey(),
+    id = cur && cur.o ? cur.o.id : null;
+  var rows = failRows(wk, id).filter(function (x) {
+    return x.fails && (!cur.k || x.key !== cur.k.id.slice(5));
+  });
+  if (!rows.length) rows = failRows(wk).filter(function (x) {
+    return x.fails && (!cur.k || x.key !== cur.k.id.slice(5));
+  });
+  if (!rows.length) {
+    if (byId[id]) start(id);
+    return;
+  }
+  rows.sort(function (a, b) {
+    return b.fails / b.att - a.fails / a.att;
+  });
+  practiceFail(rows[Math.floor(Math.random() * Math.min(3, rows.length))].key);
+}
+
 // ---------- key answers ----------
 var KEYS = DATA.keys;
 var keyDone = store.get('keys', {});
@@ -8147,7 +8362,8 @@ function startKey(id) {
     done: false,
     wrong: [],
     last: null,
-    miss: []
+    miss: [],
+    firstWrong: null
   };
   k.uci.forEach(play);
   document.getElementById('ideas').innerHTML = '';
@@ -8175,6 +8391,7 @@ function nextKey() {
 function tryKey(uci, from, to) {
   var k = cur.k;
   if (uci === k.ans) {
+    logPos(keyOp(cur), k.uci.slice(), uci, cur.misses > 0 || cur.hintLvl > 0, cur.firstWrong);
     play(uci);
     cur.done = true;
     var clean = cur.misses === 0 && cur.hintLvl === 0;
@@ -8190,13 +8407,13 @@ function tryKey(uci, from, to) {
       var pts = verdict === 'correcto' ? 10 : verdict === 'parcial' ? 5 : 0;
       xp += pts;
       store.set('xp', xp);
-      if (ok && !k.id.startsWith('dev-')) {
+      if (ok && !k.id.startsWith('dev-') && !k.id.startsWith('fail-')) {
         keyDone[k.id] = (keyDone[k.id] || 0) + 1;
         store.set('keys', keyDone);
       }
       setMsg(ok ? 'win' : 'err', ok ? "Motivo ".concat(verdict === 'parcial' ? 'casi completo' : 'correcto', " (+").concat(pts, " puntos)") : 'El motivo no era ese', k.why + (k.follow.length ? " <br><span class=\"ctx\">Sigue: ".concat(sanLine(k.follow, cur.seq).join(' '), "</span>") : ''));
       renderRack();
-      if (!k.id.startsWith('dev-')) {
+      if (!k.id.startsWith('dev-') && !k.id.startsWith('fail-')) {
         updateKeyCount();
         renderKeyCards();
       }
@@ -8211,6 +8428,7 @@ function tryKey(uci, from, to) {
     });
   } else {
     cur.misses++;
+    if (!cur.firstWrong) cur.firstWrong = uci;
     boardEl.classList.remove('shake');
     void boardEl.offsetWidth;
     boardEl.classList.add('shake');
@@ -8235,6 +8453,7 @@ sel.onchange = function () {
 document.getElementById('againBtn').onclick = function () {
   if (!cur) return;
   if (cur.mode === 'recog') return nextRecog();
+  if (cur.mode === 'key' && cur.k.id.startsWith('fail-')) return nextFail();
   if (cur.mode === 'key' && !cur.k.id.startsWith('dev-')) nextKey();else start(cur.o.id);
 };
 
@@ -8767,7 +8986,9 @@ var LIVE_USER = '';
     if (o.yMax == null) hi += pad;
     if (o.bars && o.yMin == null) lo = Math.min(0, lo);
     var n = o.labels.length;
-    var X = function X(i) {
+    var X = o.bars ? function (i) {
+      return L + (i + .5) * (W - L - R) / Math.max(1, n);
+    } : function (i) {
       return L + (n <= 1 ? (W - L - R) / 2 : i * (W - L - R) / (n - 1));
     };
     var Y = function Y(v) {
@@ -8823,7 +9044,7 @@ var LIVE_USER = '';
     var show = function show(clientX) {
       var r = svgEl.getBoundingClientRect();
       var x = (clientX - r.left) / r.width * W;
-      var i = n <= 1 ? 0 : Math.round((x - L) / ((W - L - R) / (n - 1)));
+      var i = o.bars ? Math.floor((x - L) / ((W - L - R) / Math.max(1, n))) : n <= 1 ? 0 : Math.round((x - L) / ((W - L - R) / (n - 1)));
       i = Math.max(0, Math.min(n - 1, i));
       cur.setAttribute('x1', X(i));
       cur.setAttribute('x2', X(i));
@@ -8877,7 +9098,7 @@ var LIVE_USER = '';
     document.querySelectorAll('[data-sp]').forEach(function (p) {
       p.hidden = p.dataset.sp !== v;
     });
-    if (!drawn[v]) {
+    if (v === 'trn') drawTrn();else if (!drawn[v]) {
       drawn[v] = true;
       ({
         sum: drawSum,
@@ -9181,15 +9402,187 @@ var LIVE_USER = '';
     }).join(''), "</tbody></table>");
   }
 
+  // ---------- Mis fallos (entrenamiento semanal) ----------
+  function drawTrn() {
+    var weeks = [];
+    for (var i = 11; i >= 0; i--) weeks.push(weekKey(new Date(Date.now() - i * 7 * 864e5)));
+    var tot = function tot(w) {
+      return failRows(w).reduce(function (a, x) {
+        return [a[0] + x.att, a[1] + x.fails];
+      }, [0, 0]);
+    };
+    var now = tot(weeks[11]),
+      prev = tot(weeks[10]);
+    var wl = function wl(w) {
+      var d = new Date(w + 'T12:00:00Z');
+      return d.getUTCDate() + ' ' + MES[d.getUTCMonth()];
+    };
+    var pct = function pct(t) {
+      return t[0] ? 100 * t[1] / t[0] : null;
+    };
+    var distinct = failRows(weeks[11]).filter(function (x) {
+      return x.fails;
+    }).length;
+    $('trnKpis').innerHTML = [['Jugadas practicadas', fInt(now[0]), 'esta semana'], ['Fallos', fInt(now[1]), now[0] ? nf(pct(now)) + ' % de las jugadas' : '–'], ['Posiciones con fallo', fInt(distinct), 'distintas, esta semana'], ['Semana pasada', prev[0] ? nf(pct(prev)) + ' %' : '–', prev[0] ? "".concat(prev[1], " fallos en ").concat(prev[0], " jugadas") : 'sin datos']].map(function (_ref8) {
+      var _ref9 = _slicedToArray(_ref8, 3),
+        a = _ref9[0],
+        b = _ref9[1],
+        c = _ref9[2];
+      return "<div class=\"kpi\"><span>".concat(a, "</span><b>").concat(b, "</b><span>").concat(c, "</span></div>");
+    }).join('');
+    var ch = $('trnCharts');
+    ch.innerHTML = '';
+    var has = weeks.filter(function (w) {
+      return tot(w)[0];
+    }).length;
+    if (!has) {
+      ch.innerHTML = '<p class="empty">Todavía no hay entrenamientos registrados. Desde hoy cada jugada que practiques en el Taller queda apuntada aquí.</p>';
+      $('trnLists').innerHTML = '';
+      return;
+    }
+    var first = weeks.findIndex(function (w) {
+        return tot(w)[0];
+      }),
+      ws = weeks.slice(first);
+    chart(ch, {
+      title: '% de jugadas falladas',
+      sub: 'por semana',
+      labels: ws.map(wl),
+      tipLabels: ws.map(function (w) {
+        return "Semana del ".concat(wl(w), " (").concat(tot(w)[1], " de ").concat(tot(w)[0], ")");
+      }),
+      series: [{
+        name: '% fallos',
+        color: C(4),
+        values: ws.map(function (w) {
+          return pct(tot(w));
+        })
+      }],
+      fmt: fPct,
+      yMin: 0
+    });
+    chart(ch, {
+      title: 'Jugadas practicadas',
+      sub: 'por semana',
+      labels: ws.map(wl),
+      series: [],
+      bars: {
+        name: 'Jugadas',
+        color: C(2),
+        values: ws.map(function (w) {
+          return tot(w)[0];
+        })
+      },
+      fmt: fInt,
+      yMin: 0
+    });
+    // per opening table
+    var ops = {};
+    ws.forEach(function (w) {
+      return failRows(w).forEach(function (x) {
+        var o = ops[x.op] || (ops[x.op] = {});
+        var c = o[w] || (o[w] = [0, 0]);
+        c[0] += x.att;
+        c[1] += x.fails;
+      });
+    });
+    var last6 = ws.slice(-6);
+    var box = document.createElement('div');
+    box.className = 'chart';
+    box.innerHTML = "<h3>Por apertura<small>% de fallos \xB7 jugadas</small></h3><div style=\"overflow-x:auto\"><table class=\"stbl\"><thead><tr><th>Apertura</th>".concat(last6.map(function (w) {
+      return "<th>".concat(wl(w), "</th>");
+    }).join(''), "</tr></thead><tbody>").concat(Object.keys(ops).sort(function (a, b) {
+      return opLabel(a).localeCompare(opLabel(b));
+    }).map(function (id) {
+      return "<tr><td>".concat(opLabel(id), "</td>").concat(last6.map(function (w) {
+        var c = ops[id][w];
+        if (!c) return '<td>–</td>';
+        var p = 100 * c[1] / c[0];
+        return "<td class=\"".concat(p > 20 ? 'cell-bad' : p > 8 ? 'cell-warn' : 'cell-good', "\">").concat(nf(p, 0), " %<small style=\"color:var(--muted);font-weight:400\"> \xB7").concat(c[0], "</small></td>");
+      }).join(''), "</tr>");
+    }).join(''), "</tbody></table></div>");
+    ch.appendChild(box);
+    // lists
+    var L = $('trnLists');
+    L.innerHTML = '';
+    var item = function item(x) {
+      return "<div class=\"frow\"><div><b>".concat(opLabel(x.op), "</b> \xB7 <span class=\"mv\" style=\"font-family:var(--font-mono);font-weight:700\">").concat(moveTxt(x.seq, x.want), "</span><br><span class=\"ctx\">").concat(x.note, "</span></div><button type=\"button\" class=\"btn small\" data-fk=\"").concat(x.key, "\">Practicar</button></div>");
+    };
+    var list = function list(title, sub, rows, empty) {
+      var b = document.createElement('div');
+      b.className = 'chart';
+      b.innerHTML = "<h3>".concat(title, "<small>").concat(sub, "</small></h3>") + (rows.length ? rows.map(item).join('') : "<p class=\"empty\">".concat(empty, "</p>"));
+      L.appendChild(b);
+      b.querySelectorAll('[data-fk]').forEach(function (btn) {
+        return btn.onclick = function () {
+          return practiceFail(btn.dataset.fk);
+        };
+      });
+    };
+    var cw = failRows(weeks[11]).filter(function (x) {
+      return x.fails;
+    }).sort(function (a, b) {
+      return b.fails - a.fails || b.fails / b.att - a.fails / a.att;
+    }).slice(0, 12).map(function (x) {
+      return Object.assign(x, {
+        note: "".concat(x.fails, " de ").concat(x.att, " \xB7 ").concat(playedTxt(x))
+      });
+    });
+    list('Más falladas esta semana', 'empieza de cero cada lunes', cw, 'Esta semana no has fallado ninguna jugada.');
+    var lastW = {};
+    failRows(weeks[10]).filter(function (x) {
+      return x.fails;
+    }).forEach(function (x) {
+      return lastW[x.key] = x;
+    });
+    var fixed = failRows(weeks[11]).filter(function (x) {
+      return lastW[x.key] && x.att && !x.fails;
+    }).map(function (x) {
+      return Object.assign(x, {
+        note: "la semana pasada la fallaste ".concat(lastW[x.key].fails, " de ").concat(lastW[x.key].att, "; esta semana ").concat(x.att, " de ").concat(x.att, " bien")
+      });
+    });
+    list('Corregidas', 'falladas la semana pasada, bien esta', fixed, 'Aún ninguna. Repasa las de la semana pasada para que aparezcan aquí.');
+    var seen = {};
+    weeks.slice(-4).forEach(function (w) {
+      return failRows(w).forEach(function (x) {
+        var s = seen[x.key] || (seen[x.key] = {
+          x: x,
+          wk: 0,
+          fw: 0,
+          f: 0,
+          a: 0
+        });
+        s.wk++;
+        if (x.fails) s.fw++;
+        s.f += x.fails;
+        s.a += x.att;
+        s.x = x;
+      });
+    });
+    var stuck = Object.keys(seen).map(function (k) {
+      return seen[k];
+    }).filter(function (s) {
+      return s.wk >= 3 && s.fw === s.wk;
+    }).sort(function (a, b) {
+      return b.f - a.f;
+    }).map(function (s) {
+      return Object.assign({}, s.x, {
+        note: "fallada ".concat(s.wk, " semanas seguidas (").concat(s.f, " de ").concat(s.a, "). M\xEDrala con calma o preg\xFAntame.")
+      });
+    });
+    list('Atascadas', 'falladas 3 semanas o más seguidas', stuck, 'Ninguna por ahora.');
+  }
+
   // ---------- Tácticas ----------
   var PIE = ['peón', 'caballo', 'alfil', 'torre', 'dama', 'rey'];
   function tacRows() {
     // row: [q, n, forks 6x(f,m), pins 6x, free 6x, mates 5x(f,m), material f,m, capturing 6, hanging 6]
     var types = [];
-    [['Horquilla de', 2], ['Clavada con', 14], ['Capturar gratis:', 26]].forEach(function (_ref8) {
-      var _ref9 = _slicedToArray(_ref8, 2),
-        nm = _ref9[0],
-        off = _ref9[1];
+    [['Horquilla de', 2], ['Clavada con', 14], ['Capturar gratis:', 26]].forEach(function (_ref0) {
+      var _ref1 = _slicedToArray(_ref0, 2),
+        nm = _ref1[0],
+        off = _ref1[1];
       return PIE.forEach(function (p, i) {
         if (p === 'rey' && nm !== 'Horquilla de') return;
         types.push({
@@ -9370,10 +9763,10 @@ var LIVE_USER = '';
     var g = segVal('puzGroup', 'g') || 'M';
     var host = $('puzCharts');
     host.innerHTML = '';
-    var R = SD.rush.map(function (_ref0) {
-      var _ref1 = _slicedToArray(_ref0, 2),
-        t = _ref1[0],
-        s = _ref1[1];
+    var R = SD.rush.map(function (_ref10) {
+      var _ref11 = _slicedToArray(_ref10, 2),
+        t = _ref11[0],
+        s = _ref11[1];
       return {
         date: new Date(t * 1000),
         s: s
@@ -9407,10 +9800,10 @@ var LIVE_USER = '';
         return x.s;
       }),
       last30 = all.slice(-30);
-    $('puzKpis').innerHTML = [['Series jugadas', fInt(all.length)], ['Récord', Math.max.apply(null, all)], ['Media últimas 30', nf(avg(last30))], ['Media primeras 100', nf(avg(all.slice(0, 100)))], ['Problemas puntuados', fInt(SD.puz[SD.puz.length - 1][2]) + ' pts'], ['Máximo puntuados', '2.070']].map(function (_ref10) {
-      var _ref11 = _slicedToArray(_ref10, 2),
-        a = _ref11[0],
-        b = _ref11[1];
+    $('puzKpis').innerHTML = [['Series jugadas', fInt(all.length)], ['Récord', Math.max.apply(null, all)], ['Media últimas 30', nf(avg(last30))], ['Media primeras 100', nf(avg(all.slice(0, 100)))], ['Problemas puntuados', fInt(SD.puz[SD.puz.length - 1][2]) + ' pts'], ['Máximo puntuados', '2.070']].map(function (_ref12) {
+      var _ref13 = _slicedToArray(_ref12, 2),
+        a = _ref13[0],
+        b = _ref13[1];
       return "<div class=\"kpi\"><span>".concat(a, "</span><b>").concat(b, "</b></div>");
     }).join('');
     chart(host, {
