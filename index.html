@@ -56,7 +56,8 @@ body { background: var(--bg); color: var(--ink); font-family: var(--font-body); 
 header.top { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 12px 24px; }
 h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(26px, 4vw, 36px); line-height: 1.1; margin: 0; text-wrap: balance; }
 h1 small { display: block; font-family: var(--font-body); font-size: 14px; color: var(--muted); margin-top: 6px; }
-.scorebar { display: flex; gap: 10px; flex-wrap: wrap; }
+.scorebar { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+.resetbtn.armed { border-color: var(--bad); color: var(--bad); background: var(--bad-soft); }
 .stat { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 6px 12px; min-width: 88px; }
 .stat b { display: block; font-family: var(--font-mono); font-size: 18px; font-variant-numeric: tabular-nums; }
 .stat span { font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
@@ -300,7 +301,11 @@ footer { font-size: 12px; color: var(--muted); max-width: 90ch; }
 .engrow { display: flex; flex-wrap: wrap; gap: 6px; }
 .engrow .btn[aria-pressed="true"] { border-color: var(--walnut); }
 #engBody { display: grid; gap: 6px; }
-.engbar { position: relative; height: 22px; border-radius: 6px; background: #2b2b2b; overflow: hidden; border: 1px solid var(--line); }
+.engtop { display: grid; grid-template-columns: minmax(0, 520px); justify-content: center; margin-bottom: -6px; }
+.engbar { position: relative; height: 24px; border-radius: 6px; background: #2b2b2b; overflow: hidden; border: 1px solid var(--line); }
+.engtick { position: absolute; top: 0; bottom: 0; width: 2px; margin-left: -1px; background: #888; opacity: .5; }
+.engtick.mid { left: 50%; background: var(--walnut); opacity: .9; }
+.englab { position: absolute; left: 8px; top: 50%; transform: translateY(-50%); font: 700 11px var(--font-body); color: #555; letter-spacing: .04em; text-transform: uppercase; }
 .engfill { position: absolute; left: 0; top: 0; bottom: 0; width: 50%; background: #f4f1ea; transition: width .4s ease; }
 .engnum { position: absolute; right: 8px; top: 50%; transform: translateY(-50%); font: 700 12.5px var(--font-mono); color: #fff; mix-blend-mode: difference; }
 .engnote { margin: 0; font-size: 13px; color: var(--muted); }
@@ -312,6 +317,25 @@ footer { font-size: 12px; color: var(--muted); max-width: 90ch; }
 .englines .n { color: var(--muted); margin-right: 2px; }
 .engjudge { margin-top: 6px; font-size: 13px; color: var(--muted); }
 @media (prefers-reduced-motion: reduce) { .engfill { transition: none; } }
+
+.tswitch { display: flex; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+.tswitch button { all: unset; cursor: pointer; flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 8px 6px; font-weight: 600; font-size: 14px; color: var(--muted); background: var(--panel); }
+.tswitch button + button { border-left: 1px solid var(--line); }
+.tswitch button[aria-pressed="true"] { background: var(--walnut); color: var(--panel); }
+.tswitch button:focus-visible { outline: 2px solid var(--walnut); outline-offset: -2px; }
+.crumbs { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; }
+.crumbs button { all: unset; cursor: pointer; font: 600 12.5px var(--font-mono); padding: 3px 7px; border-radius: 6px; background: var(--panel); border: 1px solid var(--line); color: var(--walnut); }
+.crumbs button[aria-current="true"] { background: var(--walnut); color: var(--panel); border-color: var(--walnut); }
+.crumbs .sep { color: var(--muted); }
+.tboard { display: flex; justify-content: center; }
+.board.mini { max-width: 230px; border-width: 4px; pointer-events: none; }
+.tq { font-size: 13px; font-weight: 700; color: var(--muted); }
+.op.tnode { grid-template-columns: 1fr; }
+.op .mvl { font: 700 15px var(--font-mono); color: var(--walnut); display: flex; justify-content: space-between; gap: 8px; }
+.op .mvl i { font: 600 12.5px var(--font-body); font-style: normal; color: var(--muted); }
+.op.leaf .mvl { color: var(--good); }
+.op.all { border-style: dashed; }
+.op.tnode .sb { grid-column: 1; }
 
 
 .ask { display: none !important; }
@@ -2080,6 +2104,7 @@ if (typeof define !== 'undefined')
       <div class="stat"><b id="xp">0</b><span>Puntos</span></div>
       <div class="stat"><b id="streak">0</b><span>Días seguidos</span></div>
       <div class="stat"><b id="clean">0</b><span>Líneas limpias</span></div>
+      <button type="button" class="btn small resetbtn" id="resetBtn" title="Borra puntos, días seguidos, líneas limpias, variantes en verde, respuestas clave, reconocer aperturas y el registro de fallos">Reiniciar puntuación</button>
     </div>
   </header>
 
@@ -2098,9 +2123,14 @@ if (typeof define !== 'undefined')
   </section>
 
   <div class="grid">
-    <nav class="rack" aria-label="Aperturas">
-      <div><h2><span class="dot b"></span>Con negras</h2><div class="olist" id="listB"></div></div>
-      <div><h2><span class="dot w"></span>Con blancas</h2><div class="olist" id="listW"></div></div>
+    <nav class="rack" aria-label="Elige la apertura">
+      <div class="tswitch" id="tCol" aria-label="Color">
+        <button type="button" data-c="b" aria-pressed="true"><span class="dot b"></span>Con negras</button><button type="button" data-c="w" aria-pressed="false"><span class="dot w"></span>Con blancas</button>
+      </div>
+      <div class="crumbs" id="tCrumbs" aria-label="Camino"></div>
+      <div class="tboard"><div class="board mini" id="tBoard" aria-hidden="true"></div></div>
+      <div class="tq" id="tQ"></div>
+      <div class="olist" id="tKids"></div>
     </nav>
 
     <main class="stage">
@@ -2131,6 +2161,7 @@ if (typeof define !== 'undefined')
       <div class="varpills" id="varpills" aria-label="Variantes: en verde las que has hecho enteras sin fallos"></div>
       <div class="crumb" id="crumb" aria-live="polite"></div>
       <div class="progress" id="prog" aria-label="Progreso de la línea"></div>
+      <div class="engtop" id="engTop"><div class="engbar" aria-hidden="true"><div class="engfill" id="engFill"></div><i class="engtick mid"></i><i class="engtick" id="engT1"></i><i class="engtick" id="engT2"></i><span class="englab">Blancas</span><span class="engnum" id="engNum">—</span></div></div>
       <div class="boardbox"><div class="board" id="board" role="grid" aria-label="Tablero"></div></div>
       <div class="msg info" id="msg" aria-live="polite"></div>
       <div class="quiz" id="quiz" hidden></div>
@@ -2155,7 +2186,6 @@ if (typeof define !== 'undefined')
           <button class="btn small" id="engBack" type="button" hidden>Volver al entrenamiento</button>
         </div>
         <div id="engBody">
-          <div class="engbar" aria-hidden="true"><div class="engfill" id="engFill"></div><span class="engnum" id="engNum">—</span></div>
           <p class="engnote" id="engNote"></p>
           <ol class="englines" id="engLines"></ol>
         </div>
@@ -7097,34 +7127,285 @@ function lineIndex(o, seq) {
   return i;
 }
 
-// ---------- rack ----------
-function renderRack() {
-  ['b', 'w'].forEach(function (c) {
-    var el = document.getElementById(c === 'b' ? 'listB' : 'listW');
-    el.innerHTML = '';
-    DATA.opens.filter(function (o) {
-      return o.color === c;
-    }).forEach(function (o) {
-      var p = P(o.id),
-        t = target(o),
-        nd = cleanLines(o).length,
-        nl = o.lines.length;
-      var b = document.createElement('button');
-      b.className = 'op' + (nd === nl ? ' alldone' : '');
-      b.type = 'button';
-      b.id = 'op-' + o.id;
-      b.setAttribute('aria-pressed', cur && cur.mode !== 'recog' && cur.o.id === o.id ? 'true' : 'false');
-      b.innerHTML = "<span class=\"nm\">".concat(o.name, "</span><span class=\"lv\"><b>").concat(p.best, "/").concat(t, "</b>jugadas</span><span class=\"sb\">").concat(o.sub).concat(o.n ? ' · ' + o.n + ' partidas' : '', "</span><span class=\"vc\"><b>").concat(nd, "</b> de ").concat(nl, " ").concat(nl === 1 ? 'variante' : 'variantes', " sin fallos</span><span class=\"meter\"><i style=\"width:").concat(Math.round(100 * Math.min(1, p.best / o.deepest)), "%\"></i></span>");
-      b.onclick = function () {
-        return start(o.id);
+// ---------- rack: choose the opening by playing the first moves ----------
+var TK = 6; // the tree branches up to move 3; deeper differences are variants inside the same leaf
+function tDiv(ls, ply) {
+  var _loop = function _loop(p) {
+      var m = ls[0].u[p];
+      if (ls.some(function (x) {
+        return x.u[p] !== m;
+      })) return {
+        v: p
       };
-      el.appendChild(b);
+    },
+    _ret;
+  for (var p = ply; p < 80; p++) {
+    _ret = _loop(p);
+    if (_ret) return _ret.v;
+  }
+  return 999;
+}
+function tLeaf(ls, ply) {
+  return ls.every(function (x) {
+    return x.o.id === ls[0].o.id;
+  }) && (ls.length === 1 || tDiv(ls, ply) >= TK);
+}
+function tGrow(ls, s, e) {
+  var n = {
+      ls: ls,
+      s: s,
+      e: e,
+      kids: []
+    },
+    groups = [],
+    at = {};
+  ls.forEach(function (x) {
+    var k = x.u[e];
+    if (!(k in at)) {
+      at[k] = groups.length;
+      groups.push([]);
+    }
+    groups[at[k]].push(x);
+  });
+  groups.forEach(function (g) {
+    if (tLeaf(g, e)) n.kids.push({
+      ls: g,
+      s: e,
+      e: e + 1,
+      leaf: true
+    });else n.kids.push(tGrow(g, e, tDiv(g, e + 1)));
+  });
+  return n;
+}
+var TREE = {};
+['w', 'b'].forEach(function (c) {
+  var ls = [];
+  DATA.opens.filter(function (o) {
+    return o.color === c;
+  }).forEach(function (o) {
+    return o.lines.forEach(function (l, i) {
+      return ls.push({
+        o: o,
+        i: i,
+        u: l.split(' ')
+      });
     });
+  });
+  TREE[c] = tGrow(ls, 0, tDiv(ls, 0));
+});
+var T = {
+  c: 'b',
+  path: []
+};
+function tNode() {
+  var n = TREE[T.c];
+  T.path.forEach(function (i) {
+    n = n.kids[i];
+  });
+  return n;
+}
+function tEdge(n) {
+  var u = n.ls[0].u,
+    sx = sanLine(u.slice(n.s, n.e), u.slice(0, n.s));
+  return sx.map(function (m, k) {
+    var p = n.s + k;
+    return p % 2 === 0 || k === 0 ? tag(p) + m : m;
+  }).join(' ');
+}
+function tNames(n) {
+  var out = [];
+  n.ls.forEach(function (x) {
+    if (out.indexOf(x.o.name) < 0) out.push(x.o.name);
+  });
+  return out;
+}
+function tStats(n) {
+  var done = 0;
+  n.ls.forEach(function (x) {
+    if (cleanLines(x.o).indexOf(x.i) >= 0) done++;
+  });
+  return {
+    done: done,
+    all: n.ls.length
+  };
+}
+function tMini(n) {
+  var g = new Chess(),
+    u = n.ls[0].u.slice(0, n.e);
+  u.forEach(function (m) {
+    return g.move({
+      from: m.slice(0, 2),
+      to: m.slice(2, 4),
+      promotion: 'q'
+    });
+  });
+  var el = document.getElementById('tBoard'),
+    files = 'abcdefgh',
+    last = u[u.length - 1],
+    flip = T.c === 'b';
+  el.innerHTML = '';
+  for (var r = 0; r < 8; r++) for (var f = 0; f < 8; f++) {
+    var rank = flip ? r + 1 : 8 - r,
+      file = flip ? files[7 - f] : files[f],
+      sq = file + rank;
+    var d = document.createElement('div');
+    d.className = 'sq ' + ((files.indexOf(file) + rank) % 2 === 1 ? 'l' : 'd');
+    if (last && (last.slice(0, 2) === sq || last.slice(2, 4) === sq)) d.classList.add('last');
+    var pc = g.get(sq);
+    if (pc) {
+      var im = document.createElement('img');
+      im.alt = '';
+      im.src = PIECES[pc.color + pc.type];
+      d.appendChild(im);
+    }
+    el.appendChild(d);
+  }
+}
+function tStart(n) {
+  var o = n.ls[0].o,
+    vs = document.getElementById('varSel');
+  var v = '';
+  if (n.ls.length < o.lines.length) {
+    var done = cleanLines(o);
+    var open = n.ls.filter(function (x) {
+        return done.indexOf(x.i) < 0;
+      }),
+      pool = open.length ? open : n.ls;
+    v = String(pool[Math.floor(Math.random() * pool.length)].i);
+  }
+  fillVarSel(o);
+  vs.value = v;
+  start(o.id);
+  if (window.innerWidth < 760) document.querySelector('.stage').scrollIntoView({
+    block: 'start',
+    behavior: 'smooth'
+  });
+}
+function tIsCur(n) {
+  if (!cur || !cur.o || cur.mode === 'recog' || cur.o.id !== n.ls[0].o.id) return false;
+  var v = document.getElementById('varSel').value;
+  return v === '' ? n.ls.length === cur.o.lines.length || n.ls.some(function (x) {
+    return cur.seq.length && lineIndex(cur.o, cur.seq) === x.i;
+  }) : n.ls.some(function (x) {
+    return String(x.i) === v;
+  });
+}
+function tSync(o) {
+  // open the tree at the place of this opening
+  var _find = function find(n, path) {
+    for (var i = 0; i < n.kids.length; i++) {
+      var k = n.kids[i];
+      if (!k.ls.some(function (x) {
+        return x.o.id === o.id;
+      })) continue;
+      if (k.leaf || k.ls.filter(function (x) {
+        return x.o.id === o.id;
+      }).length < o.lines.length) return path;
+      return _find(k, path.concat([i]));
+    }
+    return path;
+  };
+  T = {
+    c: o.color,
+    path: _find(TREE[o.color], [])
+  };
+}
+function renderRack() {
+  document.querySelectorAll('#tCol button').forEach(function (b) {
+    return b.setAttribute('aria-pressed', String(b.dataset.c === T.c));
+  });
+  var node = tNode();
+  var cr = document.getElementById('tCrumbs');
+  var n = TREE[T.c];
+  var parts = [{
+    lab: n.e > 0 ? tEdge(n) : 'Inicio',
+    d: 0
+  }];
+  T.path.forEach(function (i, k) {
+    n = n.kids[i];
+    parts.push({
+      lab: tEdge(n),
+      d: k + 1
+    });
+  });
+  cr.innerHTML = parts.map(function (p, k) {
+    return (k ? '<span class="sep">›</span>' : '') + "<button type=\"button\" data-d=\"".concat(p.d, "\" aria-current=\"").concat(p.d === T.path.length, "\">").concat(p.lab, "</button>");
+  }).join('');
+  cr.querySelectorAll('button').forEach(function (b) {
+    b.onclick = function () {
+      T.path = T.path.slice(0, +b.dataset.d);
+      renderRack();
+    };
+  });
+  tMini(node);
+  document.getElementById('tQ').textContent = (node.e % 2 === 0 ? 'w' : 'b') === T.c ? '¿Qué jugada haces tú?' : '¿Qué juega el rival?';
+  var el = document.getElementById('tKids');
+  el.innerHTML = '';
+  // a node that belongs to one opening: offer all its variants at random
+  if (node.ls.every(function (x) {
+    return x.o.id === node.ls[0].o.id;
+  }) && node !== TREE[T.c]) {
+    var o = node.ls[0].o,
+      st = tStats(node),
+      b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'op tnode leaf all' + (st.done === st.all ? ' alldone' : '');
+    b.innerHTML = "<span class=\"mvl\">Todas al azar<i>\u25B6 Entrenar</i></span><span class=\"nm\">".concat(o.name, "</span><span class=\"sb\">").concat(node.ls.length, " variantes de esta rama</span><span class=\"vc\"><b>").concat(st.done, "</b> de ").concat(st.all, " sin fallos</span>");
+    b.onclick = function () {
+      return tStart(node);
+    };
+    el.appendChild(b);
+  }
+  node.kids.forEach(function (k, idx) {
+    var st = tStats(k),
+      b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'op tnode' + (k.leaf ? ' leaf' : '') + (st.done === st.all ? ' alldone' : '');
+    b.setAttribute('aria-pressed', String(!!(k.leaf && tIsCur(k))));
+    var vc = "<span class=\"vc\"><b>".concat(st.done, "</b> de ").concat(st.all, " ").concat(st.all === 1 ? 'variante' : 'variantes', " sin fallos</span>");
+    if (k.leaf) {
+      var _o = k.ls[0].o,
+        whole = k.ls.length === _o.lines.length,
+        p = P(_o.id);
+      var sub = whole ? _o.sub + (_o.n ? ' · ' + _o.n + ' partidas' : '') : k.ls.map(function (x) {
+        return _o.lineNames[x.i];
+      }).join(' · ');
+      b.innerHTML = "<span class=\"mvl\">".concat(tEdge(k), "<i>\u25B6 Entrenar</i></span><span class=\"nm\">").concat(_o.name, "</span><span class=\"sb\">").concat(sub, "</span>").concat(vc) + (whole ? "<span class=\"meter\"><i style=\"width:".concat(Math.round(100 * Math.min(1, p.best / _o.deepest)), "%\"></i></span>") : '');
+      b.onclick = function () {
+        return tStart(k);
+      };
+    } else {
+      b.innerHTML = "<span class=\"mvl\">".concat(tEdge(k), "<i>\u203A</i></span><span class=\"sb\">").concat(tNames(k).join(', '), "</span>").concat(vc);
+      b.onclick = function () {
+        T.path = T.path.concat([idx]);
+        renderRack();
+      };
+    }
+    if (window.PointerEvent) {
+      b.addEventListener('pointerenter', function (e) {
+        if (e.pointerType === 'mouse') tMini(k);
+      });
+      b.addEventListener('pointerleave', function (e) {
+        if (e.pointerType === 'mouse') tMini(tNode());
+      });
+    }
+    el.appendChild(b);
   });
   document.getElementById('xp').textContent = xp;
   document.getElementById('streak').textContent = streak.n;
   document.getElementById('clean').textContent = cleanTotal;
 }
+document.querySelectorAll('#tCol button').forEach(function (b) {
+  b.onclick = function () {
+    if (b.dataset.c !== T.c) {
+      T = {
+        c: b.dataset.c,
+        path: []
+      };
+      renderRack();
+    }
+  };
+});
 
 // ---------- proposal ----------
 function propose() {
@@ -7287,6 +7568,7 @@ function start(id) {
     n: o.name,
     m: vi === '' ? 'El rival elegirá una de las variantes de tu plan. Fíjate en el nombre cuando aparezca.' : 'Variante elegida: ' + o.lineNames[+vi] + '.'
   });
+  tSync(o);
   renderNotes(o);
   renderRack();
   updateGoal();
@@ -8607,7 +8889,7 @@ function recOptions(r) {
   var _iterator = _createForOfIteratorHelper(pick(others.slice(), others.length)),
     _step2;
   try {
-    var _loop = function _loop() {
+    var _loop2 = function _loop2() {
       var x = _step2.value;
       if (opts.length >= 3) return 1; // break
       if (!seen.has(x.o + x.li) && !opts.some(function (y) {
@@ -8621,7 +8903,7 @@ function recOptions(r) {
       }
     };
     for (_iterator.s(); !(_step2 = _iterator.n()).done;) {
-      if (_loop()) break;
+      if (_loop2()) break;
     }
   } catch (err) {
     _iterator.e(err);
@@ -8921,7 +9203,14 @@ var engCp = function engCp(l) {
 };
 var engWin = function engWin(cp) {
   return 1 / (1 + Math.pow(10, -cp / 400));
-}; // 0..1 share of the bar for white
+};
+// logarithmic bar: the first pawn of advantage takes a lot of room, big advantages are compressed (0..100, white's share)
+var engShare = function engShare(cp) {
+  var k = 15,
+    M = 1000,
+    x = Math.min(Math.abs(cp), M);
+  return 50 + 50 * Math.sign(cp) * Math.log(1 + x / k) / Math.log(1 + M / k);
+};
 
 // ---------- engine panel: evaluation bar, best lines, free exploration ----------
 var ENG_ON = store.get('engine', true);
@@ -8952,6 +9241,9 @@ function engPaint() {
   engEl('engExplore').hidden = free || !cur || cur.mode === 'recog' && !cur.answered;
   var body = engEl('engBody');
   body.hidden = !ENG_ON;
+  engEl('engTop').hidden = !ENG_ON;
+  engEl('engT1').style.left = engShare(100).toFixed(1) + '%';
+  engEl('engT2').style.left = engShare(-100).toFixed(1) + '%';
   if (!ENG_ON) return;
   if (st === 'broken') {
     engEl('engNote').textContent = 'El motor no puede funcionar en este navegador.';
@@ -8974,7 +9266,7 @@ function engPaint() {
   var top = r.lines[0],
     cp = engCp(top),
     myW = cur && cur.o && cur.o.color !== 'b';
-  engEl('engFill').style.width = (100 * engWin(cp)).toFixed(1) + '%';
+  engEl('engFill').style.width = engShare(cp).toFixed(1) + '%';
   var mine = myW ? top : {
     cp: top.cp == null ? null : -top.cp,
     mate: top.mate == null ? null : -top.mate
@@ -9239,6 +9531,31 @@ engEl('engBack').onclick = engBack;
 ENGINE.on(function () {
   return engPaint();
 });
+
+// ---------- reset scores (while testing) ----------
+(function () {
+  var b = document.getElementById('resetBtn');
+  var armed = null;
+  b.onclick = function () {
+    if (!armed) {
+      b.classList.add('armed');
+      b.textContent = '¿Borrar todo? Pulsa otra vez';
+      armed = setTimeout(function () {
+        armed = null;
+        b.classList.remove('armed');
+        b.textContent = 'Reiniciar puntuación';
+      }, 4000);
+      return;
+    }
+    clearTimeout(armed);
+    ['prog', 'xp', 'clean', 'streak', 'fails', 'keys', 'recog'].forEach(function (k) {
+      try {
+        localStorage.removeItem('taller.' + k);
+      } catch (e) {}
+    });
+    location.reload();
+  };
+})();
 var first = propose();
 start(first.id);
 // ================= Estadísticas =================
@@ -10131,7 +10448,7 @@ var LIVE_USER = '';
         });
       });
     });
-    var _loop2 = function _loop2(k) {
+    var _loop3 = function _loop3(k) {
       types.push({
         name: 'Mate en ' + (k + 1),
         get: function get(r) {
@@ -10140,7 +10457,7 @@ var LIVE_USER = '';
       });
     };
     for (var k = 0; k < 4; k++) {
-      _loop2(k);
+      _loop3(k);
     }
     types.push({
       name: 'Ganar material',
@@ -10678,7 +10995,7 @@ var LIVE_USER = '';
   }
   function _fetchGames() {
     _fetchGames = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee3() {
-      var user, st, cache, ar, months, nowKey, todo, i, _iterator2, _step3, _loop3, _t3, _t4;
+      var user, st, cache, ar, months, nowKey, todo, i, _iterator2, _step3, _loop4, _t3, _t4;
       return _regenerator().w(function (_context4) {
         while (1) switch (_context4.p = _context4.n) {
           case 0:
@@ -10718,7 +11035,7 @@ var LIVE_USER = '';
             i = 0;
             _iterator2 = _createForOfIteratorHelper(todo);
             _context4.p = 4;
-            _loop3 = /*#__PURE__*/_regenerator().m(function _loop3() {
+            _loop4 = /*#__PURE__*/_regenerator().m(function _loop4() {
               var m, j, key;
               return _regenerator().w(function (_context3) {
                 while (1) switch (_context3.n) {
@@ -10763,7 +11080,7 @@ var LIVE_USER = '';
                   case 2:
                     return _context3.a(2);
                 }
-              }, _loop3);
+              }, _loop4);
             });
             _iterator2.s();
           case 5:
@@ -10771,7 +11088,7 @@ var LIVE_USER = '';
               _context4.n = 7;
               break;
             }
-            return _context4.d(_regeneratorValues(_loop3()), 6);
+            return _context4.d(_regeneratorValues(_loop4()), 6);
           case 6:
             _context4.n = 5;
             break;
