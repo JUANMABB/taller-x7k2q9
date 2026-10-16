@@ -296,6 +296,23 @@ footer { font-size: 12px; color: var(--muted); max-width: 90ch; }
 .live p { margin: 0; font-size: 14px; }
 .stats .chip:empty { display: none; }
 
+.engine { border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; display: grid; gap: 8px; background: var(--panel); }
+.engrow { display: flex; flex-wrap: wrap; gap: 6px; }
+.engrow .btn[aria-pressed="true"] { border-color: var(--walnut); }
+#engBody { display: grid; gap: 6px; }
+.engbar { position: relative; height: 22px; border-radius: 6px; background: #2b2b2b; overflow: hidden; border: 1px solid var(--line); }
+.engfill { position: absolute; left: 0; top: 0; bottom: 0; width: 50%; background: #f4f1ea; transition: width .4s ease; }
+.engnum { position: absolute; right: 8px; top: 50%; transform: translateY(-50%); font: 700 12.5px var(--font-mono); color: #fff; mix-blend-mode: difference; }
+.engnote { margin: 0; font-size: 13px; color: var(--muted); }
+.engnote b { color: var(--ink); }
+.englines { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; font-family: var(--font-mono); font-size: 12.5px; }
+.englines li { padding: 5px 8px; border-radius: 6px; background: var(--bg); cursor: pointer; overflow-wrap: anywhere; }
+.englines li:hover { background: var(--walnut-soft); }
+.englines li b { margin-right: 6px; }
+.englines .n { color: var(--muted); margin-right: 2px; }
+.engjudge { margin-top: 6px; font-size: 13px; color: var(--muted); }
+@media (prefers-reduced-motion: reduce) { .engfill { transition: none; } }
+
 
 .ask { display: none !important; }
 .wrap > * + * { margin-top: 20px; }
@@ -2130,6 +2147,19 @@ if (typeof define !== 'undefined')
         <button class="btn" id="vDev" type="button">Ir a la salida</button>
         <button class="btn primary" id="vPractice" type="button">Practicar esta posición</button>
       </div>
+      <div class="engine" id="engBox">
+        <div class="engrow">
+          <button class="btn small" id="engToggle" type="button" aria-pressed="true">Motor: encendido</button>
+          <button class="btn small" id="engExplore" type="button">Explorar con el motor</button>
+          <button class="btn small" id="engUndo" type="button" hidden>◀ Deshacer</button>
+          <button class="btn small" id="engBack" type="button" hidden>Volver al entrenamiento</button>
+        </div>
+        <div id="engBody">
+          <div class="engbar" aria-hidden="true"><div class="engfill" id="engFill"></div><span class="engnum" id="engNum">—</span></div>
+          <p class="engnote" id="engNote"></p>
+          <ol class="englines" id="engLines"></ol>
+        </div>
+      </div>
       <div class="ask" id="askBox">
         <button class="btn" id="askToggle" type="button" aria-expanded="false">Preguntar sobre esta posición</button>
         <div class="askpanel" id="askPanel" hidden>
@@ -2293,7 +2323,7 @@ if (typeof define !== 'undefined')
 </section>
 
 
-  <footer>Las líneas son las de tu plan de aperturas; a partir de donde acaban, guíate por el plan de la apertura, no por jugadas memorizadas. Datos: tus últimas 20 partidas blitz de cada apertura en Chess.com (hasta el 13-10-2026). Valoraciones con Stockfish 17 a profundidad 20, en centésimas de peón desde tu lado. Piezas cburnett (CC BY-SA 3.0). El progreso se guarda solo en este navegador. <span class="ipadver">Versión 2026-10-16</span></footer>
+  <footer>Las líneas son las de tu plan de aperturas; a partir de donde acaban, guíate por el plan de la apertura, no por jugadas memorizadas. Datos: tus últimas 20 partidas blitz de cada apertura en Chess.com (hasta el 13-10-2026). Valoraciones con Stockfish 17 a profundidad 20, en centésimas de peón desde tu lado. Motor en vivo: Stockfish 19 lite (GPLv3, stockfishchess.org). Piezas cburnett (CC BY-SA 3.0). El progreso se guarda solo en este navegador. <span class="ipadver">Versión 2026-10-16</span></footer>
 </div>
 
 <script>
@@ -7281,9 +7311,11 @@ function updateGoal() {
   }
 }
 function myTurn() {
+  if (cur.mode === 'free') return true;
   return cur.o.color === 'w' === (cur.seq.length % 2 === 0);
 }
 function children() {
+  if (cur.mode === 'free') return [];
   if (cur.mode === 'key') return cur.seq.length === cur.k.uci.length ? [cur.k.ans] : [];
   return _toConsumableArray((cur.tree || cur.o.tree)[cur.seq.join(' ')] || []);
 }
@@ -7438,6 +7470,7 @@ function tryMove(from, to) {
     return m.to === to;
   });
   if (!ok) return;
+  if (cur.mode === 'free') return engPlay(uci);
   if (cur.mode === 'key') return tryKey(uci, from, to);
   var ch = children();
   if (ch.includes(uci)) {
@@ -7473,6 +7506,9 @@ function tryMove(from, to) {
     cur.wrongHere = true;
     if (!cur.firstWrong) cur.firstWrong = uci;
     var _san = sanLine([uci], cur.seq)[0];
+    setTimeout(function () {
+      return engJudge(cur.seq.slice(), uci, children()[0]);
+    }, 0);
     var known = cur.o.devs.find(function (d) {
       return d.who === 'yo' && d.pre === cur.seq.join(' ') && d.played === uci;
     });
@@ -8433,6 +8469,9 @@ function tryKey(uci, from, to) {
     void boardEl.offsetWidth;
     boardEl.classList.add('shake');
     flashSquares([from, to]);
+    setTimeout(function () {
+      return engJudge(cur.seq.slice(), uci, k.ans);
+    }, 0);
     setMsg('err', "".concat(sanLine([uci], cur.seq)[0], " no es la respuesta est\xE1ndar"), cur.misses >= 2 ? 'Pulsa Pista si quieres ver qué pieza mover.' : "Piensa en qu\xE9 ha dejado sin defensa la \xFAltima jugada del rival.");
   }
 }
@@ -8452,6 +8491,7 @@ sel.onchange = function () {
 };
 document.getElementById('againBtn').onclick = function () {
   if (!cur) return;
+  if (cur.mode === 'free') return engBack();
   if (cur.mode === 'recog') return nextRecog();
   if (cur.mode === 'key' && cur.k.id.startsWith('fail-')) return nextFail();
   if (cur.mode === 'key' && !cur.k.id.startsWith('dev-')) nextKey();else start(cur.o.id);
@@ -8701,6 +8741,504 @@ recSel.onchange = function () {
 };
 
 // ---------- boot ----------
+var ENGINE_URL = 'stockfish.js';
+// ---------- Stockfish (WASM, in a Web Worker) ----------
+// One search at a time. analyse(fen, opts, onInfo) cancels the previous search and calls
+// onInfo({depth, lines:[{cp, mate, pv:[uci]}], done}) with scores from WHITE's point of view.
+var ENGINE = function () {
+  var w = null,
+    state = 'off',
+    searching = false,
+    pending = null,
+    job = null,
+    readyCbs = [];
+  var listeners = [];
+  function fail() {
+    state = 'broken';
+    searching = false;
+    listeners.forEach(function (f) {
+      return f('broken');
+    });
+  }
+  function boot() {
+    if (w || state === 'broken') return;
+    try {
+      w = new Worker(ENGINE_URL);
+    } catch (e) {
+      fail();
+      return;
+    }
+    state = 'booting';
+    w.onerror = function () {
+      return fail();
+    };
+    w.onmessage = function (e) {
+      return onLine(String(e.data));
+    };
+    w.postMessage('uci');
+    setTimeout(function () {
+      if (state === 'booting') fail();
+    }, 20000);
+  }
+  function onLine(line) {
+    if (line === 'uciok') {
+      w.postMessage('setoption name Hash value 32');
+      w.postMessage('isready');
+      return;
+    }
+    if (line === 'readyok' && state === 'booting') {
+      state = 'ready';
+      listeners.forEach(function (f) {
+        return f('ready');
+      });
+      readyCbs.splice(0).forEach(function (f) {
+        return f();
+      });
+      return;
+    }
+    if (!job) {
+      if (line.indexOf('bestmove') === 0) {
+        searching = false;
+        next();
+      }
+      return;
+    }
+    if (line.indexOf('info ') === 0 && line.indexOf(' pv ') > 0 && line.indexOf(' score ') > 0) {
+      var g = function g(k) {
+        var m = line.match(new RegExp(' ' + k + ' (-?\\d+)'));
+        return m ? +m[1] : null;
+      };
+      var d = g('depth'),
+        k = g('multipv') || 1,
+        cp = g('cp'),
+        mate = g('mate');
+      var pv = line.split(' pv ')[1].trim().split(' ');
+      var sgn = job.white ? 1 : -1;
+      if (d !== job.depth) {
+        job.depth = d;
+        job.cur = [];
+      }
+      job.cur[k - 1] = {
+        cp: cp == null ? null : sgn * cp,
+        mate: mate == null ? null : sgn * mate,
+        pv: pv
+      };
+      if (k === 1 || job.cur.filter(Boolean).length >= job.multipv) {
+        var lines = job.cur.filter(Boolean);
+        if (lines.length) {
+          job.best = {
+            depth: d,
+            lines: lines
+          };
+          job.onInfo && job.onInfo({
+            depth: d,
+            lines: lines,
+            done: false
+          });
+        }
+      }
+      return;
+    }
+    if (line.indexOf('bestmove') === 0) {
+      var j = job;
+      job = null;
+      searching = false;
+      if (j && !j.cancelled && j.best) j.onInfo && j.onInfo(Object.assign({}, j.best, {
+        done: true
+      }));
+      next();
+    }
+  }
+  function next() {
+    if (searching || !pending || state !== 'ready') return;
+    job = pending;
+    pending = null;
+    searching = true;
+    w.postMessage('setoption name MultiPV value ' + job.multipv);
+    w.postMessage('position fen ' + job.fen);
+    w.postMessage(job.movetime ? 'go movetime ' + job.movetime : 'go depth ' + job.maxDepth);
+  }
+  return {
+    url: function url() {
+      return ENGINE_URL;
+    },
+    status: function status() {
+      return state;
+    },
+    on: function on(f) {
+      return listeners.push(f);
+    },
+    start: function start() {
+      return boot();
+    },
+    analyse: function analyse(fen, opts, onInfo) {
+      opts = opts || {};
+      boot();
+      if (state === 'broken') return;
+      if (job) {
+        job.cancelled = true;
+        job.onInfo = null;
+      }
+      pending = {
+        fen: fen,
+        white: fen.split(' ')[1] === 'w',
+        maxDepth: opts.depth || 18,
+        movetime: opts.movetime || 0,
+        multipv: opts.multipv || 1,
+        onInfo: onInfo,
+        depth: 0,
+        cur: [],
+        best: null
+      };
+      if (searching) w.postMessage('stop');else if (state === 'ready') next();else readyCbs.push(next);
+    },
+    // promise helper: final result of a fixed-depth search
+    evaluate: function evaluate(fen, depth) {
+      var _this = this;
+      return new Promise(function (res) {
+        _this.analyse(fen, {
+          depth: depth || 12,
+          multipv: 1
+        }, function (r) {
+          if (r.done) res(r);
+        });
+        if (state === 'broken') res(null);
+      });
+    },
+    stop: function stop() {
+      pending = null;
+      if (job) {
+        job.cancelled = true;
+        job.onInfo = null;
+      }
+      if (searching) w.postMessage('stop');
+    }
+  };
+}();
+// score helpers (white's point of view)
+var engCp = function engCp(l) {
+  return l.mate != null ? l.mate > 0 ? 10000 - l.mate : -10000 - l.mate : l.cp;
+};
+var engWin = function engWin(cp) {
+  return 1 / (1 + Math.pow(10, -cp / 400));
+}; // 0..1 share of the bar for white
+
+// ---------- engine panel: evaluation bar, best lines, free exploration ----------
+var ENG_ON = store.get('engine', true);
+var engEl = function engEl(id) {
+  return document.getElementById(id);
+};
+var engFmt = function engFmt(l) {
+  if (l.mate != null) return (l.mate > 0 ? '+' : '−') + 'M' + Math.abs(l.mate);
+  var v = l.cp / 100;
+  return (v > 0 ? '+' : v < 0 ? '−' : '') + Math.abs(v).toFixed(2).replace('.', ',');
+};
+var engKey = null,
+  engRes = null,
+  engJudgeTok = 0;
+// while you are solving a position the engine shows only the evaluation, never the move
+function engTraining() {
+  return cur && ((cur.mode === 'lines' || cur.mode === 'key') && !cur.done || cur.mode === 'recog' && !cur.answered);
+}
+function engPaint() {
+  var box = engEl('engBox');
+  if (!box) return;
+  var st = ENGINE.status();
+  engEl('engToggle').setAttribute('aria-pressed', String(ENG_ON));
+  engEl('engToggle').textContent = ENG_ON ? 'Motor: encendido' : 'Motor: apagado';
+  var free = cur && cur.mode === 'free';
+  engEl('engUndo').hidden = !free;
+  engEl('engBack').hidden = !free;
+  engEl('engExplore').hidden = free || !cur || cur.mode === 'recog' && !cur.answered;
+  var body = engEl('engBody');
+  body.hidden = !ENG_ON;
+  if (!ENG_ON) return;
+  if (st === 'broken') {
+    engEl('engNote').textContent = 'El motor no puede funcionar en este navegador.';
+    engEl('engLines').innerHTML = '';
+    engEl('engNum').textContent = '—';
+    return;
+  }
+  if (cur && cur.mode === 'recog' && !cur.answered) {
+    engEl('engNote').textContent = 'Contesta primero; después verás qué dice el motor.';
+    engEl('engLines').innerHTML = '';
+    engEl('engNum').textContent = '—';
+    engEl('engFill').style.width = '50%';
+    return;
+  }
+  var r = engRes;
+  if (!r || !r.lines.length) {
+    engEl('engNote').textContent = st === 'ready' ? 'Pensando…' : 'Cargando Stockfish…';
+    return;
+  }
+  var top = r.lines[0],
+    cp = engCp(top),
+    myW = cur && cur.o && cur.o.color !== 'b';
+  engEl('engFill').style.width = (100 * engWin(cp)).toFixed(1) + '%';
+  var mine = myW ? top : {
+    cp: top.cp == null ? null : -top.cp,
+    mate: top.mate == null ? null : -top.mate
+  };
+  var mcp = engCp(mine);
+  engEl('engNum').textContent = engFmt(top);
+  var verdict = Math.abs(mcp) < 40 ? 'igualado' : mcp > 0 ? mcp > 150 ? 'ventaja clara para ti' : 'algo mejor para ti' : mcp < -150 ? 'ventaja clara del rival' : 'algo mejor para el rival';
+  var hide = engTraining();
+  engEl('engNote').innerHTML = "<b>".concat(verdict, "</b> \xB7 profundidad ").concat(r.depth).concat(r.done ? '' : '…').concat(hide ? ' · las mejores jugadas se ven al terminar o en «Explorar»' : '');
+  engEl('engLines').innerHTML = hide ? '' : r.lines.map(function (l, i) {
+    var s;
+    try {
+      s = sanLine(l.pv.slice(0, 6), cur.seq);
+    } catch (e) {
+      s = [];
+    }
+    var ply = cur.seq.length;
+    return "<li data-u=\"".concat(l.pv[0], "\"><b>").concat(engFmt(l), "</b> ").concat(s.map(function (m, k) {
+      return ((ply + k) % 2 === 0 || k === 0 ? "<span class=\"n\">".concat(tag(ply + k), "</span>") : '') + m;
+    }).join(' '), "</li>");
+  }).join('');
+  engEl('engLines').querySelectorAll('li').forEach(function (li) {
+    return li.onclick = function () {
+      engExplore();
+      engPlay(li.dataset.u);
+    };
+  });
+}
+function engArrow() {
+  if (!ENG_ON || !engRes || !engRes.lines.length || engTraining() || !cur) return;
+  var u = engRes.lines[0].pv[0];
+  if (!u) return;
+  var flip = cur.o.color === 'b';
+  var xy = function xy(sq) {
+    var f = 'abcdefgh'.indexOf(sq[0]),
+      r = +sq[1];
+    return [(flip ? 7 - f : f) + .5, (flip ? r - 1 : 8 - r) + .5];
+  };
+  var _xy5 = xy(u.slice(0, 2)),
+    _xy6 = _slicedToArray(_xy5, 2),
+    x1 = _xy6[0],
+    y1 = _xy6[1],
+    _xy7 = xy(u.slice(2, 4)),
+    _xy8 = _slicedToArray(_xy7, 2),
+    x2 = _xy8[0],
+    y2 = _xy8[1];
+  var L = Math.hypot(x2 - x1, y2 - y1),
+    ux = (x2 - x1) / L,
+    uy = (y2 - y1) / L,
+    ex = x2 - ux * .32,
+    ey = y2 - uy * .32;
+  boardEl.insertAdjacentHTML('beforeend', "<svg class=\"arrows\" viewBox=\"0 0 8 8\" aria-hidden=\"true\"><line x1=\"".concat(x1, "\" y1=\"").concat(y1, "\" x2=\"").concat(ex, "\" y2=\"").concat(ey, "\" stroke=\"#2e6f9e\" stroke-width=\".15\" stroke-linecap=\"round\" opacity=\".7\"/><polygon points=\"").concat(x2, ",").concat(y2, " ").concat(ex - uy * .26, ",").concat(ey + ux * .26, " ").concat(ex + uy * .26, ",").concat(ey - ux * .26, "\" fill=\"#2e6f9e\" opacity=\".75\"/></svg>"));
+}
+function engUpdate() {
+  if (!cur) return;
+  var fen = cur.game.fen();
+  if (ENG_ON && !(cur.mode === 'recog' && !cur.answered) && fen !== engKey) {
+    engKey = fen;
+    engRes = null;
+    if (cur.game.game_over()) {
+      engPaint();
+      return;
+    }
+    ENGINE.analyse(fen, {
+      depth: 18,
+      multipv: 3
+    }, function (r) {
+      if (engKey !== fen) return;
+      var had = engRes;
+      engRes = r;
+      engPaint();
+      if (!had || r.lines[0] && had.lines[0] && r.lines[0].pv[0] !== had.lines[0].pv[0]) {
+        if (!engTraining()) render();
+      }
+    });
+  }
+  engPaint();
+}
+var _renderNoEngine = render;
+render = function render() {
+  _renderNoEngine();
+  engArrow();
+  engUpdate();
+};
+// the engine's opinion of a move that is not the one of the plan
+function engJudge(_x2, _x3, _x4) {
+  return _engJudge.apply(this, arguments);
+} // free exploration from the current position: any legal move for either side
+function _engJudge() {
+  _engJudge = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee4(seq, played, want) {
+    var tok, msgEl, before, g1, g2, white, a, b, s, pa, pb, f, diff, txt;
+    return _regenerator().w(function (_context5) {
+      while (1) switch (_context5.n) {
+        case 0:
+          if (!(!ENG_ON || ENGINE.status() === 'broken' || !want)) {
+            _context5.n = 1;
+            break;
+          }
+          return _context5.a(2);
+        case 1:
+          tok = ++engJudgeTok, msgEl = engEl('msg'), before = msgEl.innerHTML;
+          g1 = new Chess(), g2 = new Chess();
+          seq.forEach(function (m) {
+            g1.move({
+              from: m.slice(0, 2),
+              to: m.slice(2, 4),
+              promotion: 'q'
+            });
+            g2.move({
+              from: m.slice(0, 2),
+              to: m.slice(2, 4),
+              promotion: 'q'
+            });
+          });
+          white = g1.turn() === 'w';
+          g1.move({
+            from: played.slice(0, 2),
+            to: played.slice(2, 4),
+            promotion: 'q'
+          });
+          g2.move({
+            from: want.slice(0, 2),
+            to: want.slice(2, 4),
+            promotion: 'q'
+          });
+          _context5.n = 2;
+          return ENGINE.evaluate(g1.fen(), 13);
+        case 2:
+          a = _context5.v;
+          if (!(tok !== engJudgeTok || !a)) {
+            _context5.n = 3;
+            break;
+          }
+          return _context5.a(2);
+        case 3:
+          _context5.n = 4;
+          return ENGINE.evaluate(g2.fen(), 13);
+        case 4:
+          b = _context5.v;
+          if (!(tok !== engJudgeTok || !b)) {
+            _context5.n = 5;
+            break;
+          }
+          return _context5.a(2);
+        case 5:
+          engKey = null;
+          engUpdate(); // resume the panel's analysis
+          if (!(msgEl.innerHTML !== before)) {
+            _context5.n = 6;
+            break;
+          }
+          return _context5.a(2);
+        case 6:
+          s = function s(x) {
+            return (white ? 1 : -1) * engCp(x.lines[0]);
+          };
+          pa = s(a), pb = s(b), f = function f(v) {
+            var l = {
+              cp: v,
+              mate: null
+            };
+            return Math.abs(v) > 5000 ? v > 0 ? 'mate a tu favor' : 'mate en contra' : engFmt(l);
+          };
+          diff = pb - pa, txt = diff < 40 ? 'para el motor es igual de buena; aun así, apréndete la del plan' : diff < 120 ? 'un poco peor que la del plan' : diff < 300 ? 'claramente peor que la del plan' : 'un error grave';
+          msgEl.insertAdjacentHTML('beforeend', "<div class=\"engjudge\">Motor: tu jugada ".concat(f(pa), " \xB7 la del plan ").concat(f(pb), " (desde tu lado): ").concat(txt, ".</div>"));
+        case 7:
+          return _context5.a(2);
+      }
+    }, _callee4);
+  }));
+  return _engJudge.apply(this, arguments);
+}
+function engExplore() {
+  if (!cur || cur.mode === 'free') return;
+  var back = cur.mode === 'key' ? {
+    key: cur.k.id
+  } : cur.mode === 'recog' ? {
+    recog: true
+  } : {
+    op: cur.o.id
+  };
+  var seq = cur.seq.slice();
+  setMode('view');
+  engEl('viewbar').hidden = true;
+  engEl('prog').hidden = true;
+  engEl('ideabox').hidden = true;
+  engEl('againBtn').hidden = true;
+  cur = {
+    mode: 'free',
+    o: {
+      id: cur.o.id,
+      color: cur.o.color,
+      name: cur.o.name,
+      doc: new Set()
+    },
+    back: back,
+    base: seq.length,
+    game: new Chess(),
+    seq: [],
+    done: false,
+    wrong: [],
+    last: null,
+    miss: [],
+    hintLvl: 0,
+    arrows: []
+  };
+  seq.forEach(function (m) {
+    cur.game.move({
+      from: m.slice(0, 2),
+      to: m.slice(2, 4),
+      promotion: 'q'
+    });
+    cur.seq.push(m);
+    cur.last = m;
+  });
+  selected = null;
+  legal = [];
+  engEl('opTitle').textContent = 'Explorar con el motor';
+  engEl('goal').textContent = 'Mueve las piezas de los dos bandos; el motor valora cada posición.';
+  setMsg('info', 'Modo libre', 'Aquí no cuentan puntos ni fallos. Pulsa una línea del motor para jugarla, «Deshacer» para volver atrás.');
+  render();
+}
+function engPlay(u) {
+  if (!cur || cur.mode !== 'free') return;
+  var m = cur.game.move({
+    from: u.slice(0, 2),
+    to: u.slice(2, 4),
+    promotion: 'q'
+  });
+  if (!m) return;
+  cur.seq.push(u);
+  cur.last = u;
+  render();
+}
+function engUndo() {
+  if (!cur || cur.mode !== 'free' || cur.seq.length <= 0) return;
+  cur.game.undo();
+  cur.seq.pop();
+  cur.last = cur.seq[cur.seq.length - 1] || null;
+  render();
+}
+function engBack() {
+  if (!cur || cur.mode !== 'free') return;
+  var b = cur.back;
+  engEl('againBtn').hidden = false;
+  if (b.key) return startKey(b.key);
+  if (b.recog) return nextRecog();
+  start(b.op);
+}
+engEl('engToggle').onclick = function () {
+  ENG_ON = !ENG_ON;
+  store.set('engine', ENG_ON);
+  if (!ENG_ON) {
+    ENGINE.stop();
+    engKey = null;
+  }
+  render();
+};
+engEl('engExplore').onclick = engExplore;
+engEl('engUndo').onclick = engUndo;
+engEl('engBack').onclick = engBack;
+ENGINE.on(function () {
+  return engPaint();
+});
 var first = propose();
 start(first.id);
 // ================= Estadísticas =================
