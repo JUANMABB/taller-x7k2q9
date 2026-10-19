@@ -7249,7 +7249,7 @@ function tMini(n) {
       file = flip ? files[7 - f] : files[f],
       sq = file + rank;
     var d = document.createElement('div');
-    d.className = 'sq ' + ((files.indexOf(file) + rank) % 2 === 1 ? 'l' : 'd');
+    d.className = 'sq ' + ((files.indexOf(file) + rank) % 2 === 0 ? 'l' : 'd');
     if (last && (last.slice(0, 2) === sq || last.slice(2, 4) === sq)) d.classList.add('last');
     var pc = g.get(sq);
     if (pc) {
@@ -7854,7 +7854,7 @@ function squares() {
       file = flip ? files[7 - f] : files[f];
     out.push({
       sq: file + rank,
-      light: (files.indexOf(file) + rank) % 2 === 1,
+      light: (files.indexOf(file) + rank) % 2 === 0,
       showF: r === 7,
       showR: f === 0
     });
