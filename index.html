@@ -382,6 +382,7 @@ footer { font-size: 12px; color: var(--muted); max-width: 90ch; }
 .wptrain { display: grid; gap: 12px; margin-top: 12px; }
 @media (min-width: 900px) { .wptrain { grid-template-columns: minmax(0, 480px) 1fr; align-items: start; } }
 .wpclock { font-family: var(--font-mono); font-size: 22px; margin-bottom: 6px; }
+.brole { font-size: 13px; color: var(--muted); }
 .bdesc { margin: 8px 0 0; font-size: 14px; line-height: 1.5; max-width: 820px; }
 .erwch { display: flex; flex-wrap: wrap; gap: 6px; margin: 10px 0; }
 .erwch button { all: unset; cursor: pointer; font-size: 13px; padding: 6px 10px; border: 1px solid var(--line); border-radius: 999px; background: var(--panel); }
@@ -11094,10 +11095,10 @@ var BOOK_DESC = {
   var bCur = null;
   function bookOpen(_x1) {
     return _bookOpen.apply(this, arguments);
-  } // Flores Rios: two rows per structure — attacking/defending (isolani, hanging pawns, Carlsbad, Stonewall) or with the colour whose structure it is / against it
+  }
   function _bookOpen() {
     _bookOpen = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee1(id) {
-      var B, DT, ci, desc, _B$ch$ci, name, items, byId, none, head, row, sideCols, _t7;
+      var B, DT, ci, desc, _B$ch$ci, name, items, byId, none, tac, okRole, head, row, roles, _t7;
       return _regenerator().w(function (_context1) {
         while (1) switch (_context1.p = _context1.n) {
           case 0:
@@ -11147,7 +11148,7 @@ var BOOK_DESC = {
             desc = typeof BOOK_DESC !== 'undefined' && BOOK_DESC[id] && BOOK_DESC[id][ci] || '';
             $g('bHead').innerHTML = "<h3 style=\"margin:0\">".concat(B.title, "</h3><p class=\"sumline\" style=\"margin:2px 0 0\">").concat(B.author, " \xB7 ").concat(B.note, "</p>\n      <div class=\"sbar\" style=\"margin-top:10px\"><label for=\"bChapSel\">Cap\xEDtulo</label><select id=\"bChapSel\">").concat(B.ch.map(function (c, i) {
               return "<option value=\"".concat(i, "\"").concat(i === ci ? ' selected' : '', ">").concat(i + 1, ". ").concat(c[0], "</option>");
-            }).join(''), "</select></div>\n      ").concat(desc ? "<p class=\"bdesc\">".concat(desc, "</p>") : '');
+            }).join(''), "</select></div>\n      ").concat(desc ? "<p class=\"bdesc\">".concat(desc, "</p>") : '', "<p class=\"bdesc brole\">").concat(ROLE_TXT[id] || '', "</p>");
             $g('bChapSel').onchange = function () {
               var i = +$g('bChapSel').value;
               bChap[id] = i;
@@ -11170,62 +11171,51 @@ var BOOK_DESC = {
             $g('ePat').innerHTML = '<p class="empty">Este capítulo combina los anteriores: no tiene apartados propios.</p>';
             return _context1.a(2);
           case 7:
-            none = '<br><span class="erwnone">sin detector todavía</span>';
-            if (B.kind === 'tactic') {
-              head = '<tr><th rowspan="2">Patrón</th><th colspan="4" class="grp">Tuyos</th><th colspan="3" class="grp">Del rival, por un error tuyo</th></tr><tr><th>Total</th><th>Aprovechados</th><th>Perdidos</th><th>% visto</th><th>Total</th><th>Lo aprovechó</th><th>No lo vio</th></tr>';
-              row = function row(n, lb) {
-                var has = n in DT;
-                if (!has) return "<td><b>".concat(n, ".</b> ").concat(lb).concat(none, "</td><td colspan=\"7\" class=\"erwnone\">\u2013</td>");
-                var s = {
-                  f: 0,
-                  m: 0,
-                  c: 0,
-                  x: 0
-                };
-                DT[n].forEach(function (o) {
-                  s[o[2]]++;
-                });
-                var tot = s.f + s.m;
-                return "<td><b>".concat(n, ".</b> ").concat(lb, "</td><td><b>").concat(tot, "</b></td><td>").concat(s.f, "</td><td>").concat(s.m, "</td><td>").concat(tot ? Math.round(100 * s.f / tot) + ' %' : '–', "</td><td><b>").concat(s.c + s.x, "</b></td><td>").concat(s.c, "</td><td>").concat(s.x, "</td>");
-              };
-            } else {
-              sideCols = id !== 'flores';
-              head = "<tr><th>Apartado</th><th>Partidas</th>".concat(sideCols ? '<th>Tú con ventaja</th><th>Tú defendiendo</th>' : '', "<th>Ganadas</th><th>Tablas</th><th>Perdidas</th><th>% de puntos</th></tr>");
-              row = function row(n0, lb) {
-                var _n0$split3 = n0.split('|'),
-                  _n0$split4 = _slicedToArray(_n0$split3, 2),
-                  n = _n0$split4[0],
-                  role = _n0$split4[1],
-                  has = n in DT,
-                  span = sideCols ? 7 : 5;
-                if (!has) return "<td><b>".concat(n, ".</b> ").concat(lb).concat(none, "</td><td colspan=\"").concat(span, "\" class=\"erwnone\">\u2013</td>");
-                var s = {
+            none = '<br><span class="erwnone">sin detector todavía</span>'; // every item: a total row and two role rows (attacking / defending); same columns everywhere
+            tac = B.kind === 'tactic', okRole = function okRole(o, role) {
+              return !role || (tac ? (role === 'a' ? 'fm' : 'cx').includes(o[2]) : o[2] === role);
+            };
+            head = "<tr><th>Apartado</th><th>".concat(tac ? 'Veces' : 'Partidas', "</th>").concat(tac ? '<th>Se aprovechó</th><th>Se escapó</th><th>% aprovechado</th>' : '', "<th>Ganadas</th><th>Tablas</th><th>Perdidas</th><th>% de puntos</th></tr>");
+            row = function row(n0, lb) {
+              var _n0$split3 = n0.split('|'),
+                _n0$split4 = _slicedToArray(_n0$split3, 2),
+                n = _n0$split4[0],
+                role = _n0$split4[1],
+                span = tac ? 7 : 4;
+              if (!(n in DT)) return "<td><b>".concat(n, ".</b> ").concat(lb).concat(none, "</td><td colspan=\"").concat(span + 1, "\" class=\"erwnone\">\u2013</td>");
+              var s = {
                   W: 0,
                   D: 0,
                   L: 0,
-                  a: 0,
-                  d: 0
-                };
-                DT[n].forEach(function (o) {
-                  if (role && o[2] !== role) return;
-                  var r = byId[o[0]];
-                  if (r) {
-                    s[r[5]]++;
-                    if (o[2]) s[o[2]]++;
-                  }
-                });
-                var tot = s.W + s.D + s.L;
-                return "<td>".concat(role ? '&nbsp;&nbsp;↳ ' : /^c\d/.test(n) ? '' : '<b>' + n + '.</b> ').concat(lb, "</td><td><b>").concat(tot, "</b></td>").concat(sideCols ? "<td>".concat(s.a, "</td><td>").concat(s.d, "</td>") : '', "<td>").concat(s.W, "</td><td>").concat(s.D, "</td><td>").concat(s.L, "</td><td>").concat(tot ? Math.round(100 * (s.W + s.D / 2) / tot) + ' %' : '–', "</td>");
-              };
-            }
-            $g('ePat').innerHTML = "<h4 class=\"gsubh\">Cap\xEDtulo ".concat(ci + 1, ": ").concat(name, "</h4><table class=\"stbl gsum\"><thead>").concat(head, "</thead><tbody>").concat(('c' + ci in DT ? [['c' + ci, '<b>Todo el capítulo</b> (este tipo de final en tus partidas)']] : []).concat(items).reduce(function (a, it) {
-              return a.concat([it], id === 'flores' && it[0] in DT ? floresRoles(it[0]) : []);
+                  ok: 0,
+                  ko: 0
+                },
+                games = new Set();
+              DT[n].forEach(function (o) {
+                if (!okRole(o, role)) return;
+                if (tac) {
+                  if ('fc'.includes(o[2])) s.ok++;else s.ko++;
+                }
+                if (games.has(o[0])) return;
+                games.add(o[0]);
+                var r = byId[o[0]];
+                if (r) s[r[5]]++;
+              });
+              var g = s.W + s.D + s.L,
+                t = s.ok + s.ko;
+              return "<td>".concat(role ? '&nbsp;&nbsp;↳ ' : /^c\d/.test(n) ? '' : '<b>' + n + '.</b> ').concat(lb, "</td><td><b>").concat(tac ? t : g, "</b></td>").concat(tac ? "<td>".concat(s.ok, "</td><td>").concat(s.ko, "</td><td>").concat(t ? Math.round(100 * s.ok / t) + ' %' : '–', "</td>") : '', "<td>").concat(s.W, "</td><td>").concat(s.D, "</td><td>").concat(s.L, "</td><td>").concat(g ? Math.round(100 * (s.W + s.D / 2) / g) + ' %' : '–', "</td>");
+            };
+            roles = function roles(n) {
+              return id === 'flores' && !/^c\d/.test(n) ? floresRoles(n) : [[n + '|a', ROLE_LB[B.kind === 'tactic' ? 'tactic' : 'end'][0]], [n + '|d', ROLE_LB[B.kind === 'tactic' ? 'tactic' : 'end'][1]]];
+            };
+            $g('ePat').innerHTML = "<h4 class=\"gsubh\">Cap\xEDtulo ".concat(ci + 1, ": ").concat(name, "</h4><div class=\"tscroll\"><table class=\"stbl gsum\"><thead>").concat(head, "</thead><tbody>").concat(('c' + ci in DT ? [['c' + ci, '<b>Todo el capítulo</b>']] : []).concat(items).reduce(function (a, it) {
+              return a.concat([it], it[0] in DT ? roles(it[0]) : []);
             }, []).map(function (_ref13) {
               var _ref14 = _slicedToArray(_ref13, 2),
                 n = _ref14[0],
                 lb = _ref14[1];
               return "<tr class=\"click".concat(n.includes('|') ? ' sub' : '', "\" data-n=\"").concat(n, "\">").concat(row(n, lb), "</tr>");
-            }).join(''), "</tbody></table>");
+            }).join(''), "</tbody></table></div>");
             $g('ePat').querySelectorAll('tr.click').forEach(function (tr) {
               return tr.onclick = function () {
                 return bookHist(id, tr.dataset.n, byId);
@@ -11238,6 +11228,17 @@ var BOOK_DESC = {
     }));
     return _bookOpen.apply(this, arguments);
   }
+  var ROLE_LB = {
+    tactic: ['atacando: el patrón era tuyo', 'defendiendo: se lo dejaste al rival'],
+    end: ['atacando: tienes tú el bando fuerte', 'defendiendo: el bando fuerte es el rival']
+  };
+  var ROLE_TXT = {
+    erwich: '<b>Atacando</b>: tú tenías el patrón (aprovechado si lo jugaste, escapado si no). <b>Defendiendo</b>: se lo dejaste al rival con un error (aprovechado si lo jugó él). Ganadas, tablas y perdidas son el resultado de esas partidas.',
+    villa: '<b>Atacando</b>: tú tienes el bando fuerte (el que intenta ganar: el peón de más, la torre contra el peón…). <b>Defendiendo</b>: el bando fuerte es el rival y tú buscas las tablas. Con material igual, ataca quien iba mejor según el motor en ese momento.',
+    silman: '<b>Atacando</b>: tú tienes el bando fuerte (el que intenta ganar). <b>Defendiendo</b>: el bando fuerte es el rival y tú buscas las tablas. Con material igual, ataca quien iba mejor según el motor en ese momento.',
+    flores: '<b>Atacando / defendiendo</b> (peón aislado, colgantes, Carlsbad, Stonewall): atacas tú si la estructura activa es tuya (el aislado, el ataque de minoría…). En las estructuras de apertura, la fila dice si la estructura era <b>tuya</b> o jugabas <b>contra ella</b>.'
+  };
+  // Flores Rios: two rows per structure — attacking/defending (isolani, hanging pawns, Carlsbad, Stonewall) or with the colour whose structure it is / against it
   var FL_ATT = {
     '1': 'el peón aislado',
     '2': 'los peones colgantes',
@@ -11275,11 +11276,11 @@ var BOOK_DESC = {
       }, []).find(function (p) {
         return p[0] === n;
       }),
-      lb = (it ? it[1] : 'Todo el capítulo ' + (+n.slice(1) + 1)) + (role ? ' · ' + floresRoles(n).find(function (x) {
+      lb = (it ? it[1] : 'Todo el capítulo ' + (+n.slice(1) + 1)) + (role ? ' · ' + (id === 'flores' && !/^c\d/.test(n) ? floresRoles(n) : [[n + '|a', ROLE_LB[B.kind === 'tactic' ? 'tactic' : 'end'][0]], [n + '|d', ROLE_LB[B.kind === 'tactic' ? 'tactic' : 'end'][1]]]).find(function (x) {
         return x[0] === n0;
       })[1] : ''),
       occ = DETB[id][n] && DETB[id][n].filter(function (o) {
-        return !role || o[2] === role;
+        return !role || (B.kind === 'tactic' ? (role === 'a' ? 'fm' : 'cx').includes(o[2]) : o[2] === role);
       });
     if (!occ) {
       $g('eHist').innerHTML = "<div class=\"card\"><h4 class=\"gsubh\" style=\"margin-top:0\">".concat(n, ". ").concat(lb, "</h4><p class=\"erwnone\">Todav\xEDa no hay detector para este apartado, as\xED que no hay historial. Los detectores se ir\xE1n a\xF1adiendo cap\xEDtulo a cap\xEDtulo.</p></div>");
