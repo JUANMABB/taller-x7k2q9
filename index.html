@@ -371,6 +371,7 @@ footer { font-size: 12px; color: var(--muted); max-width: 90ch; }
 .gpv { color: var(--muted); font-size: 12.5px; }
 .etables { display: grid; gap: 12px; margin-top: 12px; }
 .tscroll { overflow-x: auto; }
+.navsep { width: 1px; align-self: stretch; margin: 6px 4px; background: var(--line); }
 .erwch { display: flex; flex-wrap: wrap; gap: 6px; margin: 10px 0; }
 .erwch button { all: unset; cursor: pointer; font-size: 13px; padding: 6px 10px; border: 1px solid var(--line); border-radius: 999px; background: var(--panel); }
 .erwch button[aria-pressed="true"] { background: var(--walnut); color: #fff; border-color: var(--walnut); }
@@ -2167,13 +2168,17 @@ if (typeof define !== 'undefined')
   </header>
 
   <nav class="mainnav" role="tablist" aria-label="Sección">
+    <button type="button" role="tab" data-main="report" aria-selected="false">Informe</button>
+    <span class="navsep" aria-hidden="true"></span>
     <button type="button" role="tab" data-main="train" aria-selected="true">Aperturas</button>
     <button type="button" role="tab" data-main="tac" aria-selected="false">Tácticas</button>
     <button type="button" role="tab" data-main="end" aria-selected="false">Finales</button>
-    <button type="button" role="tab" data-main="report" aria-selected="false">Informe</button>
+    <span class="navsep" aria-hidden="true"></span>
     <button type="button" role="tab" data-main="stats" aria-selected="false">Estadísticas</button>
     <button type="button" role="tab" data-main="games" aria-selected="false">Mis partidas</button>
     <button type="button" role="tab" data-main="errors" aria-selected="false">Errores</button>
+    <span class="navsep" aria-hidden="true"></span>
+    <button type="button" role="tab" data-main="erw" aria-selected="false">100 patrones</button>
   </nav>
 
   <div id="viewTrain" style="display:grid;gap:20px">
@@ -2472,17 +2477,14 @@ if (typeof define !== 'undefined')
   </section>
   <section class="games" id="viewTac" hidden aria-label="Tácticas">
     <p class="note" style="font-size:13px;color:var(--muted);margin:0">Las tácticas de tus partidas, calculadas con Stockfish. <b>Tuyas</b>: las tenías tú (aprovechadas o perdidas). <b>Del rival</b>: se las dejaste tú con un error. Pulsa una fila para ver esas partidas en «Mis partidas».</p>
-    <div class="sbar"><div class="seg" id="tView"><button type="button" data-v="theme" aria-pressed="true">Por tema</button><button type="button" data-v="erw" aria-pressed="false">100 patrones (Erwich)</button></div></div>
-    <div id="tThemeBox">
     <div class="sbar"><select id="tCol" aria-label="Color"><option value="">Blancas y negras</option><option value="w">Con blancas</option><option value="b">Con negras</option></select><label for="tYear">Año</label><select id="tYear"></select></div>
     <div class="tblwrap" id="tSum"></div>
-    </div>
-    <div id="tErwBox" hidden>
+  </section>
+  <section class="games" id="viewErw" hidden aria-label="100 patrones">
       <p class="note" style="font-size:13px;color:var(--muted);margin:0">Los 100 patrones del libro <i>100 Tactical Patterns You Must Know</i> (Frank Erwich, New in Chess), con la numeración del libro. Elige un capítulo para ver sus patrones y tus estadísticas en cada uno; pulsa un patrón para ver su historial.</p>
       <div class="erwch" id="eChap"></div>
       <div class="tblwrap" id="ePat"></div>
       <div id="eHist"></div>
-    </div>
   </section>
   <section class="games" id="viewEnd" hidden aria-label="Finales">
     <p class="note" style="font-size:13px;color:var(--muted);margin:0">Los mates de tus partidas, calculados con Stockfish: por número de jugadas y por tipo de mate (según la posición final). Un ataque de mate cuenta una vez y solo es aprovechado si lo rematas. Pulsa una fila para ver esas partidas en «Mis partidas».</p>
@@ -11114,21 +11116,9 @@ var ERWICH = [['Ataque doble', [[1, 'Horquilla de peón tras aumentar la tensió
       }));
     });
   }
-  function tView(v) {
-    $g('tThemeBox').hidden = v !== 'theme';
-    $g('tErwBox').hidden = v !== 'erw';
-    if (v === 'erw') erwOpen();
-  }
-  $g('tView').querySelectorAll('button').forEach(function (b) {
-    return b.onclick = function () {
-      $g('tView').querySelectorAll('button').forEach(function (x) {
-        return x.setAttribute('aria-pressed', x === b);
-      });
-      tView(b.dataset.v);
-    };
-  });
   window.tacOpen = tacOpen;
   window.endOpen = endOpen;
+  window.erwOpen = erwOpen;
   window.gamesOpen = load;
   if (!$g('viewGames').hidden) load();
 })();
@@ -15797,8 +15787,12 @@ var LIVE_USER = '';
       $('viewErrors').hidden = m !== 'errors';
       if (m === 'errors' && window.errorsOpen) window.errorsOpen();
     }
-    ['tac', 'end'].forEach(function (k) {
-      var el = $(k === 'tac' ? 'viewTac' : 'viewEnd');
+    ['tac', 'end', 'erw'].forEach(function (k) {
+      var el = $({
+        tac: 'viewTac',
+        end: 'viewEnd',
+        erw: 'viewErw'
+      }[k]);
       if (el) {
         el.hidden = m !== k;
         if (m === k && window[k + 'Open']) window[k + 'Open']();
