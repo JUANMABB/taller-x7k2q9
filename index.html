@@ -2252,8 +2252,8 @@ if (typeof define !== 'undefined')
 
   <div data-sp="sum">
     <div class="kpis" id="kpis"></div>
-    <div class="sbar" style="margin-top:14px"><label>Partidas por tu Elo, cada mes</label><div class="seg" id="elomMode"><button type="button" data-m="n" aria-pressed="true">Número</button><button type="button" data-m="p" aria-pressed="false">% del mes</button></div></div>
-    <div id="sumCharts" style="margin-top:8px;max-width:95ch"></div>
+    <h3 style="margin:18px 0 4px;font-size:15px">Partidas según tu Elo, mes a mes</h3>
+    <div class="cgrid" id="sumCharts" style="margin-top:8px"></div>
     <div class="report" style="margin-top:16px">
       <h3>Informe de tu juego (blitz 5+0, oct 2022 – oct 2026)</h3>
       <p>Resumen de unas 14.000 partidas y 1.100 series de Puzzle Rush. Las cifras de precisión, fallos y tácticas son de Insights de Chess.com: cuentan las partidas analizadas, que son casi todas.</p>
@@ -9829,6 +9829,11 @@ var LIVE_USER = '';
     if (o.bars) o.bars.values.forEach(function (v) {
       if (v != null) all.push(v);
     });
+    if (o.stack) o.labels.forEach(function (_, i) {
+      return all.push(o.stack.reduce(function (t, st) {
+        return t + (st.values[i] || 0);
+      }, 0));
+    });
     if (o.ref != null) all.push(o.ref);
     var lo = o.yMin != null ? o.yMin : Math.min.apply(null, all),
       hi = o.yMax != null ? o.yMax : Math.max.apply(null, all);
@@ -9845,7 +9850,7 @@ var LIVE_USER = '';
     if (o.yMax == null) hi += pad;
     if (o.bars && o.yMin == null) lo = Math.min(0, lo);
     var n = o.labels.length;
-    var X = o.bars ? function (i) {
+    var X = o.bars || o.stack ? function (i) {
       return L + (i + .5) * (W - L - R) / Math.max(1, n);
     } : function (i) {
       return L + (n <= 1 ? (W - L - R) / 2 : i * (W - L - R) / (n - 1));
@@ -9874,6 +9879,18 @@ var LIVE_USER = '';
         svg += "<rect x=\"".concat((X(i) - bw / 2).toFixed(1), "\" y=\"").concat(Y(v).toFixed(1), "\" width=\"").concat(bw.toFixed(1), "\" height=\"").concat(Math.max(0, Y(Math.max(lo, 0)) - Y(v)).toFixed(1), "\" fill=\"").concat(o.bars.color, "\" opacity=\".55\" rx=\"2\"/>");
       });
     }
+    if (o.stack) {
+      var _bw = Math.max(2, (W - L - R) / Math.max(1, n) * 0.8);
+      o.labels.forEach(function (_, i) {
+        var acc = 0;
+        o.stack.forEach(function (st) {
+          var v = st.values[i];
+          if (!v) return;
+          svg += "<rect x=\"".concat((X(i) - _bw / 2).toFixed(1), "\" y=\"").concat(Y(acc + v).toFixed(1), "\" width=\"").concat(_bw.toFixed(1), "\" height=\"").concat(Math.max(0, Y(acc) - Y(acc + v)).toFixed(1), "\" fill=\"").concat(st.color, "\"/>");
+          acc += v;
+        });
+      });
+    }
     o.series.forEach(function (s) {
       var d = '',
         pen = false;
@@ -9892,7 +9909,9 @@ var LIVE_USER = '';
     });
     svg += "<line class=\"cur\" x1=\"0\" x2=\"0\" y1=\"".concat(T, "\" y2=\"").concat(H - B, "\" stroke=\"var(--ink)\" stroke-width=\"1\" opacity=\"0\"/><rect class=\"hit\" x=\"").concat(L, "\" y=\"0\" width=\"").concat(W - L - R, "\" height=\"").concat(H, "\" fill=\"transparent\"/>");
     var sv = "<svg viewBox=\"0 0 ".concat(W, " ").concat(H, "\" role=\"img\" aria-label=\"").concat(o.title, "\">").concat(svg, "</svg>");
-    var leg = o.series.length > 1 || o.bars ? "<div class=\"legend\">".concat(o.series.map(function (s) {
+    var leg = o.series.length > 1 || o.bars || o.stack ? "<div class=\"legend\">".concat((o.stack || []).map(function (s) {
+      return "<span><i style=\"background:".concat(s.color, ";height:8px\"></i>").concat(s.name, "</span>");
+    }).join('')).concat(o.series.map(function (s) {
       return "<span><i style=\"background:".concat(s.color, "\"></i>").concat(s.name, "</span>");
     }).join('')).concat(o.bars ? "<span><i style=\"background:".concat(o.bars.color, ";opacity:.55;height:8px\"></i>").concat(o.bars.name, "</span>") : '', "</div>") : '';
     box.insertAdjacentHTML('beforeend', sv + leg + "<div class=\"tip\">Pasa el dedo o el rat\xF3n por el gr\xE1fico para ver los valores.</div>" + (o.note ? "<p class=\"note\">".concat(o.note, "</p>") : ''));
@@ -9903,13 +9922,18 @@ var LIVE_USER = '';
     var show = function show(clientX) {
       var r = svgEl.getBoundingClientRect();
       var x = (clientX - r.left) / r.width * W;
-      var i = o.bars ? Math.floor((x - L) / ((W - L - R) / Math.max(1, n))) : n <= 1 ? 0 : Math.round((x - L) / ((W - L - R) / (n - 1)));
+      var i = o.bars || o.stack ? Math.floor((x - L) / ((W - L - R) / Math.max(1, n))) : n <= 1 ? 0 : Math.round((x - L) / ((W - L - R) / (n - 1)));
       i = Math.max(0, Math.min(n - 1, i));
       cur.setAttribute('x1', X(i));
       cur.setAttribute('x2', X(i));
       cur.setAttribute('opacity', '.35');
       var parts = o.series.map(function (s) {
         return "<span style=\"color:".concat(s.color, "\">\u25CF</span> ").concat(s.name, ": <b>").concat(fmt(s.values[i]), "</b>");
+      });
+      if (o.stack) o.stack.slice().reverse().filter(function (st) {
+        return st.values[i];
+      }).forEach(function (st) {
+        return parts.push("<span style=\"color:".concat(st.color, "\">\u25A0</span> ").concat(st.name, ": <b>").concat(fmt(st.values[i]), "</b>"));
       });
       if (o.bars) parts.push("".concat(o.bars.name, ": <b>").concat(o.bars.fmt ? o.bars.fmt(o.bars.values[i]) : o.bars.values[i], "</b>"));
       tip.innerHTML = "<b>".concat(o.tipLabels ? o.tipLabels[i] : o.labels[i], "</b> \xB7 ") + parts.join(' · ');
@@ -10036,59 +10060,139 @@ var LIVE_USER = '';
         up = _ref7[3];
       return "<div class=\"kpi\"><span>".concat(t, "</span><b>").concat(v, "</b><span>").concat(up == null ? s : "<em class=\"".concat(up ? 'up' : 'down', "\">").concat(up ? '▲' : '▼', "</em> ").concat(s), "</span></div>");
     }).join('');
-    seg('elomMode', 'm', drawEloM);
     drawEloM();
   }
-  // games per month played with a rating of 1400+, 1500+, 1600+, 1700+
+  // games per month by own rating: number, % at or above each level, and % by band
   function drawEloM() {
     var host = $('sumCharts');
     host.innerHTML = '';
+    // one colour per level, clearly different from each other (same in the three charts)
+    var LV = {
+      lo: '#c9ccc6',
+      l14: '#2f6db5',
+      l15: '#2f9e57',
+      l16: '#e39b0b',
+      l17: '#9b3fc0'
+    };
     var E = SD.elom || [];
     if (!E.length) return;
-    var pct = $('elomMode').querySelector('[aria-pressed="true"]').dataset.m === 'p';
     var MES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
     var labels = E.map(function (r) {
       return MES[+r[0].slice(5) - 1] + ' ' + r[0].slice(2, 4);
     });
-    var val = function val(j) {
+    var pc = function pc(r, v) {
+      return r[1] ? 100 * v / r[1] : null;
+    };
+    var cum = function cum(j) {
       return E.map(function (r) {
-        return pct ? r[1] ? 100 * r[j] / r[1] : null : r[j];
+        return pc(r, r[j]);
       });
     };
     chart(host, {
-      title: 'Partidas según tu Elo',
-      sub: pct ? '% de las partidas del mes jugadas con ese Elo o más' : 'partidas del mes jugadas con ese Elo o más',
+      title: '% de partidas por encima de cada nivel',
+      sub: 'partidas del mes jugadas con ese Elo o más',
       labels: labels,
       series: [{
         name: '1400+',
-        color: C(2),
-        values: val(2)
+        color: LV.l14,
+        values: cum(2)
       }, {
         name: '1500+',
-        color: C(3),
-        values: val(3)
+        color: LV.l15,
+        values: cum(3)
       }, {
         name: '1600+',
-        color: C(1),
-        values: val(4),
+        color: LV.l16,
+        values: cum(4),
         width: 2.5
       }, {
         name: '1700+',
-        color: C(4),
-        values: val(5),
+        color: LV.l17,
+        values: cum(5),
         width: 2.5
       }],
-      bars: pct ? null : {
+      fmt: fPct,
+      yMin: 0,
+      yMax: 100,
+      height: 240
+    });
+    var band = function band(lo, hi) {
+      return E.map(function (r) {
+        return pc(r, (lo == null ? r[1] : r[lo]) - (hi == null ? 0 : r[hi]));
+      });
+    };
+    chart(host, {
+      title: '% de partidas por tramos de Elo',
+      sub: 'cada barra suma el 100 % de las partidas del mes',
+      labels: labels,
+      stack: [{
+        name: 'Menos de 1400',
+        color: LV.lo,
+        values: band(null, 2)
+      }, {
+        name: '1400–1499',
+        color: LV.l14,
+        values: band(2, 3)
+      }, {
+        name: '1500–1599',
+        color: LV.l15,
+        values: band(3, 4)
+      }, {
+        name: '1600–1699',
+        color: LV.l16,
+        values: band(4, 5)
+      }, {
+        name: '1700+',
+        color: LV.l17,
+        values: band(5, null)
+      }],
+      series: [],
+      fmt: fPct,
+      yMin: 0,
+      yMax: 100,
+      height: 240
+    });
+    chart(host, {
+      title: 'Número de partidas según tu Elo',
+      sub: 'partidas del mes jugadas con ese Elo o más',
+      labels: labels,
+      series: [{
+        name: '1400+',
+        color: LV.l14,
+        values: E.map(function (r) {
+          return r[2];
+        })
+      }, {
+        name: '1500+',
+        color: LV.l15,
+        values: E.map(function (r) {
+          return r[3];
+        })
+      }, {
+        name: '1600+',
+        color: LV.l16,
+        values: E.map(function (r) {
+          return r[4];
+        }),
+        width: 2.5
+      }, {
+        name: '1700+',
+        color: LV.l17,
+        values: E.map(function (r) {
+          return r[5];
+        }),
+        width: 2.5
+      }],
+      bars: {
         name: 'Total del mes',
         color: 'var(--muted)',
         values: E.map(function (r) {
           return r[1];
         })
       },
-      fmt: pct ? fPct : fInt,
+      fmt: fInt,
       yMin: 0,
-      yMax: pct ? 100 : null,
-      height: 260
+      height: 240
     });
   }
 
