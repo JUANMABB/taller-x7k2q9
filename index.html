@@ -365,6 +365,19 @@ footer { font-size: 12px; color: var(--muted); max-width: 90ch; }
 .gtags { display: flex; flex-wrap: wrap; gap: 6px; }
 .gtag { all: unset; cursor: pointer; font-size: 12.5px; padding: 4px 9px; border-radius: 999px; }
 .gtag span { opacity: .8; }
+.gsum th.grp { text-align: center; border-bottom: 1px solid var(--line, #ddd); }
+.gsum small { color: var(--muted); font-size: 12px; }
+.geng { font-size: 13.5px; background: #eef3fb; color: #1f3f66; }
+.gpv { color: var(--muted); font-size: 12.5px; }
+.etables { display: grid; gap: 12px; margin-top: 12px; }
+.tscroll { overflow-x: auto; }
+.elist { display: grid; gap: 6px; }
+.erow { all: unset; cursor: pointer; display: grid; grid-template-columns: 92px 1fr auto; gap: 10px; align-items: center; padding: 8px 12px; background: var(--card, #fff); border: 1px solid var(--line, #e3e1da); border-radius: 10px; font-size: 13.5px; }
+.erow:hover { border-color: var(--walnut); }
+.erow .et { color: var(--muted); font-size: 12.5px; text-align: right; white-space: nowrap; }
+.erow .et b.fast { color: var(--bad); } .erow .et b.low { color: var(--warn); }
+@media (max-width: 640px) { .erow { grid-template-columns: 1fr; } .erow .et { text-align: left; } }
+.gsubh { margin: 18px 0 4px; font-size: 15px; }
 .stbl tr.sub td { color: var(--muted); font-size: 13px; }
 .linkbtn { all: unset; cursor: pointer; color: var(--accent, #2f6db5); text-decoration: underline; font-weight: 600; }
 .gboardwrap { display: grid; grid-template-columns: minmax(0, 480px); justify-content: center; }
@@ -2153,6 +2166,7 @@ if (typeof define !== 'undefined')
     <button type="button" role="tab" data-main="train" aria-selected="true">Entrenar aperturas</button>
     <button type="button" role="tab" data-main="stats" aria-selected="false">Estadísticas</button>
     <button type="button" role="tab" data-main="games" aria-selected="false">Mis partidas</button>
+    <button type="button" role="tab" data-main="errors" aria-selected="false">Errores</button>
   </nav>
 
   <div id="viewTrain" style="display:grid;gap:20px">
@@ -2425,11 +2439,26 @@ if (typeof define !== 'undefined')
         <div class="gtags" id="gTags"></div>
         <div class="gboardwrap"><div class="board" id="gBoard" aria-label="Tablero de la partida"></div></div>
         <div class="msg info" id="gInfo"></div>
-        <div class="controls"><button class="btn small" id="gFirst" type="button" aria-label="Al inicio">⏮</button><button class="btn small" id="gPrev" type="button" aria-label="Anterior">◀</button><button class="btn small" id="gNext" type="button" aria-label="Siguiente">▶</button><button class="btn small" id="gLast" type="button" aria-label="Al final">⏭</button><button class="btn small primary" id="gSolve" type="button" hidden>Resuélvelo tú</button><button class="btn small" id="gShow" type="button">Ver la solución</button></div>
+        <div class="msg geng" id="gEng" hidden></div>
+        <div class="controls"><button class="btn small" id="gFirst" type="button" aria-label="Al inicio">⏮</button><button class="btn small" id="gPrev" type="button" aria-label="Anterior">◀</button><button class="btn small" id="gNext" type="button" aria-label="Siguiente">▶</button><button class="btn small" id="gLast" type="button" aria-label="Al final">⏭</button><button class="btn small primary" id="gSolve" type="button" hidden>Resuélvelo tú</button><button class="btn small" id="gShow" type="button">Ver la solución</button><button class="btn small" id="gEngBtn" type="button" title="Muestra la jugada que recomienda el motor (flecha azul)">Motor: sí</button></div>
         <div class="ggraph" id="gGraph" title="Valoración de la partida desde tu lado (arriba, mejor para ti). Pulsa para ir a esa jugada."></div>
         <div class="mtable2" id="gMoves"></div>
       </div>
     </div>
+  </section>
+  <section class="games" id="viewErrors" hidden aria-label="Errores">
+    <p class="note" style="font-size:13px;color:var(--muted);margin:0">Errores graves: jugadas tuyas que le dejaron una táctica al rival (pierdes 2 peones o más). Tácticas perdidas: las tenías y no las jugaste. El tiempo pensado sale del reloj de cada jugada (reloj antes menos reloj después, más el incremento).</p>
+    <div class="kpis" id="eKpis"></div>
+    <div class="etables" id="eTables"></div>
+    <h3 class="gsubh">Tus errores, uno a uno</h3>
+    <div class="sbar">
+      <select id="eType" aria-label="Tipo de error"><option value="c">Errores graves</option><option value="e">Errores graves evitables</option><option value="m">Tácticas perdidas</option></select>
+      <select id="eSp" aria-label="Tiempo pensado"><option value="">Cualquier tiempo pensado</option><option value="0-2">Menos de 2 s</option><option value="2-10">2–10 s</option><option value="10-1e9">10 s o más</option></select>
+      <select id="eLeft" aria-label="Reloj"><option value="">Cualquier reloj</option><option value="0-30">Menos de 30 s en el reloj</option><option value="30-120">30 s – 2 min</option><option value="120-1e9">Más de 2 min</option></select>
+      <select id="eYear" aria-label="Año"></select>
+      <span class="sumline" id="eCount"></span>
+    </div>
+    <div class="elist" id="eList"></div>
   </section>
 
 
@@ -9436,16 +9465,16 @@ function engJudge(_x2, _x3, _x4) {
   return _engJudge.apply(this, arguments);
 } // free exploration from the current position: any legal move for either side
 function _engJudge() {
-  _engJudge = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee6(seq, played, want) {
+  _engJudge = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee8(seq, played, want) {
     var tok, msgEl, before, g1, g2, white, a, b, s, pa, pb, f, diff, txt;
-    return _regenerator().w(function (_context7) {
-      while (1) switch (_context7.n) {
+    return _regenerator().w(function (_context9) {
+      while (1) switch (_context9.n) {
         case 0:
           if (!(!ENG_ON || ENGINE.status() === 'broken' || !want)) {
-            _context7.n = 1;
+            _context9.n = 1;
             break;
           }
-          return _context7.a(2);
+          return _context9.a(2);
         case 1:
           tok = ++engJudgeTok, msgEl = engEl('msg'), before = msgEl.innerHTML;
           g1 = new Chess(), g2 = new Chess();
@@ -9472,33 +9501,33 @@ function _engJudge() {
             to: want.slice(2, 4),
             promotion: 'q'
           });
-          _context7.n = 2;
+          _context9.n = 2;
           return ENGINE.evaluate(g1.fen(), 13);
         case 2:
-          a = _context7.v;
+          a = _context9.v;
           if (!(tok !== engJudgeTok || !a)) {
-            _context7.n = 3;
+            _context9.n = 3;
             break;
           }
-          return _context7.a(2);
+          return _context9.a(2);
         case 3:
-          _context7.n = 4;
+          _context9.n = 4;
           return ENGINE.evaluate(g2.fen(), 13);
         case 4:
-          b = _context7.v;
+          b = _context9.v;
           if (!(tok !== engJudgeTok || !b)) {
-            _context7.n = 5;
+            _context9.n = 5;
             break;
           }
-          return _context7.a(2);
+          return _context9.a(2);
         case 5:
           engKey = null;
           engUpdate(); // resume the panel's analysis
           if (!(msgEl.innerHTML !== before)) {
-            _context7.n = 6;
+            _context9.n = 6;
             break;
           }
-          return _context7.a(2);
+          return _context9.a(2);
         case 6:
           s = function s(x) {
             return (white ? 1 : -1) * engCp(x.lines[0]);
@@ -9513,9 +9542,9 @@ function _engJudge() {
           diff = pb - pa, txt = diff < 40 ? 'para el motor es igual de buena; aun así, apréndete la del plan' : diff < 120 ? 'un poco peor que la del plan' : diff < 300 ? 'claramente peor que la del plan' : 'un error grave';
           msgEl.insertAdjacentHTML('beforeend', "<div class=\"engjudge\">Motor: tu jugada ".concat(f(pa), " \xB7 la del plan ").concat(f(pb), " (desde tu lado): ").concat(txt, ".</div>"));
         case 7:
-          return _context7.a(2);
+          return _context9.a(2);
       }
-    }, _callee6);
+    }, _callee8);
   }));
   return _engJudge.apply(this, arguments);
 }
@@ -9649,7 +9678,7 @@ var GAMES_BASE = 'partidas/',
     CO: 'Coronación',
     OT: 'Otra táctica'
   };
-  var TH_ORDER = ['M1', 'MP', 'M2', 'M3', 'M4', 'M5', 'PG', 'PGq', 'PGr', 'PGb', 'PGn', 'GM', 'GMq', 'GMr', 'GMb', 'GMn', 'GMp', 'HN', 'HP', 'HB', 'HR', 'HQ', 'HK', 'CL', 'EN', 'DS', 'DJ', 'CO', 'OT'];
+  var TH_ORDER = ['M1', 'M2', 'M3', 'M4', 'M5', 'PG', 'PGq', 'PGr', 'PGb', 'PGn', 'GM', 'GMq', 'GMr', 'GMb', 'GMn', 'GMp', 'HN', 'HP', 'HB', 'HR', 'HQ', 'HK', 'CL', 'EN', 'DS', 'DJ', 'CO', 'OT'];
   var OUT = {
     m: 'Perdida',
     f: 'Aprovechada',
@@ -9709,43 +9738,80 @@ var GAMES_BASE = 'partidas/',
   var costTxt = function costTxt(c) {
     return c >= 50 ? 'un mate (o recibirlo)' : String(c).replace('.', ',') + ' peones';
   };
-  var tagLabel = function tagLabel(t) {
-    return "".concat(TH[t[1]] || t[1], " \xB7 ").concat(Math.floor(t[0] / 2) + 1).concat(t[0] % 2 ? '…' : '.');
+  var MPN = {
+    pa: 'Mate del pasillo',
+    an: 'Mate de Anastasia',
+    ar: 'Mate árabe',
+    co: 'Mate de la coz (ahogado)',
+    bo: 'Mate de Boden',
+    ep: 'Mate de las hombreras',
+    da: 'Mate de Damiano',
+    be: 'Beso de la muerte',
+    es: 'Mate de la escalera',
+    ot: 'Otros mates'
   };
-  var thOk = function thOk(th, k) {
-    return !th || k === th || (th === 'PG' || th === 'GM') && k.slice(0, 2) === th;
+  var MPD = {
+    pa: 'rey encerrado en su primera fila por sus propios peones',
+    an: 'caballo y torre o dama por la banda',
+    ar: 'torre pegada al rey, protegida por un caballo',
+    co: 'caballo contra un rey rodeado de sus piezas',
+    bo: 'dos alfiles cruzados',
+    ep: 'dama de frente; el rey, entre dos piezas suyas',
+    da: 'dama pegada al rey, protegida por un peón',
+    be: 'dama pegada al rey, protegida por otra pieza',
+    es: 'dos piezas pesadas en líneas seguidas',
+    ot: 'ninguno de los anteriores'
+  };
+  var MPS = {
+    pa: 'pasillo',
+    an: 'Anastasia',
+    ar: 'árabe',
+    co: 'coz',
+    bo: 'Boden',
+    ep: 'hombreras',
+    da: 'Damiano',
+    be: 'beso de la muerte',
+    es: 'escalera',
+    ot: ''
+  };
+  var MP_ORDER = ['pa', 'an', 'ar', 'co', 'bo', 'ep', 'da', 'be', 'es', 'ot'];
+  var tagLabel = function tagLabel(t) {
+    return "".concat(TH[t[1]] || t[1]).concat(t[8] && MPS[t[8]] ? ' (' + MPS[t[8]] + ')' : '', " \xB7 ").concat(Math.floor(t[0] / 2) + 1).concat(t[0] % 2 ? '…' : '.');
+  };
+  var thOk = function thOk(th, k, t) {
+    return !th || k === th || (th === 'PG' || th === 'GM') && k.slice(0, 2) === th || th.startsWith('P:') && t && t[8] === th.slice(2);
   };
   function load() {
     return _load.apply(this, arguments);
   }
   function _load() {
-    _load = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee3() {
+    _load = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee4() {
       var years, _t4;
-      return _regenerator().w(function (_context3) {
-        while (1) switch (_context3.p = _context3.n) {
+      return _regenerator().w(function (_context4) {
+        while (1) switch (_context4.p = _context4.n) {
           case 0:
             if (!CAT) {
-              _context3.n = 1;
+              _context4.n = 1;
               break;
             }
-            return _context3.a(2);
+            return _context4.a(2);
           case 1:
             $g('gList').innerHTML = '<p class="empty">Cargando partidas…</p>';
-            _context3.p = 2;
-            _context3.n = 3;
+            _context4.p = 2;
+            _context4.n = 3;
             return fetch(GAMES_BASE + 'catalog.json').then(function (r) {
               if (!r.ok) throw new Error(r.status);
               return r.json();
             });
           case 3:
-            CAT = _context3.v;
-            _context3.n = 5;
+            CAT = _context4.v;
+            _context4.n = 5;
             break;
           case 4:
-            _context3.p = 4;
-            _t4 = _context3.v;
+            _context4.p = 4;
+            _t4 = _context4.v;
             $g('gList').innerHTML = '<p class="empty">No se han podido cargar las partidas.</p>';
-            return _context3.a(2);
+            return _context4.a(2);
           case 5:
             years = _toConsumableArray(new Set(CAT.map(function (r) {
               return r[1].slice(0, 4);
@@ -9761,7 +9827,15 @@ var GAMES_BASE = 'partidas/',
               });
             }).map(function (k) {
               return "<option value=\"".concat(k, "\">").concat(TH[k], "</option>");
-            }).join('');
+            }).join('') + "<optgroup label=\"Tipo de mate\">".concat(MP_ORDER.filter(function (k) {
+              return CAT.some(function (r) {
+                return r[9].some(function (t) {
+                  return t[8] === k;
+                });
+              });
+            }).map(function (k) {
+              return "<option value=\"P:".concat(k, "\">").concat(MPN[k], "</option>");
+            }).join(''), "</optgroup>");
             ['gTheme', 'gOut', 'gCol', 'gRes', 'gYear'].forEach(function (id) {
               $g(id).onchange = function () {
                 page = 60;
@@ -9774,9 +9848,9 @@ var GAMES_BASE = 'partidas/',
             };
             render();
           case 6:
-            return _context3.a(2);
+            return _context4.a(2);
         }
-      }, _callee3, null, [[2, 4]]);
+      }, _callee4, null, [[2, 4]]);
     }));
     return _load.apply(this, arguments);
   }
@@ -9791,7 +9865,7 @@ var GAMES_BASE = 'partidas/',
       return (!col || r[2] === col) && (!res || r[5] === res) && (!y || r[1].startsWith(y)) && (!q || ecoName(r[7]).toLowerCase().includes(q));
     });
     var okTag = function okTag(t) {
-      return thOk(th, t[1]) && (!out || (out === 'c' ? 'cx'.includes(t[2]) : out === 'e' ? 'cx'.includes(t[2]) && t[6] === 'e' : t[2] === out));
+      return thOk(th, t[1], t) && (!out || (out === 'c' ? 'cx'.includes(t[2]) : out === 'e' ? 'cx'.includes(t[2]) && t[6] === 'e' : t[2] === out));
     };
     return {
       base: base,
@@ -9800,6 +9874,23 @@ var GAMES_BASE = 'partidas/',
       }) : base,
       okTag: okTag
     };
+  }
+  // table: your tactics (total, found, missed, % seen) and the rival's from your errors (total, taken, not seen, avoidable)
+  function sumTable(head, rows) {
+    var S = sumTable.S,
+      pcCls = function pcCls(pc) {
+        return pc == null ? '' : pc < 50 ? 'cell-bad' : pc >= 70 ? 'cell-good' : '';
+      };
+    return "<table class=\"stbl gsum\"><thead><tr><th rowspan=\"2\">".concat(head, "</th><th colspan=\"4\" class=\"grp\">Tuyas</th><th colspan=\"4\" class=\"grp\">Del rival, por un error tuyo</th></tr><tr><th>Total</th><th>Aprovechadas</th><th>Perdidas</th><th>% vista</th><th>Total</th><th>La aprovech\xF3</th><th>No la vio</th><th>Evitables</th></tr></thead><tbody>").concat(rows.map(function (_ref4) {
+      var _ref5 = _slicedToArray(_ref4, 3),
+        k = _ref5[0],
+        label = _ref5[1],
+        sub = _ref5[2];
+      var s = S[k],
+        tot = s.f + s.m,
+        pc = tot ? 100 * s.f / tot : null;
+      return "<tr class=\"click".concat(sub ? ' sub' : '', "\" data-k=\"").concat(k, "\"><td>").concat(label, "</td><td><b>").concat(tot, "</b></td><td>").concat(s.f, "</td><td>").concat(s.m, "</td><td class=\"").concat(pcCls(pc), "\">").concat(pc == null ? '–' : Math.round(pc) + ' %', "</td><td><b>").concat(s.c + s.x, "</b></td><td>").concat(s.c, "</td><td>").concat(s.x, "</td><td>").concat(s.e, "</td></tr>");
+    }).join(''), "</tbody></table>");
   }
   function render() {
     var _filt = filt(),
@@ -9816,6 +9907,7 @@ var GAMES_BASE = 'partidas/',
       r[9].forEach(function (t) {
         var ks = [t[1]];
         if (t[1].length === 3) ks.push(t[1].slice(0, 2));
+        if (t[8]) ks.push('P:' + t[8]);
         ks.forEach(function (k) {
           var s = S[k] = S[k] || {
             f: 0,
@@ -9835,17 +9927,19 @@ var GAMES_BASE = 'partidas/',
       });
       if (had) EG++;
     });
-    var keys = TH_ORDER.filter(function (k) {
-      return S[k];
-    });
+    sumTable.S = S;
     var n100 = base.length ? 100 * E / base.length : 0;
-    $g('gSum').innerHTML = (E ? "<p class=\"sumline\"><b>Tus errores que dieron una t\xE1ctica al rival:</b> ".concat(E.toLocaleString('es-ES'), " en ").concat(EG.toLocaleString('es-ES'), " de ").concat(base.length.toLocaleString('es-ES'), " partidas (").concat(String(n100.toFixed(0)), " por cada 100 partidas). <b>").concat(Math.round(100 * EE / E), " %</b> eran evitables: hab\xEDa m\xE1s de una jugada que no dejaba nada. <button type=\"button\" class=\"btn small\" id=\"gErr\">Ver los errores evitables</button></p>") : '') + "<table class=\"stbl\"><thead><tr><th>T\xE1ctica</th><th>Aprovechadas</th><th>Perdidas</th><th>% vista</th><th>Se la diste al rival</th><th>\u2026evitables</th><th>\u2026el rival no la vio</th></tr></thead><tbody>".concat(keys.map(function (k) {
-      var s = S[k],
-        tot = s.f + s.m,
-        pc = tot ? 100 * s.f / tot : null;
-      var sub = k.length === 3;
-      return "<tr class=\"click".concat(sub ? ' sub' : '', "\" data-k=\"").concat(k, "\"><td>").concat(sub ? '&nbsp;&nbsp;↳ ' + TH[k].split(': ')[1] : TH[k] + (k === 'PG' || k === 'GM' ? ' (total)' : ''), "</td><td>").concat(s.f, "</td><td>").concat(s.m, "</td><td class=\"").concat(pc == null ? '' : pc < 50 ? 'cell-bad' : pc >= 70 ? 'cell-good' : '', "\">").concat(pc == null ? '–' : Math.round(pc) + ' %', "</td><td>").concat(s.c + s.x, "</td><td>").concat(s.e, "</td><td>").concat(s.x, "</td></tr>");
-    }).join(''), "</tbody></table>");
+    $g('gSum').innerHTML = (E ? "<p class=\"sumline\"><b>Tus errores que dieron una t\xE1ctica al rival:</b> ".concat(E.toLocaleString('es-ES'), " en ").concat(EG.toLocaleString('es-ES'), " de ").concat(base.length.toLocaleString('es-ES'), " partidas (").concat(String(n100.toFixed(0)), " por cada 100 partidas). <b>").concat(Math.round(100 * EE / E), " %</b> eran evitables: hab\xEDa m\xE1s de una jugada que no dejaba nada. <button type=\"button\" class=\"btn small\" id=\"gErr\">Ver los errores evitables</button></p>") : '') + sumTable('Táctica', TH_ORDER.filter(function (k) {
+      return S[k];
+    }).map(function (k) {
+      return [k, k.length === 3 ? '&nbsp;&nbsp;↳ ' + TH[k].split(': ')[1] : TH[k] + (k === 'PG' || k === 'GM' ? ' (total)' : ''), k.length === 3];
+    })) + (MP_ORDER.some(function (k) {
+      return S['P:' + k];
+    }) ? "<h4 class=\"gsubh\">Tipos de mate</h4><p class=\"sumline\" style=\"margin-top:0\">Seg\xFAn la posici\xF3n final del mate (en los mates largos, la l\xEDnea del motor).</p>" + sumTable('Tipo de mate', MP_ORDER.filter(function (k) {
+      return S['P:' + k];
+    }).map(function (k) {
+      return ['P:' + k, "".concat(MPN[k], "<br><small>").concat(MPD[k], "</small>"), false];
+    })) : '');
     var ge = $g('gErr');
     if (ge) ge.onclick = function () {
       $g('gOut').value = 'e';
@@ -9884,36 +9978,36 @@ var GAMES_BASE = 'partidas/',
     return _openGame.apply(this, arguments);
   }
   function _openGame() {
-    _openGame = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee4(r, scroll) {
+    _openGame = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee5(r, scroll) {
       var mon, d, sans, g, fens, ucis, th, out, first, link, _t5;
-      return _regenerator().w(function (_context4) {
-        while (1) switch (_context4.p = _context4.n) {
+      return _regenerator().w(function (_context5) {
+        while (1) switch (_context5.p = _context5.n) {
           case 0:
             mon = r[1].slice(0, 7);
             if (DET[mon]) {
-              _context4.n = 4;
+              _context5.n = 4;
               break;
             }
-            _context4.p = 1;
-            _context4.n = 2;
+            _context5.p = 1;
+            _context5.n = 2;
             return fetch(GAMES_BASE + mon + '.json').then(function (x) {
               return x.json();
             });
           case 2:
-            DET[mon] = _context4.v;
-            _context4.n = 4;
+            DET[mon] = _context5.v;
+            _context5.n = 4;
             break;
           case 3:
-            _context4.p = 3;
-            _t5 = _context4.v;
+            _context5.p = 3;
+            _t5 = _context5.v;
             DET[mon] = {};
           case 4:
             d = DET[mon][r[0]];
             if (d) {
-              _context4.n = 5;
+              _context5.n = 5;
               break;
             }
-            return _context4.a(2);
+            return _context5.a(2);
           case 5:
             sans = d.s ? d.s.split(' ') : [];
             g = new Chess(), fens = [g.fen()], ucis = [];
@@ -9924,7 +10018,7 @@ var GAMES_BASE = 'partidas/',
             });
             th = $g('gTheme').value, out = $g('gOut').value;
             first = r[9].find(function (t) {
-              return thOk(th, t[1]) && (!out || (out === 'c' ? 'cx'.includes(t[2]) : out === 'e' ? 'cx'.includes(t[2]) && t[6] === 'e' : t[2] === out));
+              return thOk(th, t[1], t) && (!out || (out === 'c' ? 'cx'.includes(t[2]) : out === 'e' ? 'cx'.includes(t[2]) && t[6] === 'e' : t[2] === out));
             });
             view = {
               r: r,
@@ -9938,7 +10032,9 @@ var GAMES_BASE = 'partidas/',
               ply: first ? first[0] : 0,
               tag: first || null,
               solve: null,
-              sel: null
+              sel: null,
+              ex: null,
+              eng: null
             };
             $g('gView').hidden = false;
             document.querySelectorAll('#gList .grow2').forEach(function (b) {
@@ -9947,7 +10043,7 @@ var GAMES_BASE = 'partidas/',
             link = GAMES_LINKS ? " \xB7 <a href=\"https://www.chess.com/game/live/".concat(r[0], "\" target=\"_blank\" rel=\"noopener\">Ver en Chess.com</a>") : '';
             $g('gHead').innerHTML = "<h3>".concat(r[2] === 'w' ? 'Blancas' : 'Negras', " \xB7 ").concat(RES[r[5]]).concat(r[6] ? ' por ' + esc2(termTxt(r[6])) : '', "</h3><p class=\"sumline\">").concat(fmtDate(r[1]), " \xB7 tu Elo ").concat(r[3], ", rival ").concat(d.o ? esc2(d.o) + ' ' : '').concat(r[4], " \xB7 ").concat(esc2(ecoName(r[7]))).concat(link, "</p>");
             $g('gTags').innerHTML = r[9].length ? r[9].map(function (t, i) {
-              return "<button type=\"button\" class=\"gtag ".concat(t[2], "\" data-i=\"").concat(i, "\"><b>").concat(tagLabel(t), "</b> ").concat(OUT[t[2]]).concat(t[3] ? " <span>(".concat(t[3] >= 50 ? 'mate' : '−' + String(t[3]).replace('.', ','), ")</span>") : '', "</button>");
+              return "<button type=\"button\" class=\"gtag ".concat(t[2], "\" data-i=\"").concat(i, "\"><b>").concat(tagLabel(t), "</b> ").concat(OUT[t[2]]).concat(t[3] ? " <span>(".concat(t[3] >= 50 || /^M/.test(t[1]) ? 'mate' : '−' + String(t[3]).replace('.', ','), ")</span>") : '', "</button>");
             }).join('') : '<p class="empty">Ninguna táctica en esta partida.</p>';
             $g('gTags').querySelectorAll('.gtag').forEach(function (b) {
               return b.onclick = function () {
@@ -9964,9 +10060,9 @@ var GAMES_BASE = 'partidas/',
               behavior: 'smooth'
             });
           case 6:
-            return _context4.a(2);
+            return _context5.a(2);
         }
-      }, _callee4, null, [[1, 3]]);
+      }, _callee5, null, [[1, 3]]);
     }));
     return _openGame.apply(this, arguments);
   }
@@ -9974,13 +10070,25 @@ var GAMES_BASE = 'partidas/',
     if (!view) return;
     view.ply = Math.max(0, Math.min(view.sans.length, p));
     view.sel = null;
+    view.ex = null;
     if (view.tag && view.tag[0] !== view.ply && !('cx'.includes(view.tag[2]) && view.tag[0] + 1 === view.ply)) view.tag = null;
     paint();
   }
   function arrowsFor() {
+    var out = arrowsTag(),
+      e = view.eng;
+    if (ENG_ON && e && e.u && !view.solve && !out.some(function (a) {
+      return a.u === e.u;
+    })) out.push({
+      u: e.u,
+      c: '#2f6db5'
+    });
+    return out;
+  }
+  function arrowsTag() {
     var t = view.tag,
       out = [];
-    if (!t || view.solve) return out;
+    if (!t || view.solve || view.ex) return out;
     var played = view.ucis[t[0]],
       best = t[4];
     if (t[2] === 'c' || t[2] === 'x') {
@@ -10016,10 +10124,10 @@ var GAMES_BASE = 'partidas/',
   function paint() {
     var v = view,
       flip = v.r[2] === 'b',
-      fen = v.fens[v.ply];
-    var last = v.ply ? v.ucis[v.ply - 1] : null;
+      fen = curFen();
+    var last = v.ex ? v.ex.ucis.length ? v.ex.ucis[v.ex.ucis.length - 1] : v.ply ? v.ucis[v.ply - 1] : null : v.ply ? v.ucis[v.ply - 1] : null;
     drawBoardG($g('gBoard'), fen, flip, {
-      last: v.tag ? null : last,
+      last: v.tag && !v.ex ? null : last,
       arrows: arrowsFor(),
       sel: v.sel
     });
@@ -10055,9 +10163,10 @@ var GAMES_BASE = 'partidas/',
     if (t && !v.solve) {
       var bestSan = sanOf(v.fens[t[0]], t[4]),
         playSan = v.ss[t[0]];
-      info = "<b>".concat(tagLabel(t), " \xB7 ").concat(OUT[t[2]], "</b><br>") + (t[2] === 'm' ? "Jugaste <b style=\"color:#c0392b\">".concat(playSan, "</b>; ten\xEDas <b style=\"color:#2f7d4f\">").concat(bestSan, "</b>. Te cost\xF3 ").concat(costTxt(t[3]), ".") : t[2] === 'f' ? "Jugaste <b style=\"color:#2f7d4f\">".concat(playSan, "</b>, la mejor jugada.") : concTxt(v, t, playSan));
+      info = "<b>".concat(tagLabel(t), " \xB7 ").concat(OUT[t[2]], "</b><br>") + (t[2] === 'm' ? /^M/.test(t[1]) && typeof t[5] === 'number' && t[5] > t[0] ? "Ten\xEDas ".concat(TH[t[1]].toLowerCase(), " empezando por <b style=\"color:#2f7d4f\">").concat(bestSan, "</b>. Empezaste bien, pero en tu jugada <button type=\"button\" class=\"linkbtn\" data-go=\"").concat(t[5], "\">").concat(Math.floor(t[5] / 2) + 1).concat(t[5] % 2 ? '…' : '.', " ").concat(v.ss[t[5]], "</button> dejaste escapar el mate.") : "Jugaste <b style=\"color:#c0392b\">".concat(playSan, "</b>; ten\xEDas <b style=\"color:#2f7d4f\">").concat(bestSan, "</b>. Te cost\xF3 ").concat(costTxt(t[3]), ".") : t[2] === 'f' ? "Jugaste <b style=\"color:#2f7d4f\">".concat(playSan, "</b>, la mejor jugada.") : concTxt(v, t, playSan));
     }
     if (v.solve) info = v.solve.msg;
+    if (v.ex) info = "<b>Explorando</b> desde la jugada ".concat(Math.floor(v.ply / 2) + 1, ": ").concat(v.ex.sans.length ? exLine() : 'mueve una pieza para probar otra jugada.', " <button type=\"button\" class=\"linkbtn\" id=\"gBack\">Volver a la partida</button>");
     $g('gInfo').innerHTML = info;
     var rb = $g('gInfo').querySelector('[data-go]');
     if (rb) rb.onclick = function () {
@@ -10065,13 +10174,20 @@ var GAMES_BASE = 'partidas/',
       view.tag = null;
       go(+rb.dataset.go);
     };
+    var bk = $g('gInfo').querySelector('#gBack');
+    if (bk) bk.onclick = function () {
+      view.ex = null;
+      view.sel = null;
+      paint();
+    };
     var ab = $g('gInfo').querySelector('#gAfter');
     if (ab) ab.onclick = function () {
       return go(t[0] + 1);
     };
     var cx = t && 'cx'.includes(t[2]);
     $g('gSolve').textContent = cx ? 'Evita el error' : 'Resuélvelo tú';
-    $g('gSolve').hidden = !(t && (t[2] === 'm' || cx && t[5] && v.ply === t[0])) || !!v.solve;
+    $g('gSolve').hidden = !(t && (t[2] === 'm' || cx && t[5] && v.ply === t[0])) || !!v.solve || !!v.ex;
+    engRun();
     $g('gGraph').querySelectorAll('.gcur').forEach(function (x) {
       x.setAttribute('x1', gx(v.ply));
       x.setAttribute('x2', gx(v.ply));
@@ -10081,7 +10197,7 @@ var GAMES_BASE = 'partidas/',
   function concTxt(v, t, playSan) {
     var rival = sanOf(v.fens[t[0] + 1], t[4]);
     if (v.ply === t[0] + 1) return "El rival pod\xEDa jugar <b style=\"color:#d1822a\">".concat(rival, "</b> (").concat(TH[t[1]].toLowerCase(), ")").concat(t[2] === 'x' ? ', pero no lo vio' : '', ".");
-    var s = "Tu jugada <b style=\"color:#c0392b\">".concat(playSan, "</b> le dej\xF3 al rival <b style=\"color:#d1822a\">").concat(rival, "</b>").concat(t[2] === 'x' ? ', pero no lo vio' : '', ". Perdiste ").concat(costTxt(t[3]), ".");
+    var s = "Tu jugada <b style=\"color:#c0392b\">".concat(playSan, "</b> le dej\xF3 al rival <b style=\"color:#d1822a\">").concat(rival, "</b>").concat(t[2] === 'x' ? ', pero no lo vio' : '', ". Perdiste ").concat(/^M/.test(t[1]) ? 'la partida: te podían dar mate' : costTxt(t[3]), ".");
     if (t[5]) {
       s += "<br>Lo evitabas con ".concat(t[5].map(function (u) {
         return "<b style=\"color:#2f7d4f\">".concat(sanOf(v.fens[t[0]], u), "</b>");
@@ -10089,6 +10205,95 @@ var GAMES_BASE = 'partidas/',
       if (t[6] === 'e') s += ' Había más de una jugada buena: <b>era un error evitable</b>.';else s += ' Solo esa jugada lo evitaba: la posición ya era difícil.' + (t[7] >= 0 ? " El problema empez\xF3 en tu jugada <button type=\"button\" class=\"linkbtn\" data-go=\"".concat(t[7], "\">").concat(Math.floor(t[7] / 2) + 1).concat(t[7] % 2 ? '…' : '.', " ").concat(v.ss[t[7]], "</button>.") : '');
     }
     return s + " <button type=\"button\" class=\"linkbtn\" id=\"gAfter\">Ver la t\xE1ctica del rival \u25B6</button>";
+  }
+  function curFen() {
+    return view.ex ? view.ex.fens[view.ex.fens.length - 1] : view.fens[view.ply];
+  }
+  function exLine() {
+    var e = view.ex;
+    var n = view.ply;
+    return e.sans.map(function (s, i) {
+      var txt = (n % 2 === 0 ? Math.floor(n / 2) + 1 + '.' : i === 0 ? Math.floor(n / 2) + 1 + '…' : '') + s;
+      n++;
+      return txt;
+    }).join(' ');
+  }
+  // engine recommendation for the position on the board (Stockfish in the browser), from your side
+  var ENG_ON = true;
+  try {
+    ENG_ON = localStorage.getItem('taller.gEng') !== '0';
+  } catch (e) {}
+  var engKey = null,
+    engT = null;
+  function engRun() {
+    var box = $g('gEng'),
+      fen = curFen();
+    if (!box) return;
+    $g('gEngBtn').textContent = ENG_ON ? 'Motor: sí' : 'Motor: no';
+    if (!ENG_ON || view.solve || typeof ENGINE === 'undefined') {
+      box.hidden = true;
+      if (typeof ENGINE !== 'undefined' && engKey) ENGINE.stop();
+      engKey = null;
+      view.eng = null;
+      return;
+    }
+    box.hidden = false;
+    if (engKey === fen) return;
+    engKey = fen;
+    view.eng = null;
+    var g = new Chess(fen);
+    if (g.moves().length === 0) {
+      box.innerHTML = '<b>Motor:</b> la partida ha terminado en esta posición.';
+      return;
+    }
+    box.innerHTML = '<b>Motor:</b> pensando…';
+    clearTimeout(engT);
+    engT = setTimeout(function () {
+      return ENGINE.analyse(fen, {
+        depth: 18,
+        multipv: 1
+      }, function (r) {
+        if (engKey !== fen || !r.lines || !r.lines[0]) return;
+        var l = r.lines[0],
+          me = view.r[2] === 'w' ? 1 : -1,
+          u = l.pv[0];
+        var cp = engCp(l) * me,
+          ev = l.mate != null ? l.mate * me > 0 ? 'ganas con mate en ' + Math.abs(l.mate) : 'te dan mate en ' + Math.abs(l.mate) : (cp > 0 ? '+' : '') + (cp / 100).toFixed(1).replace('.', ',');
+        var pv = [];
+        {
+          var c = new Chess(fen);
+          var _iterator2 = _createForOfIteratorHelper(l.pv.slice(0, 6)),
+            _step3;
+          try {
+            for (_iterator2.s(); !(_step3 = _iterator2.n()).done;) {
+              var x = _step3.value;
+              var m = c.move({
+                from: x.slice(0, 2),
+                to: x.slice(2, 4),
+                promotion: x[4] || 'q'
+              });
+              if (!m) break;
+              pv.push(es(m.san));
+            }
+          } catch (err) {
+            _iterator2.e(err);
+          } finally {
+            _iterator2.f();
+          }
+        }
+        box.innerHTML = "<b>Motor:</b> <b style=\"color:#2f6db5\">".concat(pv[0] || u, "</b> \xB7 ").concat(ev, " (desde tu lado) \xB7 profundidad ").concat(r.depth).concat(pv.length > 1 ? "<br><span class=\"gpv\">L\xEDnea: ".concat(pv.join(' '), "</span>") : '');
+        if (!view.eng || view.eng.u !== u) {
+          view.eng = {
+            u: u
+          };
+          drawBoardG($g('gBoard'), fen, view.r[2] === 'b', {
+            last: null,
+            arrows: arrowsFor(),
+            sel: view.sel
+          });
+        }
+      });
+    }, 250);
   }
   function sanOf(fen, u) {
     if (!u) return '';
@@ -10212,7 +10417,8 @@ var GAMES_BASE = 'partidas/',
     paint();
   }
   function boardTap(sq) {
-    if (!view || !view.solve) return;
+    if (!view) return;
+    if (!view.solve) return exploreTap(sq);
     var c = new Chess(view.fens[view.solve.t[0]]);
     if (!view.sel) {
       var _p = c.get(sq);
@@ -10260,11 +10466,63 @@ var GAMES_BASE = 'partidas/',
       paint();
     }
   }
+  function exploreTap(sq) {
+    var c = new Chess(curFen());
+    if (!view.sel) {
+      var _p2 = c.get(sq);
+      if (_p2 && _p2.color === c.turn()) {
+        view.sel = sq;
+        paint();
+      }
+      return;
+    }
+    var from = view.sel;
+    view.sel = null;
+    if (from === sq) {
+      paint();
+      return;
+    }
+    var p = c.get(sq);
+    if (p && p.color === c.turn()) {
+      view.sel = sq;
+      paint();
+      return;
+    }
+    var m = c.move({
+      from: from,
+      to: sq,
+      promotion: 'q'
+    });
+    if (!m) {
+      paint();
+      return;
+    }
+    if (!view.ex) view.ex = {
+      fens: [view.fens[view.ply]],
+      sans: [],
+      ucis: []
+    };
+    view.ex.fens.push(c.fen());
+    view.ex.sans.push(es(m.san));
+    view.ex.ucis.push(m.from + m.to);
+    view.tag = null;
+    paint();
+  }
   $g('gBoard').addEventListener('click', function (ev) {
     var s = ev.target.closest('.sq');
     if (s) boardTap(s.dataset.sq);
   });
   $g('gSolve').onclick = startSolve;
+  $g('gEngBtn').onclick = function () {
+    if (!view) return;
+    ENG_ON = !ENG_ON;
+    try {
+      localStorage.setItem('taller.gEng', ENG_ON ? '1' : '0');
+    } catch (e) {}
+    engKey = null;
+    view.eng = null;
+    paint();
+  };
   $g('gShow').onclick = function () {
     if (view && view.solve) {
       var t = view.solve.t;
@@ -10279,6 +10537,15 @@ var GAMES_BASE = 'partidas/',
   };
   $g('gPrev').onclick = function () {
     view.solve = null;
+    if (view.ex) {
+      view.ex.fens.pop();
+      view.ex.sans.pop();
+      view.ex.ucis.pop();
+      if (!view.ex.sans.length) view.ex = null;
+      view.sel = null;
+      paint();
+      return;
+    }
     go(view.ply - 1);
   };
   $g('gNext').onclick = function () {
@@ -10300,6 +10567,173 @@ var GAMES_BASE = 'partidas/',
       go(view.ply + 1);
     }
   });
+  // ---------- Errores: thinking time and clock of your errors ----------
+  var ERR = null,
+    ePage = 50;
+  var fmtS = function fmtS(x) {
+    return (Math.round(x * 10) / 10).toLocaleString('es-ES') + ' s';
+  };
+  var fmtClk = function fmtClk(x) {
+    return x >= 60 ? Math.floor(x / 60) + ':' + String(Math.round(x % 60)).padStart(2, '0') : Math.round(x) + ' s';
+  };
+  function errorsOpen() {
+    return _errorsOpen.apply(this, arguments);
+  }
+  function _errorsOpen() {
+    _errorsOpen = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee6() {
+      var years, _t6;
+      return _regenerator().w(function (_context6) {
+        while (1) switch (_context6.p = _context6.n) {
+          case 0:
+            _context6.n = 1;
+            return load();
+          case 1:
+            if (CAT) {
+              _context6.n = 2;
+              break;
+            }
+            return _context6.a(2);
+          case 2:
+            if (ERR) {
+              _context6.n = 6;
+              break;
+            }
+            _context6.p = 3;
+            _context6.n = 4;
+            return fetch(GAMES_BASE + 'errors.json').then(function (r) {
+              return r.json();
+            });
+          case 4:
+            ERR = _context6.v;
+            _context6.n = 6;
+            break;
+          case 5:
+            _context6.p = 5;
+            _t6 = _context6.v;
+            ERR = {};
+          case 6:
+            years = _toConsumableArray(new Set(CAT.map(function (r) {
+              return r[1].slice(0, 4);
+            }))).sort().reverse();
+            if (!$g('eYear').options.length) {
+              $g('eYear').innerHTML = '<option value="">Todos los años</option>' + years.map(function (y) {
+                return "<option>".concat(y, "</option>");
+              }).join('');
+              ['eType', 'eSp', 'eLeft', 'eYear'].forEach(function (id) {
+                return $g(id).onchange = function () {
+                  ePage = 50;
+                  renderErrList();
+                };
+              });
+            }
+            renderErrStats();
+            renderErrList();
+          case 7:
+            return _context6.a(2);
+        }
+      }, _callee6, null, [[3, 5]]);
+    }));
+    return _errorsOpen.apply(this, arguments);
+  }
+  function renderErrStats() {
+    var E = ERR || {};
+    if (!E.sp) {
+      $g('eTables').innerHTML = '<p class="empty">Sin datos de reloj.</p>';
+      return;
+    }
+    var nc = 0,
+      ne = 0,
+      nm = 0,
+      low = 0,
+      fast = 0;
+    CAT.forEach(function (r) {
+      return r[9].forEach(function (t) {
+        if ('cx'.includes(t[2])) {
+          nc++;
+          if (t[6] === 'e') ne++;
+          if (t[10] != null && t[10] < 30) low++;
+          if (t[9] != null && t[9] < 2) fast++;
+        } else if (t[2] === 'm') nm++;
+      });
+    });
+    var kpi = function kpi(v, l) {
+      return "<div class=\"kpi\"><b>".concat(v, "</b><span>").concat(l, "</span></div>");
+    };
+    $g('eKpis').innerHTML = kpi(nc.toLocaleString('es-ES'), "errores graves (".concat((100 * nc / CAT.length).toFixed(0), " por cada 100 partidas)")) + kpi(Math.round(100 * ne / nc) + ' %', 'eran evitables') + kpi(fmtS(E.avg.medAll), 'pensaste en una jugada normal (mediana)') + kpi(fmtS(E.avg.medConc), 'pensaste en un error grave (mediana)') + kpi(Math.round(100 * fast / nc) + ' %', 'de los errores graves, pensados menos de 2 s') + kpi(Math.round(100 * low / nc) + ' %', 'de los errores graves, con menos de 30 s en el reloj');
+    var tbl = function tbl(title, rows) {
+      var rate = rows.map(function (r) {
+          return r[1] ? 100 * r[2] / r[1] : 0;
+        }),
+        mx = Math.max.apply(Math, _toConsumableArray(rate));
+      return "<div class=\"card\"><h4 class=\"gsubh\" style=\"margin-top:0\">".concat(title, "</h4><div class=\"tscroll\"><table class=\"stbl\"><thead><tr><th></th><th>Jugadas</th><th>Errores graves</th><th>Por cada 100 jugadas</th><th>T\xE1cticas perdidas</th><th>Por cada 100 jugadas</th></tr></thead><tbody>").concat(rows.map(function (r, i) {
+        return "<tr><td>".concat(r[0], "</td><td>").concat(r[1].toLocaleString('es-ES'), "</td><td>").concat(r[2].toLocaleString('es-ES'), "</td><td class=\"").concat(rate[i] === mx ? 'cell-bad' : '', "\"><b>").concat(rate[i].toFixed(1).replace('.', ','), "</b></td><td>").concat(r[3].toLocaleString('es-ES'), "</td><td>").concat(r[1] ? (100 * r[3] / r[1]).toFixed(1).replace('.', ',') : '–', "</td></tr>");
+      }).join(''), "</tbody></table></div></div>");
+    };
+    var yrs = Object.keys(E.yr || {}).sort();
+    $g('eTables').innerHTML = tbl('Según lo que pensaste la jugada', E.sp) + tbl('Según el tiempo que te quedaba en el reloj', E.left) + tbl('Según la fase de la partida', E.ph) + "<div class=\"card\"><h4 class=\"gsubh\" style=\"margin-top:0\">A\xF1o a a\xF1o</h4><div class=\"tscroll\"><table class=\"stbl\"><thead><tr><th>A\xF1o</th><th>Partidas</th><th>Pensaste por jugada (media)</th><th>Errores graves por cada 100 jugadas</th><th>Pensaste en los errores (media)</th></tr></thead><tbody>".concat(yrs.map(function (y) {
+      var Y = E.yr[y];
+      return "<tr><td>".concat(y, "</td><td>").concat(Y[4].toLocaleString('es-ES'), "</td><td>").concat(fmtS(Y[1] / Y[0]), "</td><td><b>").concat((100 * Y[2] / Y[0]).toFixed(1).replace('.', ','), "</b></td><td>").concat(Y[2] ? fmtS(Y[3] / Y[2]) : '–', "</td></tr>");
+    }).join(''), "</tbody></table></div></div>");
+  }
+  function errItems() {
+    var ty = $g('eType').value,
+      sp = $g('eSp').value,
+      lf = $g('eLeft').value,
+      y = $g('eYear').value,
+      rng = function rng(v) {
+        return v ? v.split('-').map(Number) : null;
+      },
+      S = rng(sp),
+      L = rng(lf),
+      out = [];
+    CAT.forEach(function (r) {
+      if (y && !r[1].startsWith(y)) return;
+      r[9].forEach(function (t) {
+        if (ty === 'm' ? t[2] !== 'm' : !'cx'.includes(t[2]) || ty === 'e' && t[6] !== 'e') return;
+        if (S && !(t[9] != null && t[9] >= S[0] && t[9] < S[1])) return;
+        if (L && !(t[10] != null && t[10] >= L[0] && t[10] < L[1])) return;
+        out.push([r, t]);
+      });
+    });
+    return out;
+  }
+  function renderErrList() {
+    var it = errItems();
+    $g('eCount').textContent = it.length.toLocaleString('es-ES') + ' errores';
+    $g('eList').innerHTML = it.slice(0, ePage).map(function (_ref6, i) {
+      var _ref7 = _slicedToArray(_ref6, 2),
+        r = _ref7[0],
+        t = _ref7[1];
+      var ply = t[2] === 'm' && /^M/.test(t[1]) && typeof t[5] === 'number' && t[5] > t[0] ? t[5] : t[0];
+      return "<button type=\"button\" class=\"erow\" data-i=\"".concat(i, "\"><span><b>").concat(fmtDate(r[1]), "</b><br><small>").concat(r[2] === 'w' ? 'blancas' : 'negras', " \xB7 ").concat(RES[r[5]].toLowerCase(), "</small></span><span><b>").concat(Math.floor(ply / 2) + 1).concat(ply % 2 ? '…' : '.', "</b> ").concat(TH[t[1]] || t[1]).concat(t[8] && MPS[t[8]] ? ' (' + MPS[t[8]] + ')' : '', " \xB7 ").concat(t[2] === 'm' ? 'la tenías y no la jugaste' : 'se la dejaste al rival' + (t[2] === 'x' ? ' (no la vio)' : ''), " \xB7 \u2212").concat(t[3] >= 50 || /^M/.test(t[1]) ? 'mate' : String(t[3]).replace('.', ','), "</span><span class=\"et\">").concat(t[9] != null ? "pensaste <b class=\"".concat(t[9] < 2 ? 'fast' : '', "\">").concat(fmtS(t[9]), "</b><br>reloj <b class=\"").concat(t[10] < 30 ? 'low' : '', "\">").concat(fmtClk(t[10]), "</b>") : '', "</span></button>");
+    }).join('') + (it.length > ePage ? "<button type=\"button\" class=\"btn small\" id=\"eMore\">Ver ".concat(Math.min(50, it.length - ePage), " m\xE1s</button>") : '') + (it.length ? '' : '<p class="empty">Ningún error con estos filtros.</p>');
+    $g('eList').querySelectorAll('.erow').forEach(function (b) {
+      return b.onclick = /*#__PURE__*/_asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee3() {
+        var _it$b$dataset$i, r, t;
+        return _regenerator().w(function (_context3) {
+          while (1) switch (_context3.n) {
+            case 0:
+              _it$b$dataset$i = _slicedToArray(it[+b.dataset.i], 2), r = _it$b$dataset$i[0], t = _it$b$dataset$i[1];
+              document.querySelector('[data-main="games"]').click();
+              _context3.n = 1;
+              return openGame(r, true);
+            case 1:
+              view.tag = t;
+              view.solve = null;
+              go(t[0]);
+            case 2:
+              return _context3.a(2);
+          }
+        }, _callee3);
+      }));
+    });
+    var m = $g('eMore');
+    if (m) m.onclick = function () {
+      ePage += 50;
+      renderErrList();
+    };
+  }
+  window.errorsOpen = errorsOpen;
   window.gamesOpen = load;
   if (!$g('viewGames').hidden) load();
 })();
@@ -12532,10 +12966,10 @@ var LIVE_USER = '';
     var a = by['2022'],
       z = by['2026'];
     var rushY = {};
-    SD.rush.forEach(function (_ref4) {
-      var _ref5 = _slicedToArray(_ref4, 2),
-        t = _ref5[0],
-        s = _ref5[1];
+    SD.rush.forEach(function (_ref9) {
+      var _ref0 = _slicedToArray(_ref9, 2),
+        t = _ref0[0],
+        s = _ref0[1];
       var k = new Date(t * 1000).getUTCFullYear();
       (rushY[k] = rushY[k] || []).push(s);
     });
@@ -12550,12 +12984,12 @@ var LIVE_USER = '';
     }, 0)), 'blitz desde oct 2022'], ['Precisión', nf(M.acc(z)) + ' %', "2022: ".concat(nf(M.acc(a)), " %"), M.acc(z) > M.acc(a)], ['Fallos graves / 100 jugadas', nf(M.per(z, 'bl', 'm'), 2), "2022: ".concat(nf(M.per(a, 'bl', 'm'), 2)), M.per(z, 'bl', 'm') < M.per(a, 'bl', 'm')], ['Derrotas por tiempo', nf(M.to(z)) + ' %', "2022: ".concat(nf(M.to(a)), " %"), M.to(z) < M.to(a)], ['Puntuación (últimas 100)', nf(M.score(last100)) + ' %', 'de los puntos posibles'], ['Puzzle Rush (media 2026)', nf(avg(rushY[2026])), "2022: ".concat(nf(avg(rushY[2022])), " \xB7 r\xE9cord ").concat(Math.max.apply(null, SD.rush.map(function (x) {
       return x[1];
     }))), true], ['Problemas puntuados', fInt(SD.puz[SD.puz.length - 1][2]), 'puntuación actual']];
-    $('kpis').innerHTML = k.map(function (_ref6) {
-      var _ref7 = _slicedToArray(_ref6, 4),
-        t = _ref7[0],
-        v = _ref7[1],
-        s = _ref7[2],
-        up = _ref7[3];
+    $('kpis').innerHTML = k.map(function (_ref1) {
+      var _ref10 = _slicedToArray(_ref1, 4),
+        t = _ref10[0],
+        v = _ref10[1],
+        s = _ref10[2],
+        up = _ref10[3];
       return "<div class=\"kpi\"><span>".concat(t, "</span><b>").concat(v, "</b><span>").concat(up == null ? s : "<em class=\"".concat(up ? 'up' : 'down', "\">").concat(up ? '▲' : '▼', "</em> ").concat(s), "</span></div>");
     }).join('');
     drawEloM();
@@ -12749,14 +13183,14 @@ var LIVE_USER = '';
     }, true, 1], ['Puzzle Rush (mejor serie)', r0.length ? Math.max.apply(null, r0) : null, r1.length ? Math.max.apply(null, r1) : null, fInt, true, 1], ['Problemas (puntuación)', pzAt(30), pzAt(0), fInt, true, 10]];
     var good = [],
       bad = [];
-    var tr = rows.map(function (_ref8) {
-      var _ref9 = _slicedToArray(_ref8, 6),
-        lab = _ref9[0],
-        a = _ref9[1],
-        b = _ref9[2],
-        f = _ref9[3],
-        up = _ref9[4],
-        min = _ref9[5];
+    var tr = rows.map(function (_ref11) {
+      var _ref12 = _slicedToArray(_ref11, 6),
+        lab = _ref12[0],
+        a = _ref12[1],
+        b = _ref12[2],
+        f = _ref12[3],
+        up = _ref12[4],
+        min = _ref12[5];
       var cls = '',
         arrow = '';
       if (a != null && b != null && up != null && Math.abs(b - a) >= min && min > 0) {
@@ -13065,11 +13499,11 @@ var LIVE_USER = '';
     var distinct = failRows(weeks[11]).filter(function (x) {
       return x.fails;
     }).length;
-    $('trnKpis').innerHTML = [['Jugadas practicadas', fInt(now[0]), 'esta semana'], ['Fallos', fInt(now[1]), now[0] ? nf(pct(now)) + ' % de las jugadas' : '–'], ['Posiciones con fallo', fInt(distinct), 'distintas, esta semana'], ['Semana pasada', prev[0] ? nf(pct(prev)) + ' %' : '–', prev[0] ? "".concat(prev[1], " fallos en ").concat(prev[0], " jugadas") : 'sin datos']].map(function (_ref0) {
-      var _ref1 = _slicedToArray(_ref0, 3),
-        a = _ref1[0],
-        b = _ref1[1],
-        c = _ref1[2];
+    $('trnKpis').innerHTML = [['Jugadas practicadas', fInt(now[0]), 'esta semana'], ['Fallos', fInt(now[1]), now[0] ? nf(pct(now)) + ' % de las jugadas' : '–'], ['Posiciones con fallo', fInt(distinct), 'distintas, esta semana'], ['Semana pasada', prev[0] ? nf(pct(prev)) + ' %' : '–', prev[0] ? "".concat(prev[1], " fallos en ").concat(prev[0], " jugadas") : 'sin datos']].map(function (_ref13) {
+      var _ref14 = _slicedToArray(_ref13, 3),
+        a = _ref14[0],
+        b = _ref14[1],
+        c = _ref14[2];
       return "<div class=\"kpi\"><span>".concat(a, "</span><b>").concat(b, "</b><span>").concat(c, "</span></div>");
     }).join('');
     var ch = $('trnCharts');
@@ -13221,10 +13655,10 @@ var LIVE_USER = '';
   function tacRows() {
     // row: [q, n, forks 6x(f,m), pins 6x, free 6x, mates 5x(f,m), material f,m, capturing 6, hanging 6]
     var types = [];
-    [['Horquilla de', 2], ['Clavada con', 14], ['Capturar gratis:', 26]].forEach(function (_ref10) {
-      var _ref11 = _slicedToArray(_ref10, 2),
-        nm = _ref11[0],
-        off = _ref11[1];
+    [['Horquilla de', 2], ['Clavada con', 14], ['Capturar gratis:', 26]].forEach(function (_ref15) {
+      var _ref16 = _slicedToArray(_ref15, 2),
+        nm = _ref16[0],
+        off = _ref16[1];
       return PIE.forEach(function (p, i) {
         if (p === 'rey' && nm !== 'Horquilla de') return;
         types.push({
@@ -13405,10 +13839,10 @@ var LIVE_USER = '';
     var g = segVal('puzGroup', 'g') || 'M';
     var host = $('puzCharts');
     host.innerHTML = '';
-    var R = SD.rush.map(function (_ref12) {
-      var _ref13 = _slicedToArray(_ref12, 2),
-        t = _ref13[0],
-        s = _ref13[1];
+    var R = SD.rush.map(function (_ref17) {
+      var _ref18 = _slicedToArray(_ref17, 2),
+        t = _ref18[0],
+        s = _ref18[1];
       return {
         date: new Date(t * 1000),
         s: s
@@ -13442,10 +13876,10 @@ var LIVE_USER = '';
         return x.s;
       }),
       last30 = all.slice(-30);
-    $('puzKpis').innerHTML = [['Series jugadas', fInt(all.length)], ['Récord', Math.max.apply(null, all)], ['Media últimas 30', nf(avg(last30))], ['Media primeras 100', nf(avg(all.slice(0, 100)))], ['Problemas puntuados', fInt(SD.puz[SD.puz.length - 1][2]) + ' pts'], ['Máximo puntuados', '2.070']].map(function (_ref14) {
-      var _ref15 = _slicedToArray(_ref14, 2),
-        a = _ref15[0],
-        b = _ref15[1];
+    $('puzKpis').innerHTML = [['Series jugadas', fInt(all.length)], ['Récord', Math.max.apply(null, all)], ['Media últimas 30', nf(avg(last30))], ['Media primeras 100', nf(avg(all.slice(0, 100)))], ['Problemas puntuados', fInt(SD.puz[SD.puz.length - 1][2]) + ' pts'], ['Máximo puntuados', '2.070']].map(function (_ref19) {
+      var _ref20 = _slicedToArray(_ref19, 2),
+        a = _ref20[0],
+        b = _ref20[1];
       return "<div class=\"kpi\"><span>".concat(a, "</span><b>").concat(b, "</b></div>");
     }).join('');
     chart(host, {
@@ -13800,11 +14234,11 @@ var LIVE_USER = '';
     var col = c === 'w' ? 'blancas' : 'negras';
     var yAll = sum(qs, idx),
       y1 = sum(last4, idx);
-    $('opeBookKpis').innerHTML = [['Te sales tú primero', fPct(pct(y1)), "todo: ".concat(fPct(pct(yAll)))], ['Jugada en que te sales tú', f2(me(y1)), "todo: ".concat(f2(me(yAll)))], ['Jugada en que se sale el rival', f2(op(y1)), "todo: ".concat(f2(op(yAll)))], ['Partidas', fInt(y1[0]), "\xFAltimos 4 trimestres con ".concat(col)]].map(function (_ref16) {
-      var _ref17 = _slicedToArray(_ref16, 3),
-        t = _ref17[0],
-        v = _ref17[1],
-        s = _ref17[2];
+    $('opeBookKpis').innerHTML = [['Te sales tú primero', fPct(pct(y1)), "todo: ".concat(fPct(pct(yAll)))], ['Jugada en que te sales tú', f2(me(y1)), "todo: ".concat(f2(me(yAll)))], ['Jugada en que se sale el rival', f2(op(y1)), "todo: ".concat(f2(op(yAll)))], ['Partidas', fInt(y1[0]), "\xFAltimos 4 trimestres con ".concat(col)]].map(function (_ref21) {
+      var _ref22 = _slicedToArray(_ref21, 3),
+        t = _ref22[0],
+        v = _ref22[1],
+        s = _ref22[2];
       return "<div class=\"kpi\"><span>".concat(t, "</span><b>").concat(v, "</b><span>").concat(s, "</span></div>");
     }).join('');
     var rows = idx.map(function (i) {
@@ -13919,18 +14353,18 @@ var LIVE_USER = '';
     return _fetchGames.apply(this, arguments);
   }
   function _fetchGames() {
-    _fetchGames = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee5() {
-      var user, st, cache, ar, months, nowKey, todo, i, _iterator2, _step3, _loop4, _t6, _t7;
-      return _regenerator().w(function (_context6) {
-        while (1) switch (_context6.p = _context6.n) {
+    _fetchGames = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee7() {
+      var user, st, cache, ar, months, nowKey, todo, i, _iterator3, _step4, _loop4, _t7, _t8;
+      return _regenerator().w(function (_context8) {
+        while (1) switch (_context8.p = _context8.n) {
           case 0:
             user = $('liveUser').value.trim().toLowerCase();
             if (user) {
-              _context6.n = 1;
+              _context8.n = 1;
               break;
             }
             $('liveUser').focus();
-            return _context6.a(2);
+            return _context8.a(2);
           case 1:
             try {
               localStorage.setItem('taller.user', user);
@@ -13944,36 +14378,36 @@ var LIVE_USER = '';
               g: [],
               done: []
             };
-            _context6.p = 2;
-            _context6.n = 3;
+            _context8.p = 2;
+            _context8.n = 3;
             return fetch("https://api.chess.com/pub/player/".concat(encodeURIComponent(user), "/games/archives")).then(function (r) {
               if (!r.ok) throw new Error(r.status === 404 ? 'Usuario no encontrado' : 'Error ' + r.status);
               return r.json();
             });
           case 3:
-            ar = _context6.v;
+            ar = _context8.v;
             months = ar.archives;
             nowKey = months[months.length - 1];
             todo = months.filter(function (m) {
               return cache.done.indexOf(m) < 0 || m === nowKey || m === months[months.length - 2];
             });
             i = 0;
-            _iterator2 = _createForOfIteratorHelper(todo);
-            _context6.p = 4;
+            _iterator3 = _createForOfIteratorHelper(todo);
+            _context8.p = 4;
             _loop4 = /*#__PURE__*/_regenerator().m(function _loop4() {
               var m, j, key;
-              return _regenerator().w(function (_context5) {
-                while (1) switch (_context5.n) {
+              return _regenerator().w(function (_context7) {
+                while (1) switch (_context7.n) {
                   case 0:
-                    m = _step3.value;
+                    m = _step4.value;
                     i++;
                     st.textContent = "Descargando ".concat(i, " de ").concat(todo.length, "\u2026");
-                    _context5.n = 1;
+                    _context7.n = 1;
                     return fetch(m).then(function (r) {
                       return r.json();
                     });
                   case 1:
-                    j = _context5.v;
+                    j = _context7.v;
                     key = m.slice(-7);
                     cache.g = cache.g.filter(function (x) {
                       return x.m !== key;
@@ -14003,31 +14437,31 @@ var LIVE_USER = '';
                     });
                     if (cache.done.indexOf(m) < 0) cache.done.push(m);
                   case 2:
-                    return _context5.a(2);
+                    return _context7.a(2);
                 }
               }, _loop4);
             });
-            _iterator2.s();
+            _iterator3.s();
           case 5:
-            if ((_step3 = _iterator2.n()).done) {
-              _context6.n = 7;
+            if ((_step4 = _iterator3.n()).done) {
+              _context8.n = 7;
               break;
             }
-            return _context6.d(_regeneratorValues(_loop4()), 6);
+            return _context8.d(_regeneratorValues(_loop4()), 6);
           case 6:
-            _context6.n = 5;
+            _context8.n = 5;
             break;
           case 7:
-            _context6.n = 9;
+            _context8.n = 9;
             break;
           case 8:
-            _context6.p = 8;
-            _t6 = _context6.v;
-            _iterator2.e(_t6);
+            _context8.p = 8;
+            _t7 = _context8.v;
+            _iterator3.e(_t7);
           case 9:
-            _context6.p = 9;
-            _iterator2.f();
-            return _context6.f(9);
+            _context8.p = 9;
+            _iterator3.f();
+            return _context8.f(9);
           case 10:
             cache.g.sort(function (a, b) {
               return a.t - b.t;
@@ -14036,16 +14470,16 @@ var LIVE_USER = '';
             GAMES = cache.g;
             st.textContent = "".concat(GAMES.length, " partidas blitz \xB7 actualizado");
             renderGames();
-            _context6.n = 12;
+            _context8.n = 12;
             break;
           case 11:
-            _context6.p = 11;
-            _t7 = _context6.v;
-            st.textContent = 'No he podido descargar: ' + (_t7 && _t7.message ? _t7.message : _t7) + '. Si estás dentro de Claude, prueba la versión del iPad.';
+            _context8.p = 11;
+            _t8 = _context8.v;
+            st.textContent = 'No he podido descargar: ' + (_t8 && _t8.message ? _t8.message : _t8) + '. Si estás dentro de Claude, prueba la versión del iPad.';
           case 12:
-            return _context6.a(2);
+            return _context8.a(2);
         }
-      }, _callee5, null, [[4, 8, 9, 10], [2, 11]]);
+      }, _callee7, null, [[4, 8, 9, 10], [2, 11]]);
     }));
     return _fetchGames.apply(this, arguments);
   }
@@ -14349,6 +14783,10 @@ var LIVE_USER = '';
     if ($('viewGames')) {
       $('viewGames').hidden = m !== 'games';
       if (m === 'games' && window.gamesOpen) window.gamesOpen();
+    }
+    if ($('viewErrors')) {
+      $('viewErrors').hidden = m !== 'errors';
+      if (m === 'errors' && window.errorsOpen) window.errorsOpen();
     }
     if (m === 'stats') {
       var t = 'sum';
