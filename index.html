@@ -297,6 +297,12 @@ footer { font-size: 12px; color: var(--muted); max-width: 90ch; }
 .live p { margin: 0; font-size: 14px; }
 .stats .chip:empty { display: none; }
 
+.monthcmp { display: grid; gap: 8px; }
+.monthcmp .cols2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px; }
+.monthcmp h4 { margin: 0 0 4px; font-size: 13px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
+.monthcmp .cols2 > div:first-child h4 { color: var(--good); }
+.monthcmp .cols2 > div:last-child h4 { color: var(--bad); }
+
 .engine { border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; display: grid; gap: 8px; background: var(--panel); }
 .engrow { display: flex; flex-wrap: wrap; gap: 6px; }
 .engrow .btn[aria-pressed="true"] { border-color: var(--walnut); }
@@ -2255,6 +2261,10 @@ if (typeof define !== 'undefined')
     <h3 style="margin:18px 0 4px;font-size:15px">Partidas según tu Elo, mes a mes</h3>
     <div class="cgrid" id="sumCharts" style="margin-top:8px"></div>
     <div class="report" style="margin-top:16px">
+      <h3>Este mes frente al anterior</h3>
+      <div id="monthCmp" class="monthcmp"></div>
+      <h3>Rachas por nivel de Elo</h3>
+      <div id="streaks"></div>
       <h3>Informe de tu juego (blitz 5+0, oct 2022 – oct 2026)</h3>
       <p>Resumen de unas 14.000 partidas y 1.100 series de Puzzle Rush. Las cifras de precisión, fallos y tácticas son de Insights de Chess.com: cuentan las partidas analizadas, que son casi todas.</p>
       <h3>Lo que ha mejorado</h3>
@@ -9563,6 +9573,46 @@ var first = propose();
 start(first.id);
 // ================= Estadísticas =================
 var SD = {
+  "streaks": {
+    "lastT": 1792449509,
+    "lv": {
+      "1400": {
+        "cur": 4671,
+        "cf": 1758151052,
+        "best": 4671,
+        "bf": 1758151052,
+        "bt": 1792449509
+      },
+      "1500": {
+        "cur": 951,
+        "cf": 1787477107,
+        "best": 1263,
+        "bf": 1775658314,
+        "bt": 1785559158
+      },
+      "1600": {
+        "cur": 100,
+        "cf": 1791312082,
+        "best": 223,
+        "bf": 1780013839,
+        "bt": 1781948497
+      },
+      "1700": {
+        "cur": 19,
+        "cf": 1792070840,
+        "best": 30,
+        "bf": 1783887788,
+        "bt": 1785091183
+      },
+      "1800": {
+        "cur": 0,
+        "cf": null,
+        "best": 0,
+        "bf": null,
+        "bt": null
+      }
+    }
+  },
   "elom": [["2022-10", 61, 0, 0, 0, 0], ["2022-11", 300, 81, 0, 0, 0], ["2022-12", 131, 0, 0, 0, 0], ["2023-01", 213, 122, 0, 0, 0], ["2023-02", 281, 229, 2, 0, 0], ["2023-03", 383, 43, 0, 0, 0], ["2023-04", 274, 135, 0, 0, 0], ["2023-05", 158, 93, 0, 0, 0], ["2023-06", 207, 183, 24, 0, 0], ["2023-07", 267, 211, 56, 0, 0], ["2023-08", 277, 134, 12, 0, 0], ["2023-09", 265, 120, 0, 0, 0], ["2023-10", 128, 128, 2, 0, 0], ["2023-11", 332, 326, 92, 0, 0], ["2023-12", 361, 357, 35, 0, 0], ["2024-01", 213, 212, 53, 0, 0], ["2024-02", 319, 306, 88, 0, 0], ["2024-03", 317, 260, 23, 0, 0], ["2024-04", 139, 105, 0, 0, 0], ["2024-05", 312, 167, 0, 0, 0], ["2024-06", 426, 247, 0, 0, 0], ["2024-07", 89, 13, 0, 0, 0], ["2024-08", 279, 137, 0, 0, 0], ["2024-09", 68, 60, 0, 0, 0], ["2024-10", 241, 63, 0, 0, 0], ["2024-11", 226, 166, 0, 0, 0], ["2024-12", 221, 214, 1, 0, 0], ["2025-01", 284, 281, 1, 0, 0], ["2025-02", 294, 79, 0, 0, 0], ["2025-03", 303, 263, 45, 0, 0], ["2025-04", 393, 393, 380, 60, 0], ["2025-05", 421, 421, 256, 135, 0], ["2025-06", 165, 165, 24, 0, 0], ["2025-07", 368, 351, 130, 0, 0], ["2025-08", 312, 312, 59, 0, 0], ["2025-09", 450, 444, 144, 0, 0], ["2025-10", 458, 458, 283, 0, 0], ["2025-11", 539, 539, 534, 132, 0], ["2025-12", 363, 363, 349, 93, 0], ["2026-01", 70, 70, 70, 44, 0], ["2026-02", 179, 179, 124, 0, 0], ["2026-03", 162, 162, 159, 115, 0], ["2026-04", 318, 318, 282, 58, 0], ["2026-05", 273, 273, 273, 136, 0], ["2026-06", 386, 386, 386, 340, 1], ["2026-07", 328, 328, 328, 246, 40], ["2026-08", 634, 634, 556, 254, 29], ["2026-09", 556, 556, 556, 328, 1], ["2026-10", 267, 267, 267, 160, 19]],
   "gen": "2026-10-20",
   "base": "2021-12-01",
@@ -10061,6 +10111,8 @@ var LIVE_USER = '';
       return "<div class=\"kpi\"><span>".concat(t, "</span><b>").concat(v, "</b><span>").concat(up == null ? s : "<em class=\"".concat(up ? 'up' : 'down', "\">").concat(up ? '▲' : '▼', "</em> ").concat(s), "</span></div>");
     }).join('');
     drawEloM();
+    drawMonth();
+    drawStreaks();
   }
   // games per month by own rating: number, % at or above each level, and % by band
   function drawEloM() {
@@ -10196,6 +10248,102 @@ var LIVE_USER = '';
     });
   }
 
+  // ---------- this month vs the previous one (last 30 days vs the 30 before) ----------
+  function drawMonth() {
+    var el = $('monthCmp');
+    if (!el || !DAYS.length) return;
+    var endD = new Date((SD.gen ? new Date(SD.gen + 'T00:00:00Z') : DAYS[DAYS.length - 1].date).getTime() + 864e5); // includes the last day
+    var win = function win(a, b) {
+      var B = emptyB('', '');
+      DAYS.forEach(function (r) {
+        var t = (endD - r.date) / 864e5;
+        if (t > a && t <= b) addDay(B, r);
+      });
+      var last = DAYS.filter(function (r) {
+        return (endD - r.date) / 864e5 > a && (endD - r.date) / 864e5 <= b && r.elo != null && r.gn;
+      }).pop();
+      B.elo = last ? last.elo : null;
+      return B;
+    };
+    var now = win(0, 30),
+      prev = win(30, 60);
+    var rw = function rw(a, b) {
+      return SD.rush.filter(function (x) {
+        var t = (endD / 1000 - x[0]) / 86400;
+        return t > a && t <= b;
+      }).map(function (x) {
+        return x[1];
+      });
+    };
+    var r1 = rw(0, 30),
+      r0 = rw(30, 60),
+      avg = function avg(v) {
+        return v.length ? v.reduce(function (p, c) {
+          return p + c;
+        }, 0) / v.length : null;
+      };
+    var pz = SD.puz.map(function (r) {
+      return {
+        d: new Date(r[0] + 'T00:00:00Z'),
+        close: r[2]
+      };
+    });
+    var pzAt = function pzAt(days) {
+      var lim = new Date(endD - days * 864e5);
+      var x = pz.filter(function (r) {
+        return r.d <= lim && r.close;
+      }).pop();
+      return x ? x.close : null;
+    };
+    // [label, previous, now, format, higher is better, minimal change that counts]
+    var rows = [['Elo al final', prev.elo, now.elo, fInt, true, 10], ['Elo medio', M.eloAvg(prev), M.eloAvg(now), fInt, true, 10], ['Partidas', prev.n, now.n, fInt, null, 0], ['Puntuación', M.score(prev), M.score(now), fPct, true, 1.5], ['Precisión', M.acc(prev), M.acc(now), fPct, true, 0.3], ['Precisión en la apertura', M.op(prev), M.op(now), fPct, true, 0.4], ['Precisión en el medio juego', M.mg(prev), M.mg(now), fPct, true, 0.4], ['Precisión en el final', M.eg(prev), M.eg(now), fPct, true, 0.4], ['Fallos graves / 100 jugadas', M.per(prev, 'bl', 'm'), M.per(now, 'bl', 'm'), f2, false, 0.15], ['Errores / 100 jugadas', M.per(prev, 'mi', 'm'), M.per(now, 'mi', 'm'), f2, false, 0.15], ['Ocasiones de ganar perdidas / partida', M.per(prev, 'mw', 'g'), M.per(now, 'mw', 'g'), f2, false, 0.03], ['Derrotas por tiempo', M.to(prev), M.to(now), fPct, false, 1], ['Jugadas de libro / partida', M.book(prev), M.book(now), f2, true, 0.1], ['Puzzle Rush (media)', avg(r0), avg(r1), function (v) {
+      return nf(v);
+    }, true, 1], ['Puzzle Rush (mejor serie)', r0.length ? Math.max.apply(null, r0) : null, r1.length ? Math.max.apply(null, r1) : null, fInt, true, 1], ['Problemas (puntuación)', pzAt(30), pzAt(0), fInt, true, 10]];
+    var good = [],
+      bad = [];
+    var tr = rows.map(function (_ref8) {
+      var _ref9 = _slicedToArray(_ref8, 6),
+        lab = _ref9[0],
+        a = _ref9[1],
+        b = _ref9[2],
+        f = _ref9[3],
+        up = _ref9[4],
+        min = _ref9[5];
+      var cls = '',
+        arrow = '';
+      if (a != null && b != null && up != null && Math.abs(b - a) >= min && min > 0) {
+        var better = up ? b > a : b < a;
+        cls = better ? 'cell-good' : 'cell-bad';
+        arrow = b > a ? '▲' : '▼';
+        (better ? good : bad).push("".concat(lab, ": ").concat(f(a), " \u2192 ").concat(f(b)));
+      }
+      var d = a != null && b != null ? (b - a > 0 ? '+' : '') + f(b - a) : '–';
+      return "<tr><td>".concat(lab, "</td><td>").concat(f(a), "</td><td><b>").concat(f(b), "</b></td><td class=\"").concat(cls, "\">").concat(arrow, " ").concat(d, "</td></tr>");
+    }).join('');
+    var fd = function fd(d) {
+      return fmtD(d);
+    };
+    el.innerHTML = "<p class=\"note\" style=\"margin:0;color:var(--muted);font-size:12.5px\">\xDAltimos 30 d\xEDas (hasta el ".concat(fd(new Date(endD - 864e5)), ") frente a los 30 anteriores. Verde: mejora; rojo: empeora. Los cambios muy peque\xF1os no se marcan.</p>\n      <div class=\"cols2\"><div><h4>Mejora</h4><ul>").concat(good.length ? good.map(function (x) {
+      return "<li>".concat(x, "</li>");
+    }).join('') : '<li>Nada destacable este mes.</li>', "</ul></div><div><h4>Empeora</h4><ul>").concat(bad.length ? bad.map(function (x) {
+      return "<li>".concat(x, "</li>");
+    }).join('') : '<li>Nada destacable este mes.</li>', "</ul></div></div>\n      <details><summary style=\"cursor:pointer;font-weight:600\">Ver todas las cifras</summary><div class=\"tblwrap\" style=\"margin-top:8px\"><table class=\"stbl\"><thead><tr><th>Indicador</th><th>Mes anterior</th><th>Este mes</th><th>Cambio</th></tr></thead><tbody>").concat(tr, "</tbody></table></div></details>");
+  }
+  // ---------- streaks of games at or above each rating level ----------
+  function drawStreaks() {
+    var el = $('streaks');
+    if (!el || !SD.streaks) return;
+    var d = function d(t) {
+      return t ? fmtD(new Date(t * 1000)) : '';
+    };
+    var lv = SD.streaks.lv;
+    el.innerHTML = "<div class=\"tblwrap\"><table class=\"stbl\"><thead><tr><th>Nivel</th><th>Racha actual</th><th>Mejor racha</th></tr></thead><tbody>".concat(Object.keys(lv).sort().map(function (t) {
+      var s = lv[t];
+      var cur = s.cur ? "<b>".concat(fInt(s.cur), "</b> partidas <span style=\"color:var(--muted)\">desde el ").concat(d(s.cf), "</span>") : '<span style="color:var(--muted)">—</span>';
+      var best = s.best ? "<b>".concat(fInt(s.best), "</b> partidas <span style=\"color:var(--muted)\">").concat(d(s.bf), " \u2013 ").concat(d(s.bt), "</span>").concat(s.cur && s.cur === s.best ? ' <span class="cell-good">(es la actual)</span>' : '') : '<span style="color:var(--muted)">aún ninguna</span>';
+      return "<tr><td>".concat(t, "+</td><td>").concat(cur, "</td><td>").concat(best, "</td></tr>");
+    }).join(''), "</tbody></table></div>\n      <p class=\"note\" style=\"margin:6px 0 0;color:var(--muted);font-size:12.5px\">Partidas seguidas terminadas con tu Elo en ese nivel o m\xE1s. La racha se corta en cuanto una partida te deja por debajo.</p>");
+  }
   // ---------- Evolución ----------
   function drawEvo() {
     seg('evoGroup', 'g', function () {
@@ -10440,11 +10588,11 @@ var LIVE_USER = '';
     var distinct = failRows(weeks[11]).filter(function (x) {
       return x.fails;
     }).length;
-    $('trnKpis').innerHTML = [['Jugadas practicadas', fInt(now[0]), 'esta semana'], ['Fallos', fInt(now[1]), now[0] ? nf(pct(now)) + ' % de las jugadas' : '–'], ['Posiciones con fallo', fInt(distinct), 'distintas, esta semana'], ['Semana pasada', prev[0] ? nf(pct(prev)) + ' %' : '–', prev[0] ? "".concat(prev[1], " fallos en ").concat(prev[0], " jugadas") : 'sin datos']].map(function (_ref8) {
-      var _ref9 = _slicedToArray(_ref8, 3),
-        a = _ref9[0],
-        b = _ref9[1],
-        c = _ref9[2];
+    $('trnKpis').innerHTML = [['Jugadas practicadas', fInt(now[0]), 'esta semana'], ['Fallos', fInt(now[1]), now[0] ? nf(pct(now)) + ' % de las jugadas' : '–'], ['Posiciones con fallo', fInt(distinct), 'distintas, esta semana'], ['Semana pasada', prev[0] ? nf(pct(prev)) + ' %' : '–', prev[0] ? "".concat(prev[1], " fallos en ").concat(prev[0], " jugadas") : 'sin datos']].map(function (_ref0) {
+      var _ref1 = _slicedToArray(_ref0, 3),
+        a = _ref1[0],
+        b = _ref1[1],
+        c = _ref1[2];
       return "<div class=\"kpi\"><span>".concat(a, "</span><b>").concat(b, "</b><span>").concat(c, "</span></div>");
     }).join('');
     var ch = $('trnCharts');
@@ -10596,10 +10744,10 @@ var LIVE_USER = '';
   function tacRows() {
     // row: [q, n, forks 6x(f,m), pins 6x, free 6x, mates 5x(f,m), material f,m, capturing 6, hanging 6]
     var types = [];
-    [['Horquilla de', 2], ['Clavada con', 14], ['Capturar gratis:', 26]].forEach(function (_ref0) {
-      var _ref1 = _slicedToArray(_ref0, 2),
-        nm = _ref1[0],
-        off = _ref1[1];
+    [['Horquilla de', 2], ['Clavada con', 14], ['Capturar gratis:', 26]].forEach(function (_ref10) {
+      var _ref11 = _slicedToArray(_ref10, 2),
+        nm = _ref11[0],
+        off = _ref11[1];
       return PIE.forEach(function (p, i) {
         if (p === 'rey' && nm !== 'Horquilla de') return;
         types.push({
@@ -10780,10 +10928,10 @@ var LIVE_USER = '';
     var g = segVal('puzGroup', 'g') || 'M';
     var host = $('puzCharts');
     host.innerHTML = '';
-    var R = SD.rush.map(function (_ref10) {
-      var _ref11 = _slicedToArray(_ref10, 2),
-        t = _ref11[0],
-        s = _ref11[1];
+    var R = SD.rush.map(function (_ref12) {
+      var _ref13 = _slicedToArray(_ref12, 2),
+        t = _ref13[0],
+        s = _ref13[1];
       return {
         date: new Date(t * 1000),
         s: s
@@ -10817,10 +10965,10 @@ var LIVE_USER = '';
         return x.s;
       }),
       last30 = all.slice(-30);
-    $('puzKpis').innerHTML = [['Series jugadas', fInt(all.length)], ['Récord', Math.max.apply(null, all)], ['Media últimas 30', nf(avg(last30))], ['Media primeras 100', nf(avg(all.slice(0, 100)))], ['Problemas puntuados', fInt(SD.puz[SD.puz.length - 1][2]) + ' pts'], ['Máximo puntuados', '2.070']].map(function (_ref12) {
-      var _ref13 = _slicedToArray(_ref12, 2),
-        a = _ref13[0],
-        b = _ref13[1];
+    $('puzKpis').innerHTML = [['Series jugadas', fInt(all.length)], ['Récord', Math.max.apply(null, all)], ['Media últimas 30', nf(avg(last30))], ['Media primeras 100', nf(avg(all.slice(0, 100)))], ['Problemas puntuados', fInt(SD.puz[SD.puz.length - 1][2]) + ' pts'], ['Máximo puntuados', '2.070']].map(function (_ref14) {
+      var _ref15 = _slicedToArray(_ref14, 2),
+        a = _ref15[0],
+        b = _ref15[1];
       return "<div class=\"kpi\"><span>".concat(a, "</span><b>").concat(b, "</b></div>");
     }).join('');
     chart(host, {
