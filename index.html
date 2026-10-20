@@ -372,6 +372,10 @@ footer { font-size: 12px; color: var(--muted); max-width: 90ch; }
 .etables { display: grid; gap: 12px; margin-top: 12px; }
 .tscroll { overflow-x: auto; }
 .navsep { width: 1px; align-self: stretch; margin: 6px 4px; background: var(--line); }
+.wpbar { height: 8px; background: var(--line); border-radius: 99px; overflow: hidden; margin-top: 10px; } .wpbar i { display: block; height: 100%; background: var(--walnut); }
+.wptrain { display: grid; gap: 12px; margin-top: 12px; }
+@media (min-width: 900px) { .wptrain { grid-template-columns: minmax(0, 480px) 1fr; align-items: start; } }
+.wpclock { font-family: var(--font-mono); font-size: 22px; margin-bottom: 6px; }
 .erwch { display: flex; flex-wrap: wrap; gap: 6px; margin: 10px 0; }
 .erwch button { all: unset; cursor: pointer; font-size: 13px; padding: 6px 10px; border: 1px solid var(--line); border-radius: 999px; background: var(--panel); }
 .erwch button[aria-pressed="true"] { background: var(--walnut); color: #fff; border-color: var(--walnut); }
@@ -2182,6 +2186,7 @@ if (typeof define !== 'undefined')
     <button type="button" role="tab" data-main="bk-villa" aria-selected="false">De la Villa</button>
     <button type="button" role="tab" data-main="bk-silman" aria-selected="false">Silman</button>
     <button type="button" role="tab" data-main="bk-flores" aria-selected="false">Flores Rios</button>
+    <button type="button" role="tab" data-main="wp" aria-selected="false">Woodpecker</button>
   </nav>
 
   <div id="viewTrain" style="display:grid;gap:20px">
@@ -2482,6 +2487,18 @@ if (typeof define !== 'undefined')
     <p class="note" style="font-size:13px;color:var(--muted);margin:0">Las tácticas de tus partidas, calculadas con Stockfish. <b>Tuyas</b>: las tenías tú (aprovechadas o perdidas). <b>Del rival</b>: se las dejaste tú con un error. Pulsa una fila para ver esas partidas en «Mis partidas».</p>
     <div class="sbar"><select id="tCol" aria-label="Color"><option value="">Blancas y negras</option><option value="w">Con blancas</option><option value="b">Con negras</option></select><label for="tYear">Año</label><select id="tYear"></select></div>
     <div class="tblwrap" id="tSum"></div>
+  </section>
+  <section class="games" id="viewWp" hidden aria-label="Woodpecker">
+    <h3 style="margin:0">The Woodpecker Method</h3><p class="sumline" style="margin:2px 0 0">Axel Smith y Hans Tikkanen (Quality Chess)</p>
+    <p class="note" style="font-size:13px;color:var(--muted);margin:6px 0 0">El método: resuelve todos los ejercicios de un nivel (un ciclo) y repítelos una y otra vez, cada ciclo en la mitad de tiempo que el anterior, hasta reconocer los patrones al instante. Las posiciones son las del libro (numeradas como en él); las soluciones las ha calculado Stockfish, y si encuentras otra jugada que también gana, el motor del navegador la acepta. El progreso se guarda en este dispositivo.</p>
+    <div class="sbar"><label for="wpLevel">Nivel</label><select id="wpLevel"><option value="e">Fácil (1–222)</option><option value="i">Intermedio (223–984)</option><option value="a">Avanzado (985–1128)</option><option value="t">Todos (1–1128)</option></select><button type="button" class="btn small primary" id="wpGo">Empezar un ciclo</button><button type="button" class="btn small" id="wpNew">Ciclo nuevo</button></div>
+    <div id="wpBox"></div><div id="wpProg"></div>
+    <div class="wptrain" id="wpTrain" hidden>
+      <div class="gboardwrap"><div class="board" id="wpBoard" aria-label="Tablero del ejercicio"></div></div>
+      <div class="wpside"><div class="wpclock" id="wpClock">0 s</div><div class="msg info" id="wpInfo"></div>
+        <div class="controls"><button type="button" class="btn small" id="wpShow">Ver la solución</button><button type="button" class="btn small" id="wpSkip">Saltar</button></div></div>
+    </div>
+    <h4 class="gsubh">Tus ciclos</h4><div id="wpCycles"></div>
   </section>
   <section class="games" id="viewBook" hidden aria-label="Libro">
       <div id="bHead"></div>
@@ -9499,16 +9516,16 @@ function engJudge(_x2, _x3, _x4) {
   return _engJudge.apply(this, arguments);
 } // free exploration from the current position: any legal move for either side
 function _engJudge() {
-  _engJudge = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee10(seq, played, want) {
+  _engJudge = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee13(seq, played, want) {
     var tok, msgEl, before, g1, g2, white, a, b, s, pa, pb, f, diff, txt;
-    return _regenerator().w(function (_context11) {
-      while (1) switch (_context11.n) {
+    return _regenerator().w(function (_context14) {
+      while (1) switch (_context14.n) {
         case 0:
           if (!(!ENG_ON || ENGINE.status() === 'broken' || !want)) {
-            _context11.n = 1;
+            _context14.n = 1;
             break;
           }
-          return _context11.a(2);
+          return _context14.a(2);
         case 1:
           tok = ++engJudgeTok, msgEl = engEl('msg'), before = msgEl.innerHTML;
           g1 = new Chess(), g2 = new Chess();
@@ -9535,33 +9552,33 @@ function _engJudge() {
             to: want.slice(2, 4),
             promotion: 'q'
           });
-          _context11.n = 2;
+          _context14.n = 2;
           return ENGINE.evaluate(g1.fen(), 13);
         case 2:
-          a = _context11.v;
+          a = _context14.v;
           if (!(tok !== engJudgeTok || !a)) {
-            _context11.n = 3;
+            _context14.n = 3;
             break;
           }
-          return _context11.a(2);
+          return _context14.a(2);
         case 3:
-          _context11.n = 4;
+          _context14.n = 4;
           return ENGINE.evaluate(g2.fen(), 13);
         case 4:
-          b = _context11.v;
+          b = _context14.v;
           if (!(tok !== engJudgeTok || !b)) {
-            _context11.n = 5;
+            _context14.n = 5;
             break;
           }
-          return _context11.a(2);
+          return _context14.a(2);
         case 5:
           engKey = null;
           engUpdate(); // resume the panel's analysis
           if (!(msgEl.innerHTML !== before)) {
-            _context11.n = 6;
+            _context14.n = 6;
             break;
           }
-          return _context11.a(2);
+          return _context14.a(2);
         case 6:
           s = function s(x) {
             return (white ? 1 : -1) * engCp(x.lines[0]);
@@ -9576,9 +9593,9 @@ function _engJudge() {
           diff = pb - pa, txt = diff < 40 ? 'para el motor es igual de buena; aun así, apréndete la del plan' : diff < 120 ? 'un poco peor que la del plan' : diff < 300 ? 'claramente peor que la del plan' : 'un error grave';
           msgEl.insertAdjacentHTML('beforeend', "<div class=\"engjudge\">Motor: tu jugada ".concat(f(pa), " \xB7 la del plan ").concat(f(pb), " (desde tu lado): ").concat(txt, ".</div>"));
         case 7:
-          return _context11.a(2);
+          return _context14.a(2);
       }
-    }, _callee10);
+    }, _callee13);
   }));
   return _engJudge.apply(this, arguments);
 }
@@ -11186,8 +11203,414 @@ var BOOKS = {
   window.tacOpen = tacOpen;
   window.endOpen = endOpen;
   window.bookOpen = bookOpen;
+  window.drawBoardG = drawBoardG;
   window.gamesOpen = load;
   if (!$g('viewGames').hidden) load();
+})();
+
+// ---------- Woodpecker Method trainer: cycles over the book's 1128 positions (solutions computed with Stockfish) ----------
+(function () {
+  var $w = function $w(id) {
+    return document.getElementById(id);
+  };
+  var LEVELS = {
+    e: ['Fácil', 1, 222],
+    i: ['Intermedio', 223, 984],
+    a: ['Avanzado', 985, 1128],
+    t: ['Todos', 1, 1128]
+  };
+  var P = null,
+    S = null,
+    cur = null,
+    tick = null;
+  var load = function load() {
+    var s = null;
+    try {
+      s = JSON.parse(localStorage.getItem('taller.wp') || 'null');
+    } catch (e) {}
+    return s || {
+      level: 'e',
+      cycles: {
+        e: [],
+        i: [],
+        a: [],
+        t: []
+      }
+    };
+  };
+  var save = function save() {
+    try {
+      localStorage.setItem('taller.wp', JSON.stringify(S));
+    } catch (e) {}
+  };
+  var fmt = function fmt(s) {
+    s = Math.round(s);
+    var h = Math.floor(s / 3600),
+      m = Math.floor(s % 3600 / 60),
+      x = s % 60;
+    return (h ? h + ' h ' : '') + (h || m ? m + ' min ' : '') + (h ? '' : x + ' s');
+  };
+  var set = function set() {
+    var _LEVELS$S$level = _slicedToArray(LEVELS[S.level], 3),
+      a = _LEVELS$S$level[1],
+      b = _LEVELS$S$level[2];
+    return P.filter(function (p) {
+      return p[0] >= a && p[0] <= b;
+    });
+  };
+  var cycle = function cycle() {
+    var c = S.cycles[S.level];
+    return c.length ? c[c.length - 1] : null;
+  };
+  function open() {
+    return _open.apply(this, arguments);
+  } // cycles table and progress
+  function _open() {
+    _open = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee1() {
+      var _t8;
+      return _regenerator().w(function (_context1) {
+        while (1) switch (_context1.p = _context1.n) {
+          case 0:
+            if (!S) S = load();
+            if (P) {
+              _context1.n = 4;
+              break;
+            }
+            $w('wpBox').innerHTML = '<p class="empty">Cargando ejercicios…</p>';
+            _context1.p = 1;
+            _context1.n = 2;
+            return fetch(GAMES_BASE + 'woodpecker.json').then(function (r) {
+              if (!r.ok) throw 0;
+              return r.json();
+            });
+          case 2:
+            P = _context1.v;
+            _context1.n = 4;
+            break;
+          case 3:
+            _context1.p = 3;
+            _t8 = _context1.v;
+            $w('wpBox').innerHTML = '<p class="empty">No se han podido cargar los ejercicios.</p>';
+            return _context1.a(2);
+          case 4:
+            $w('wpLevel').value = S.level;
+            $w('wpLevel').onchange = function () {
+              S.level = $w('wpLevel').value;
+              save();
+              stop();
+              panel();
+            };
+            $w('wpNew').onclick = function () {
+              if (cycle() && !cycle().end && !confirm('¿Empezar un ciclo nuevo? El actual quedará sin terminar.')) return;
+              S.cycles[S.level].push({
+                start: Date.now(),
+                end: null,
+                res: {}
+              });
+              save();
+              stop();
+              panel();
+              next();
+            };
+            $w('wpGo').onclick = function () {
+              if (!cycle() || cycle().end) S.cycles[S.level].push({
+                start: Date.now(),
+                end: null,
+                res: {}
+              });
+              save();
+              next();
+            };
+            panel();
+          case 5:
+            return _context1.a(2);
+        }
+      }, _callee1, null, [[1, 3]]);
+    }));
+    return _open.apply(this, arguments);
+  }
+  function panel() {
+    var cs = S.cycles[S.level],
+      n = set().length,
+      rows = cs.map(function (c, i) {
+        var r = Object.values(c.res),
+          ok = r.filter(function (x) {
+            return x[0];
+          }).length,
+          t = r.reduce(function (a, x) {
+            return a + x[1];
+          }, 0);
+        return "<tr><td>".concat(i + 1, "</td><td>").concat(r.length, " de ").concat(n, "</td><td>").concat(r.length ? Math.round(100 * ok / r.length) + ' %' : '–', "</td><td>").concat(r.length ? fmt(t) : '–', "</td><td>").concat(r.length ? fmt(t / r.length) : '–', "</td><td>").concat(new Date(c.start).toLocaleDateString('es-ES')).concat(c.end ? ' – ' + new Date(c.end).toLocaleDateString('es-ES') : ' (en curso)', "</td></tr>");
+      });
+    var c = cycle(),
+      doneN = c ? Object.keys(c.res).length : 0;
+    var avail = P.length < 1128 ? "<p class=\"sumline\">Disponibles ahora: ".concat(P.length, " de 1.128 ejercicios (el resto se est\xE1 calculando).</p>") : '';
+    $w('wpCycles').innerHTML = cs.length ? "<div class=\"tscroll\"><table class=\"stbl\"><thead><tr><th>Ciclo</th><th>Hechos</th><th>A la primera</th><th>Tiempo total</th><th>Por ejercicio</th><th>Fechas</th></tr></thead><tbody>".concat(rows.join(''), "</tbody></table></div>") : '<p class="sumline">Aún no has empezado ningún ciclo en este nivel.</p>';
+    var prev = cs.length >= 2 ? cs[cs.length - 2] : null,
+      goal = prev && prev.end ? (prev.end - prev.start) / 2 : null;
+    $w('wpProg').innerHTML = avail + (c && !c.end ? "<div class=\"wpbar\"><i style=\"width:".concat((100 * doneN / n).toFixed(1), "%\"></i></div><p class=\"sumline\">Ciclo ").concat(cs.length, ": ").concat(doneN, " de ").concat(n, " ejercicios.").concat(goal ? " Objetivo del m\xE9todo: terminarlo en la mitad de d\xEDas que el anterior (".concat(Math.ceil(goal / 864e5), " d\xEDas).") : '', "</p>") : '');
+    $w('wpGo').textContent = c && !c.end ? 'Continuar el ciclo' : 'Empezar un ciclo';
+  }
+  function stop() {
+    clearInterval(tick);
+    tick = null;
+    cur = null;
+    $w('wpTrain').hidden = true;
+  }
+  function next() {
+    var c = cycle(),
+      todo = set().filter(function (p) {
+        return !(p[0] in c.res);
+      });
+    if (!todo.length && P.length < 1128) {
+      stop();
+      panel();
+      $w('wpProg').insertAdjacentHTML('afterbegin', "<p class=\"msg info\">Has hecho todos los ejercicios disponibles por ahora (".concat(P.length, " de 1.128): el resto se est\xE1 preparando y aparecer\xE1 en la pr\xF3xima actualizaci\xF3n. El ciclo sigue abierto.</p>"));
+      return;
+    }
+    if (!todo.length) {
+      c.end = Date.now();
+      save();
+      stop();
+      panel();
+      $w('wpProg').insertAdjacentHTML('afterbegin', '<p class="msg info"><b>¡Ciclo terminado!</b> El método propone repetir los mismos ejercicios en la mitad de tiempo.</p>');
+      return;
+    }
+    var p = todo[0],
+      g = new Chess(p[2]);
+    cur = {
+      p: p,
+      fen: p[2],
+      pv: p[4] ? p[4].split(' ') : [],
+      k: 0,
+      me: g.turn(),
+      fails: 0,
+      shown: false,
+      t0: Date.now(),
+      sel: null,
+      last: null,
+      busy: false
+    };
+    $w('wpTrain').hidden = false;
+    draw();
+    say("<b>Ejercicio ".concat(p[1], "</b> \xB7 juegan las ").concat(cur.me === 'w' ? 'blancas' : 'negras', " \xB7 ").concat(p[3] === '1/2-1/2' ? 'consigue las tablas' : 'gana', ". Toca la pieza y despu\xE9s la casilla."));
+    clearInterval(tick);
+    tick = setInterval(function () {
+      $w('wpClock').textContent = fmt((Date.now() - cur.t0) / 1000);
+    }, 500);
+    panel();
+  }
+  var say = function say(h) {
+    $w('wpInfo').innerHTML = h;
+  };
+  function draw(arrows) {
+    window.drawBoardG($w('wpBoard'), cur.fen, cur.me === 'b', {
+      last: cur.last,
+      arrows: arrows || [],
+      sel: cur.sel
+    });
+  }
+  function finish(ok, msg) {
+    var c = cycle(),
+      secs = (Date.now() - cur.t0) / 1000;
+    clearInterval(tick);
+    c.res[cur.p[0]] = [ok && !cur.fails && !cur.shown ? 1 : 0, Math.round(secs)];
+    save();
+    panel();
+    say(msg + " <button type=\"button\" class=\"btn small primary\" id=\"wpNext\">Siguiente</button>");
+    $w('wpNext').onclick = next;
+    cur.busy = true;
+  }
+  function tap(_x8) {
+    return _tap.apply(this, arguments);
+  }
+  function _tap() {
+    _tap = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee10(sq) {
+      var g, _pc, from, pc, m, u, want, ok;
+      return _regenerator().w(function (_context10) {
+        while (1) switch (_context10.n) {
+          case 0:
+            if (!(!cur || cur.busy)) {
+              _context10.n = 1;
+              break;
+            }
+            return _context10.a(2);
+          case 1:
+            g = new Chess(cur.fen);
+            if (cur.sel) {
+              _context10.n = 2;
+              break;
+            }
+            _pc = g.get(sq);
+            if (_pc && _pc.color === g.turn()) {
+              cur.sel = sq;
+              draw();
+            }
+            return _context10.a(2);
+          case 2:
+            from = cur.sel;
+            cur.sel = null;
+            if (!(from === sq)) {
+              _context10.n = 3;
+              break;
+            }
+            draw();
+            return _context10.a(2);
+          case 3:
+            pc = g.get(sq);
+            if (!(pc && pc.color === g.turn())) {
+              _context10.n = 4;
+              break;
+            }
+            cur.sel = sq;
+            draw();
+            return _context10.a(2);
+          case 4:
+            m = g.move({
+              from: from,
+              to: sq,
+              promotion: 'q'
+            });
+            if (m) {
+              _context10.n = 5;
+              break;
+            }
+            draw();
+            return _context10.a(2);
+          case 5:
+            u = m.from + m.to + (m.promotion ? m.promotion : ''), want = cur.pv[cur.k];
+            if (!(want && (u === want || u.slice(0, 4) === want.slice(0, 4)))) {
+              _context10.n = 6;
+              break;
+            }
+            return _context10.a(2, advance(g, m));
+          case 6:
+            // another move: ask the browser engine whether it is as good as the solution
+            cur.busy = true;
+            say("Compruebo ".concat(es(m.san), " con el motor\u2026"));
+            _context10.n = 7;
+            return altOk(g.fen());
+          case 7:
+            ok = _context10.v;
+            cur.busy = false;
+            if (!ok) {
+              _context10.n = 8;
+              break;
+            }
+            cur.fen = g.fen();
+            cur.last = m.from + m.to;
+            draw();
+            return _context10.a(2, finish(true, "<b style=\"color:#2f7d4f\">\xA1Bien! ".concat(es(m.san), "</b> tambi\xE9n ").concat(cur.p[3] === '1/2-1/2' ? 'aguanta' : 'gana', " (no es la l\xEDnea del libro, pero el motor la da por buena).")));
+          case 8:
+            cur.fails++;
+            draw();
+            say("<b style=\"color:#c0392b\">".concat(es(m.san), " no es.</b> Int\xE9ntalo otra vez o pulsa \xABVer la soluci\xF3n\xBB."));
+          case 9:
+            return _context10.a(2);
+        }
+      }, _callee10);
+    }));
+    return _tap.apply(this, arguments);
+  }
+  function advance(g, m) {
+    cur.fen = g.fen();
+    cur.last = m.from + m.to;
+    cur.k++;
+    draw();
+    if (cur.k >= cur.pv.length || (g.game_over ? g.game_over() : g.isGameOver())) return finish(true, "<b style=\"color:#2f7d4f\">\xA1Resuelto!</b> ".concat(line()));
+    var r = cur.pv[cur.k];
+    cur.busy = true;
+    setTimeout(function () {
+      var h = new Chess(cur.fen);
+      var mv = h.move({
+        from: r.slice(0, 2),
+        to: r.slice(2, 4),
+        promotion: r[4]
+      });
+      cur.fen = h.fen();
+      cur.last = r.slice(0, 4);
+      cur.k++;
+      cur.busy = false;
+      draw();
+      if (cur.k >= cur.pv.length) return finish(true, "<b style=\"color:#2f7d4f\">\xA1Resuelto!</b> ".concat(line()));
+      say("Bien: ".concat(es(m.san), ". El rival responde ").concat(mv ? es(mv.san) : '', ". Sigue."));
+    }, 450);
+  }
+  function line() {
+    var g = new Chess(cur.p[2]);
+    return 'Solución: ' + cur.pv.map(function (u) {
+      var m = g.move({
+        from: u.slice(0, 2),
+        to: u.slice(2, 4),
+        promotion: u[4]
+      });
+      return m ? es(m.san) : '';
+    }).join(' ');
+  }
+  function altOk(_x9) {
+    return _altOk.apply(this, arguments);
+  }
+  function _altOk() {
+    _altOk = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee11(fen) {
+      var r, l, sgn, v, sc;
+      return _regenerator().w(function (_context11) {
+        while (1) switch (_context11.n) {
+          case 0:
+            if (!(typeof ENGINE === 'undefined')) {
+              _context11.n = 1;
+              break;
+            }
+            return _context11.a(2, false);
+          case 1:
+            _context11.n = 2;
+            return ENGINE.evaluate(fen, 14);
+          case 2:
+            r = _context11.v;
+            if (!(!r || !r.lines || !r.lines[0])) {
+              _context11.n = 3;
+              break;
+            }
+            return _context11.a(2, false);
+          case 3:
+            l = r.lines[0], sgn = cur.me === 'w' ? 1 : -1, v = engCp(l) * sgn, sc = cur.p[5] || '0';
+            if (!(sc[0] === '#')) {
+              _context11.n = 4;
+              break;
+            }
+            return _context11.a(2, l.mate != null && l.mate * sgn > 0);
+          case 4:
+            if (!(cur.p[3] === '1/2-1/2')) {
+              _context11.n = 5;
+              break;
+            }
+            return _context11.a(2, v >= -60);
+          case 5:
+            return _context11.a(2, v >= Math.min(+sc - 100, 300));
+        }
+      }, _callee11);
+    }));
+    return _altOk.apply(this, arguments);
+  }
+  $w('wpBoard').addEventListener('click', function (ev) {
+    var s = ev.target.closest('.sq');
+    if (s) tap(s.dataset.sq);
+  });
+  $w('wpShow').onclick = function () {
+    if (!cur || cur.busy) return;
+    cur.shown = true;
+    var u = cur.pv[cur.k];
+    if (u) draw([{
+      u: u,
+      c: '#2f7d4f'
+    }]);
+    say(line() + ' <span class="erwnone">(este ejercicio contará como fallado en el ciclo)</span>');
+  };
+  $w('wpSkip').onclick = function () {
+    if (!cur) return;
+    cur.shown = true;
+    finish(false, line());
+  };
+  window.wpOpen = open;
 })();
 
 // ---------- reset scores (while testing) ----------
@@ -15418,18 +15841,18 @@ var LIVE_USER = '';
     return _fetchGames.apply(this, arguments);
   }
   function _fetchGames() {
-    _fetchGames = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee1() {
-      var user, st, cache, ar, months, nowKey, todo, i, _iterator3, _step4, _loop4, _t8, _t9;
-      return _regenerator().w(function (_context10) {
-        while (1) switch (_context10.p = _context10.n) {
+    _fetchGames = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee12() {
+      var user, st, cache, ar, months, nowKey, todo, i, _iterator3, _step4, _loop4, _t9, _t0;
+      return _regenerator().w(function (_context13) {
+        while (1) switch (_context13.p = _context13.n) {
           case 0:
             user = $('liveUser').value.trim().toLowerCase();
             if (user) {
-              _context10.n = 1;
+              _context13.n = 1;
               break;
             }
             $('liveUser').focus();
-            return _context10.a(2);
+            return _context13.a(2);
           case 1:
             try {
               localStorage.setItem('taller.user', user);
@@ -15443,14 +15866,14 @@ var LIVE_USER = '';
               g: [],
               done: []
             };
-            _context10.p = 2;
-            _context10.n = 3;
+            _context13.p = 2;
+            _context13.n = 3;
             return fetch("https://api.chess.com/pub/player/".concat(encodeURIComponent(user), "/games/archives")).then(function (r) {
               if (!r.ok) throw new Error(r.status === 404 ? 'Usuario no encontrado' : 'Error ' + r.status);
               return r.json();
             });
           case 3:
-            ar = _context10.v;
+            ar = _context13.v;
             months = ar.archives;
             nowKey = months[months.length - 1];
             todo = months.filter(function (m) {
@@ -15458,21 +15881,21 @@ var LIVE_USER = '';
             });
             i = 0;
             _iterator3 = _createForOfIteratorHelper(todo);
-            _context10.p = 4;
+            _context13.p = 4;
             _loop4 = /*#__PURE__*/_regenerator().m(function _loop4() {
               var m, j, key;
-              return _regenerator().w(function (_context1) {
-                while (1) switch (_context1.n) {
+              return _regenerator().w(function (_context12) {
+                while (1) switch (_context12.n) {
                   case 0:
                     m = _step4.value;
                     i++;
                     st.textContent = "Descargando ".concat(i, " de ").concat(todo.length, "\u2026");
-                    _context1.n = 1;
+                    _context12.n = 1;
                     return fetch(m).then(function (r) {
                       return r.json();
                     });
                   case 1:
-                    j = _context1.v;
+                    j = _context12.v;
                     key = m.slice(-7);
                     cache.g = cache.g.filter(function (x) {
                       return x.m !== key;
@@ -15502,31 +15925,31 @@ var LIVE_USER = '';
                     });
                     if (cache.done.indexOf(m) < 0) cache.done.push(m);
                   case 2:
-                    return _context1.a(2);
+                    return _context12.a(2);
                 }
               }, _loop4);
             });
             _iterator3.s();
           case 5:
             if ((_step4 = _iterator3.n()).done) {
-              _context10.n = 7;
+              _context13.n = 7;
               break;
             }
-            return _context10.d(_regeneratorValues(_loop4()), 6);
+            return _context13.d(_regeneratorValues(_loop4()), 6);
           case 6:
-            _context10.n = 5;
+            _context13.n = 5;
             break;
           case 7:
-            _context10.n = 9;
+            _context13.n = 9;
             break;
           case 8:
-            _context10.p = 8;
-            _t8 = _context10.v;
-            _iterator3.e(_t8);
+            _context13.p = 8;
+            _t9 = _context13.v;
+            _iterator3.e(_t9);
           case 9:
-            _context10.p = 9;
+            _context13.p = 9;
             _iterator3.f();
-            return _context10.f(9);
+            return _context13.f(9);
           case 10:
             cache.g.sort(function (a, b) {
               return a.t - b.t;
@@ -15535,16 +15958,16 @@ var LIVE_USER = '';
             GAMES = cache.g;
             st.textContent = "".concat(GAMES.length, " partidas blitz \xB7 actualizado");
             renderGames();
-            _context10.n = 12;
+            _context13.n = 12;
             break;
           case 11:
-            _context10.p = 11;
-            _t9 = _context10.v;
-            st.textContent = 'No he podido descargar: ' + (_t9 && _t9.message ? _t9.message : _t9) + '. Si estás dentro de Claude, prueba la versión del iPad.';
+            _context13.p = 11;
+            _t0 = _context13.v;
+            st.textContent = 'No he podido descargar: ' + (_t0 && _t0.message ? _t0.message : _t0) + '. Si estás dentro de Claude, prueba la versión del iPad.';
           case 12:
-            return _context10.a(2);
+            return _context13.a(2);
         }
-      }, _callee1, null, [[4, 8, 9, 10], [2, 11]]);
+      }, _callee12, null, [[4, 8, 9, 10], [2, 11]]);
     }));
     return _fetchGames.apply(this, arguments);
   }
@@ -15867,6 +16290,10 @@ var LIVE_USER = '';
     if ($('viewBook')) {
       $('viewBook').hidden = !m.startsWith('bk-');
       if (m.startsWith('bk-') && window.bookOpen) window.bookOpen(m.slice(3));
+    }
+    if ($('viewWp')) {
+      $('viewWp').hidden = m !== 'wp';
+      if (m === 'wp' && window.wpOpen) window.wpOpen();
     }
     if (m === 'report') showSub('sum');
     if (m === 'stats') {
