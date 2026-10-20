@@ -2187,6 +2187,7 @@ if (typeof define !== 'undefined')
     <button type="button" role="tab" data-main="bk-silman" aria-selected="false">Silman</button>
     <button type="button" role="tab" data-main="bk-flores" aria-selected="false">Flores Rios</button>
     <button type="button" role="tab" data-main="wp" aria-selected="false">Woodpecker</button>
+    <button type="button" role="tab" data-main="lc" aria-selected="false">Logical Chess</button>
   </nav>
 
   <div id="viewTrain" style="display:grid;gap:20px">
@@ -2487,6 +2488,20 @@ if (typeof define !== 'undefined')
     <p class="note" style="font-size:13px;color:var(--muted);margin:0">Las tácticas de tus partidas, calculadas con Stockfish. <b>Tuyas</b>: las tenías tú (aprovechadas o perdidas). <b>Del rival</b>: se las dejaste tú con un error. Pulsa una fila para ver esas partidas en «Mis partidas».</p>
     <div class="sbar"><select id="tCol" aria-label="Color"><option value="">Blancas y negras</option><option value="w">Con blancas</option><option value="b">Con negras</option></select><label for="tYear">Año</label><select id="tYear"></select></div>
     <div class="tblwrap" id="tSum"></div>
+  </section>
+  <section class="games" id="viewLc" hidden aria-label="Logical Chess">
+    <h3 style="margin:0">Logical Chess: Move by Move</h3><p class="sumline" style="margin:2px 0 0">Irving Chernev</p>
+    <p class="note" style="font-size:13px;color:var(--muted);margin:6px 0 0">Las 33 partidas del libro, en su orden. Aquí solo están las jugadas: los comentarios de Chernev, jugada a jugada, están en el libro y en el estudio de Lichess (enlace en cada partida). Con «Adivina la jugada» juegas tú las jugadas del ganador.</p>
+    <div class="ggrid">
+      <div class="glist2" id="lcList"></div>
+      <div class="gview card" id="lcView" hidden>
+        <div id="lcHead"></div>
+        <div class="gboardwrap"><div class="board" id="lcBoard" aria-label="Tablero"></div></div>
+        <div class="msg info" id="lcInfo"></div>
+        <div class="controls"><button class="btn small" id="lcFirst" type="button" aria-label="Al inicio">⏮</button><button class="btn small" id="lcPrev" type="button" aria-label="Anterior">◀</button><button class="btn small" id="lcNext" type="button" aria-label="Siguiente">▶</button><button class="btn small" id="lcLast" type="button" aria-label="Al final">⏭</button><button class="btn small primary" id="lcGuess" type="button">Adivina la jugada</button><button class="btn small" id="lcWhy" type="button" hidden>¿Por qué esta jugada?</button></div>
+        <div class="mtable2" id="lcMoves"></div>
+      </div>
+    </div>
   </section>
   <section class="games" id="viewWp" hidden aria-label="Woodpecker">
     <h3 style="margin:0">The Woodpecker Method</h3><p class="sumline" style="margin:2px 0 0">Axel Smith y Hans Tikkanen (Quality Chess)</p>
@@ -9516,16 +9531,16 @@ function engJudge(_x2, _x3, _x4) {
   return _engJudge.apply(this, arguments);
 } // free exploration from the current position: any legal move for either side
 function _engJudge() {
-  _engJudge = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee15(seq, played, want) {
+  _engJudge = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee17(seq, played, want) {
     var tok, msgEl, before, g1, g2, white, a, b, s, pa, pb, f, diff, txt;
-    return _regenerator().w(function (_context16) {
-      while (1) switch (_context16.n) {
+    return _regenerator().w(function (_context18) {
+      while (1) switch (_context18.n) {
         case 0:
           if (!(!ENG_ON || ENGINE.status() === 'broken' || !want)) {
-            _context16.n = 1;
+            _context18.n = 1;
             break;
           }
-          return _context16.a(2);
+          return _context18.a(2);
         case 1:
           tok = ++engJudgeTok, msgEl = engEl('msg'), before = msgEl.innerHTML;
           g1 = new Chess(), g2 = new Chess();
@@ -9552,33 +9567,33 @@ function _engJudge() {
             to: want.slice(2, 4),
             promotion: 'q'
           });
-          _context16.n = 2;
+          _context18.n = 2;
           return ENGINE.evaluate(g1.fen(), 13);
         case 2:
-          a = _context16.v;
+          a = _context18.v;
           if (!(tok !== engJudgeTok || !a)) {
-            _context16.n = 3;
+            _context18.n = 3;
             break;
           }
-          return _context16.a(2);
+          return _context18.a(2);
         case 3:
-          _context16.n = 4;
+          _context18.n = 4;
           return ENGINE.evaluate(g2.fen(), 13);
         case 4:
-          b = _context16.v;
+          b = _context18.v;
           if (!(tok !== engJudgeTok || !b)) {
-            _context16.n = 5;
+            _context18.n = 5;
             break;
           }
-          return _context16.a(2);
+          return _context18.a(2);
         case 5:
           engKey = null;
           engUpdate(); // resume the panel's analysis
           if (!(msgEl.innerHTML !== before)) {
-            _context16.n = 6;
+            _context18.n = 6;
             break;
           }
-          return _context16.a(2);
+          return _context18.a(2);
         case 6:
           s = function s(x) {
             return (white ? 1 : -1) * engCp(x.lines[0]);
@@ -9593,9 +9608,9 @@ function _engJudge() {
           diff = pb - pa, txt = diff < 40 ? 'para el motor es igual de buena; aun así, apréndete la del plan' : diff < 120 ? 'un poco peor que la del plan' : diff < 300 ? 'claramente peor que la del plan' : 'un error grave';
           msgEl.insertAdjacentHTML('beforeend', "<div class=\"engjudge\">Motor: tu jugada ".concat(f(pa), " \xB7 la del plan ").concat(f(pb), " (desde tu lado): ").concat(txt, ".</div>"));
         case 7:
-          return _context16.a(2);
+          return _context18.a(2);
       }
-    }, _callee15);
+    }, _callee17);
   }));
   return _engJudge.apply(this, arguments);
 }
@@ -11804,6 +11819,294 @@ var BOOKS = {
     finish(false, line());
   };
   window.wpOpen = open;
+})();
+
+// ---------- Logical Chess: Move by Move (Chernev): the book's 33 games, move by move ----------
+// Only the moves and game data are stored (historic games). The book's commentary stays in the book / the Lichess study:
+// each game links to its chapter there. In claude.ai, "¿Por qué esta jugada?" asks Claude for an explanation in its own words.
+(function () {
+  var $l = function $l(id) {
+    return document.getElementById(id);
+  };
+  var G = null,
+    cur = null,
+    guess = false,
+    score = {
+      ok: 0,
+      n: 0
+    };
+  function open() {
+    return _open2.apply(this, arguments);
+  }
+  function _open2() {
+    _open2 = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee14() {
+      var seen, _t1;
+      return _regenerator().w(function (_context14) {
+        while (1) switch (_context14.p = _context14.n) {
+          case 0:
+            if (G) {
+              _context14.n = 4;
+              break;
+            }
+            _context14.p = 1;
+            _context14.n = 2;
+            return fetch(GAMES_BASE + 'logical.json').then(function (r) {
+              if (!r.ok) throw 0;
+              return r.json();
+            });
+          case 2:
+            G = _context14.v;
+            _context14.n = 4;
+            break;
+          case 3:
+            _context14.p = 3;
+            _t1 = _context14.v;
+            $l('lcList').innerHTML = '<p class="empty">No se han podido cargar las partidas.</p>';
+            return _context14.a(2);
+          case 4:
+            seen = {};
+            try {
+              seen = JSON.parse(localStorage.getItem('taller.lc') || '{}');
+            } catch (e) {}
+            $l('lcList').innerHTML = G.map(function (g, i) {
+              return "<button type=\"button\" class=\"grow2".concat(cur && cur.i === i ? ' on' : '', "\" data-i=\"").concat(i, "\"><span class=\"gr ").concat(g[5] === '1-0' ? 'W' : g[5] === '0-1' ? 'L' : 'D', "\">").concat(g[0], "</span><span class=\"gm\"><b>").concat(esc2(g[1]), " \u2013 ").concat(esc2(g[2]), "</b><br><span class=\"ge\">").concat(esc2(g[3]), " \xB7 ").concat(g[5]).concat(seen[g[0]] ? ' · vista' : '', "</span></span></button>");
+            }).join('');
+            $l('lcList').querySelectorAll('.grow2').forEach(function (b) {
+              return b.onclick = function () {
+                return openGame(+b.dataset.i);
+              };
+            });
+          case 5:
+            return _context14.a(2);
+        }
+      }, _callee14, null, [[1, 3]]);
+    }));
+    return _open2.apply(this, arguments);
+  }
+  var esc2 = function esc2(t) {
+    return String(t).replace(/[&<>"]/g, function (c) {
+      return {
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;'
+      }[c];
+    });
+  };
+  function openGame(i) {
+    var g = G[i],
+      sans = g[7].split(' '),
+      c = new Chess(),
+      fens = [c.fen()],
+      ucis = [];
+    sans.forEach(function (s) {
+      var m = c.move(s);
+      ucis.push(m.from + m.to);
+      fens.push(c.fen());
+    });
+    var win = g[5] === '0-1' ? 'b' : 'w';
+    cur = {
+      i: i,
+      g: g,
+      sans: sans,
+      ss: sans.map(function (s) {
+        return es(s);
+      }),
+      fens: fens,
+      ucis: ucis,
+      ply: 0,
+      side: win,
+      sel: null,
+      tries: 0
+    };
+    score = {
+      ok: 0,
+      n: 0
+    };
+    $l('lcView').hidden = false;
+    $l('lcHead').innerHTML = "<h3 style=\"margin:0\">".concat(g[0], ". ").concat(esc2(g[1]), " \u2013 ").concat(esc2(g[2]), "</h3><p class=\"sumline\">").concat(esc2(g[3]), " \xB7 ").concat(g[5], " \xB7 ECO ").concat(g[6], " \xB7 <a href=\"https://lichess.org/study/oSSeNbOw/").concat(g[8], "\" target=\"_blank\" rel=\"noopener\">Leer los comentarios del libro en Lichess</a></p>");
+    try {
+      var s = JSON.parse(localStorage.getItem('taller.lc') || '{}');
+      s[g[0]] = 1;
+      localStorage.setItem('taller.lc', JSON.stringify(s));
+    } catch (e) {}
+    go(0);
+    if (window.innerWidth < 1100) $l('lcView').scrollIntoView({
+      block: 'start',
+      behavior: 'smooth'
+    });
+  }
+  function go(p) {
+    if (!cur) return;
+    cur.ply = Math.max(0, Math.min(cur.sans.length, p));
+    cur.sel = null;
+    cur.tries = 0;
+    paint();
+  }
+  function paint(arrows) {
+    var v = cur,
+      flip = v.side === 'b',
+      last = v.ply ? v.ucis[v.ply - 1] : null;
+    window.drawBoardG($l('lcBoard'), v.fens[v.ply], flip, {
+      last: last,
+      arrows: arrows || [],
+      sel: v.sel
+    });
+    var h = '';
+    for (var i = 0; i < v.sans.length; i += 2) {
+      var cell = function cell(j) {
+        return j < v.sans.length ? guess && j >= v.ply ? '<span class="mc">·</span>' : "<span class=\"mc".concat(j + 1 === v.ply ? ' on' : '', "\" data-p=\"").concat(j + 1, "\">").concat(v.ss[j], "</span>") : '<span></span>';
+      };
+      h += "<span class=\"mn\">".concat(i / 2 + 1, ".</span>").concat(cell(i)).concat(cell(i + 1));
+    }
+    var mt = $l('lcMoves');
+    mt.innerHTML = h;
+    mt.querySelectorAll('.mc[data-p]').forEach(function (c) {
+      return c.onclick = function () {
+        if (!guess) go(+c.dataset.p);
+      };
+    });
+    var on = mt.querySelector('.on');
+    if (on) {
+      var t = on.offsetTop - mt.offsetTop;
+      if (t < mt.scrollTop || t > mt.scrollTop + mt.clientHeight - 30) mt.scrollTop = t - 80;
+    }
+    var turn = v.ply % 2 === 0 ? 'w' : 'b';
+    var info = "Jugada ".concat(Math.floor(v.ply / 2) + v.ply % 2, " de ").concat(Math.ceil(v.sans.length / 2));
+    if (guess) info = v.ply >= v.sans.length ? "<b>Partida terminada.</b> Acertaste ".concat(score.ok, " de ").concat(score.n, " jugadas del ganador.") : turn === v.side ? "<b>Adivina la jugada</b> de las ".concat(v.side === 'w' ? 'blancas' : 'negras', ": toca la pieza y la casilla. Aciertos: ").concat(score.ok, " de ").concat(score.n, ".") : 'El rival juega…';
+    $l('lcInfo').innerHTML = info;
+    $l('lcWhy').hidden = !(typeof SAMPLE !== 'undefined' && SAMPLE) || !v.ply || guess;
+    $l('lcGuess').textContent = guess ? 'Salir de «Adivina»' : 'Adivina la jugada';
+    if (guess && v.ply < v.sans.length && turn !== v.side) setTimeout(function () {
+      if (guess && cur === v && (v.ply % 2 === 0 ? 'w' : 'b') !== v.side) go(v.ply + 1);
+    }, 500);
+  }
+  function tap(sq) {
+    if (!cur || !guess || cur.ply >= cur.sans.length) return;
+    var v = cur,
+      c = new Chess(v.fens[v.ply]);
+    if ((v.ply % 2 === 0 ? 'w' : 'b') !== v.side) return;
+    if (!v.sel) {
+      var _p3 = c.get(sq);
+      if (_p3 && _p3.color === c.turn()) {
+        v.sel = sq;
+        paint();
+      }
+      return;
+    }
+    var from = v.sel;
+    v.sel = null;
+    if (from === sq) {
+      paint();
+      return;
+    }
+    var p = c.get(sq);
+    if (p && p.color === c.turn()) {
+      v.sel = sq;
+      paint();
+      return;
+    }
+    var m = c.move({
+      from: from,
+      to: sq,
+      promotion: 'q'
+    });
+    if (!m) {
+      paint();
+      return;
+    }
+    if (m.from + m.to === v.ucis[v.ply]) {
+      if (!v.tries) score.ok++;
+      score.n++;
+      v.tries = 0;
+      go(v.ply + 1);
+      return;
+    }
+    v.tries++;
+    if (v.tries >= 2) {
+      score.n++;
+      var u = v.ucis[v.ply];
+      paint([{
+        u: u,
+        c: '#2f7d4f'
+      }]);
+      $l('lcInfo').innerHTML = "Se jug\xF3 <b>".concat(v.ss[v.ply], "</b> (flecha verde). Pulsa \u25B6 para seguir.");
+      v.tries = 0;
+      return;
+    }
+    paint();
+    $l('lcInfo').innerHTML = "<b style=\"color:#c0392b\">".concat(es(m.san), "</b> no es la de la partida. Prueba otra vez.");
+  }
+  function why() {
+    return _why.apply(this, arguments);
+  }
+  function _why() {
+    _why = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee15() {
+      var v, k, pre, r, _t10;
+      return _regenerator().w(function (_context15) {
+        while (1) switch (_context15.p = _context15.n) {
+          case 0:
+            if (!(!cur || !cur.ply || typeof SAMPLE === 'undefined' || !SAMPLE)) {
+              _context15.n = 1;
+              break;
+            }
+            return _context15.a(2);
+          case 1:
+            v = cur, k = v.ply - 1;
+            pre = v.ss.slice(0, k).map(function (s, i) {
+              return (i % 2 === 0 ? i / 2 + 1 + '. ' : '') + s;
+            }).join(' ');
+            $l('lcInfo').innerHTML = 'Preguntando a Claude…';
+            _context15.p = 2;
+            _context15.n = 3;
+            return SAMPLE("Eres un entrenador de ajedrez. Partida ".concat(v.g[1], " \u2013 ").concat(v.g[2], " (").concat(v.g[3], "). Jugadas hasta ahora (notaci\xF3n espa\xF1ola): ").concat(pre, ". Explica en espa\xF1ol, tuteando, en 3 o 4 frases y con tus propias palabras, la idea de la jugada ").concat(Math.floor(k / 2) + 1).concat(k % 2 ? '...' : '.', " ").concat(v.ss[k], ": qu\xE9 busca, qu\xE9 amenaza o qu\xE9 prepara, y qu\xE9 principio general ilustra. Si no est\xE1s seguro de un c\xE1lculo concreto, dilo."), {
+              onText: function onText(x) {
+                $l('lcInfo').innerHTML = esc2(x.text);
+              }
+            });
+          case 3:
+            r = _context15.v;
+            $l('lcInfo').innerHTML = "<b>".concat(v.ss[k], ":</b> ").concat(esc2(r.text));
+            _context15.n = 5;
+            break;
+          case 4:
+            _context15.p = 4;
+            _t10 = _context15.v;
+            $l('lcInfo').innerHTML = 'Ahora no he podido responder. Inténtalo más tarde.';
+          case 5:
+            return _context15.a(2);
+        }
+      }, _callee15, null, [[2, 4]]);
+    }));
+    return _why.apply(this, arguments);
+  }
+  $l('lcBoard').addEventListener('click', function (ev) {
+    var s = ev.target.closest('.sq');
+    if (s) tap(s.dataset.sq);
+  });
+  $l('lcFirst').onclick = function () {
+    return go(0);
+  };
+  $l('lcPrev').onclick = function () {
+    return go(cur ? cur.ply - 1 : 0);
+  };
+  $l('lcNext').onclick = function () {
+    return go(cur ? cur.ply + 1 : 0);
+  };
+  $l('lcLast').onclick = function () {
+    if (!guess) go(cur ? cur.sans.length : 0);
+  };
+  $l('lcGuess').onclick = function () {
+    if (!cur) return;
+    guess = !guess;
+    score = {
+      ok: 0,
+      n: 0
+    };
+    go(guess ? 0 : cur.ply);
+  };
+  $l('lcWhy').onclick = why;
+  window.lcOpen = open;
 })();
 
 // ---------- reset scores (while testing) ----------
@@ -16034,18 +16337,18 @@ var LIVE_USER = '';
     return _fetchGames.apply(this, arguments);
   }
   function _fetchGames() {
-    _fetchGames = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee14() {
-      var user, st, cache, ar, months, nowKey, todo, i, _iterator3, _step4, _loop4, _t1, _t10;
-      return _regenerator().w(function (_context15) {
-        while (1) switch (_context15.p = _context15.n) {
+    _fetchGames = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee16() {
+      var user, st, cache, ar, months, nowKey, todo, i, _iterator3, _step4, _loop4, _t11, _t12;
+      return _regenerator().w(function (_context17) {
+        while (1) switch (_context17.p = _context17.n) {
           case 0:
             user = $('liveUser').value.trim().toLowerCase();
             if (user) {
-              _context15.n = 1;
+              _context17.n = 1;
               break;
             }
             $('liveUser').focus();
-            return _context15.a(2);
+            return _context17.a(2);
           case 1:
             try {
               localStorage.setItem('taller.user', user);
@@ -16059,14 +16362,14 @@ var LIVE_USER = '';
               g: [],
               done: []
             };
-            _context15.p = 2;
-            _context15.n = 3;
+            _context17.p = 2;
+            _context17.n = 3;
             return fetch("https://api.chess.com/pub/player/".concat(encodeURIComponent(user), "/games/archives")).then(function (r) {
               if (!r.ok) throw new Error(r.status === 404 ? 'Usuario no encontrado' : 'Error ' + r.status);
               return r.json();
             });
           case 3:
-            ar = _context15.v;
+            ar = _context17.v;
             months = ar.archives;
             nowKey = months[months.length - 1];
             todo = months.filter(function (m) {
@@ -16074,21 +16377,21 @@ var LIVE_USER = '';
             });
             i = 0;
             _iterator3 = _createForOfIteratorHelper(todo);
-            _context15.p = 4;
+            _context17.p = 4;
             _loop4 = /*#__PURE__*/_regenerator().m(function _loop4() {
               var m, j, key;
-              return _regenerator().w(function (_context14) {
-                while (1) switch (_context14.n) {
+              return _regenerator().w(function (_context16) {
+                while (1) switch (_context16.n) {
                   case 0:
                     m = _step4.value;
                     i++;
                     st.textContent = "Descargando ".concat(i, " de ").concat(todo.length, "\u2026");
-                    _context14.n = 1;
+                    _context16.n = 1;
                     return fetch(m).then(function (r) {
                       return r.json();
                     });
                   case 1:
-                    j = _context14.v;
+                    j = _context16.v;
                     key = m.slice(-7);
                     cache.g = cache.g.filter(function (x) {
                       return x.m !== key;
@@ -16118,31 +16421,31 @@ var LIVE_USER = '';
                     });
                     if (cache.done.indexOf(m) < 0) cache.done.push(m);
                   case 2:
-                    return _context14.a(2);
+                    return _context16.a(2);
                 }
               }, _loop4);
             });
             _iterator3.s();
           case 5:
             if ((_step4 = _iterator3.n()).done) {
-              _context15.n = 7;
+              _context17.n = 7;
               break;
             }
-            return _context15.d(_regeneratorValues(_loop4()), 6);
+            return _context17.d(_regeneratorValues(_loop4()), 6);
           case 6:
-            _context15.n = 5;
+            _context17.n = 5;
             break;
           case 7:
-            _context15.n = 9;
+            _context17.n = 9;
             break;
           case 8:
-            _context15.p = 8;
-            _t1 = _context15.v;
-            _iterator3.e(_t1);
+            _context17.p = 8;
+            _t11 = _context17.v;
+            _iterator3.e(_t11);
           case 9:
-            _context15.p = 9;
+            _context17.p = 9;
             _iterator3.f();
-            return _context15.f(9);
+            return _context17.f(9);
           case 10:
             cache.g.sort(function (a, b) {
               return a.t - b.t;
@@ -16151,16 +16454,16 @@ var LIVE_USER = '';
             GAMES = cache.g;
             st.textContent = "".concat(GAMES.length, " partidas blitz \xB7 actualizado");
             renderGames();
-            _context15.n = 12;
+            _context17.n = 12;
             break;
           case 11:
-            _context15.p = 11;
-            _t10 = _context15.v;
-            st.textContent = 'No he podido descargar: ' + (_t10 && _t10.message ? _t10.message : _t10) + '. Si estás dentro de Claude, prueba la versión del iPad.';
+            _context17.p = 11;
+            _t12 = _context17.v;
+            st.textContent = 'No he podido descargar: ' + (_t12 && _t12.message ? _t12.message : _t12) + '. Si estás dentro de Claude, prueba la versión del iPad.';
           case 12:
-            return _context15.a(2);
+            return _context17.a(2);
         }
-      }, _callee14, null, [[4, 8, 9, 10], [2, 11]]);
+      }, _callee16, null, [[4, 8, 9, 10], [2, 11]]);
     }));
     return _fetchGames.apply(this, arguments);
   }
@@ -16483,6 +16786,10 @@ var LIVE_USER = '';
     if ($('viewBook')) {
       $('viewBook').hidden = !m.startsWith('bk-');
       if (m.startsWith('bk-') && window.bookOpen) window.bookOpen(m.slice(3));
+    }
+    if ($('viewLc')) {
+      $('viewLc').hidden = m !== 'lc';
+      if (m === 'lc' && window.lcOpen) window.lcOpen();
     }
     if ($('viewWp')) {
       $('viewWp').hidden = m !== 'wp';
