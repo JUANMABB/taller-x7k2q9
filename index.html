@@ -9516,16 +9516,16 @@ function engJudge(_x2, _x3, _x4) {
   return _engJudge.apply(this, arguments);
 } // free exploration from the current position: any legal move for either side
 function _engJudge() {
-  _engJudge = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee13(seq, played, want) {
+  _engJudge = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee15(seq, played, want) {
     var tok, msgEl, before, g1, g2, white, a, b, s, pa, pb, f, diff, txt;
-    return _regenerator().w(function (_context14) {
-      while (1) switch (_context14.n) {
+    return _regenerator().w(function (_context16) {
+      while (1) switch (_context16.n) {
         case 0:
           if (!(!ENG_ON || ENGINE.status() === 'broken' || !want)) {
-            _context14.n = 1;
+            _context16.n = 1;
             break;
           }
-          return _context14.a(2);
+          return _context16.a(2);
         case 1:
           tok = ++engJudgeTok, msgEl = engEl('msg'), before = msgEl.innerHTML;
           g1 = new Chess(), g2 = new Chess();
@@ -9552,33 +9552,33 @@ function _engJudge() {
             to: want.slice(2, 4),
             promotion: 'q'
           });
-          _context14.n = 2;
+          _context16.n = 2;
           return ENGINE.evaluate(g1.fen(), 13);
         case 2:
-          a = _context14.v;
+          a = _context16.v;
           if (!(tok !== engJudgeTok || !a)) {
-            _context14.n = 3;
+            _context16.n = 3;
             break;
           }
-          return _context14.a(2);
+          return _context16.a(2);
         case 3:
-          _context14.n = 4;
+          _context16.n = 4;
           return ENGINE.evaluate(g2.fen(), 13);
         case 4:
-          b = _context14.v;
+          b = _context16.v;
           if (!(tok !== engJudgeTok || !b)) {
-            _context14.n = 5;
+            _context16.n = 5;
             break;
           }
-          return _context14.a(2);
+          return _context16.a(2);
         case 5:
           engKey = null;
           engUpdate(); // resume the panel's analysis
           if (!(msgEl.innerHTML !== before)) {
-            _context14.n = 6;
+            _context16.n = 6;
             break;
           }
-          return _context14.a(2);
+          return _context16.a(2);
         case 6:
           s = function s(x) {
             return (white ? 1 : -1) * engCp(x.lines[0]);
@@ -9593,9 +9593,9 @@ function _engJudge() {
           diff = pb - pa, txt = diff < 40 ? 'para el motor es igual de buena; aun así, apréndete la del plan' : diff < 120 ? 'un poco peor que la del plan' : diff < 300 ? 'claramente peor que la del plan' : 'un error grave';
           msgEl.insertAdjacentHTML('beforeend', "<div class=\"engjudge\">Motor: tu jugada ".concat(f(pa), " \xB7 la del plan ").concat(f(pb), " (desde tu lado): ").concat(txt, ".</div>"));
         case 7:
-          return _context14.a(2);
+          return _context16.a(2);
       }
-    }, _callee13);
+    }, _callee15);
   }));
   return _engJudge.apply(this, arguments);
 }
@@ -11223,7 +11223,12 @@ var BOOKS = {
     S = null,
     cur = null,
     tick = null;
-  var load = function load() {
+  // Storage: in claude.ai the cycles live in the artifact's private db (data/users/<id>/wp + cycles/<level>_<n>), synced across
+  // devices; elsewhere (the iPad site) in this browser. localStorage is always kept as a local copy.
+  var DB = null,
+    UID = null,
+    dbOn = false;
+  var local = function local() {
     var s = null;
     try {
       s = JSON.parse(localStorage.getItem('taller.wp') || 'null');
@@ -11238,10 +11243,179 @@ var BOOKS = {
       }
     };
   };
-  var save = function save() {
+  var saveLocal = function saveLocal() {
     try {
       localStorage.setItem('taller.wp', JSON.stringify(S));
     } catch (e) {}
+  };
+  function connect() {
+    return _connect.apply(this, arguments);
+  }
+  function _connect() {
+    _connect = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee1() {
+      var _yield$Promise$all, _yield$Promise$all2, db, user, id, _t8;
+      return _regenerator().w(function (_context1) {
+        while (1) switch (_context1.p = _context1.n) {
+          case 0:
+            _context1.p = 0;
+            if (!(!window.claude || !window.claude.use)) {
+              _context1.n = 1;
+              break;
+            }
+            return _context1.a(2);
+          case 1:
+            _context1.n = 2;
+            return Promise.all([window.claude.use('db'), window.claude.use('user')]);
+          case 2:
+            _yield$Promise$all = _context1.v;
+            _yield$Promise$all2 = _slicedToArray(_yield$Promise$all, 2);
+            db = _yield$Promise$all2[0];
+            user = _yield$Promise$all2[1];
+            if (!(!db || !user)) {
+              _context1.n = 3;
+              break;
+            }
+            return _context1.a(2);
+          case 3:
+            _context1.n = 4;
+            return user.id();
+          case 4:
+            id = _context1.v;
+            if (id) {
+              _context1.n = 5;
+              break;
+            }
+            return _context1.a(2);
+          case 5:
+            DB = db;
+            UID = id;
+            _context1.n = 7;
+            break;
+          case 6:
+            _context1.p = 6;
+            _t8 = _context1.v;
+            DB = null;
+          case 7:
+            return _context1.a(2);
+        }
+      }, _callee1, null, [[0, 6]]);
+    }));
+    return _connect.apply(this, arguments);
+  }
+  var root = function root() {
+    return DB.doc('data/users/' + UID + '/wp');
+  };
+  function loadState() {
+    return _loadState.apply(this, arguments);
+  }
+  function _loadState() {
+    _loadState = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee10() {
+      var L, cs, st, any, anyLocal, _i, _Object$keys, k, n, _t9;
+      return _regenerator().w(function (_context10) {
+        while (1) switch (_context10.p = _context10.n) {
+          case 0:
+            L = local();
+            _context10.n = 1;
+            return connect();
+          case 1:
+            if (DB) {
+              _context10.n = 2;
+              break;
+            }
+            return _context10.a(2, L);
+          case 2:
+            _context10.p = 2;
+            _context10.n = 3;
+            return root().collection('cycles').get();
+          case 3:
+            cs = _context10.v;
+            st = {
+              level: L.level,
+              cycles: {
+                e: [],
+                i: [],
+                a: [],
+                t: []
+              }
+            };
+            cs.docs.forEach(function (d) {
+              var x = d.data(),
+                _d$id$split = d.id.split('_'),
+                _d$id$split2 = _slicedToArray(_d$id$split, 2),
+                lv = _d$id$split2[0],
+                n = _d$id$split2[1];
+              if (st.cycles[lv]) st.cycles[lv][+n] = {
+                start: x.start,
+                end: x.end || null,
+                res: x.res || {},
+                days: x.days || []
+              };
+            });
+            Object.keys(st.cycles).forEach(function (k) {
+              st.cycles[k] = st.cycles[k].filter(Boolean);
+            });
+            any = Object.values(st.cycles).some(function (c) {
+              return c.length;
+            }), anyLocal = Object.values(L.cycles).some(function (c) {
+              return c.length;
+            });
+            dbOn = true;
+            if (!(!any && anyLocal)) {
+              _context10.n = 9;
+              break;
+            }
+            _i = 0, _Object$keys = Object.keys(L.cycles);
+          case 4:
+            if (!(_i < _Object$keys.length)) {
+              _context10.n = 8;
+              break;
+            }
+            k = _Object$keys[_i];
+            n = 0;
+          case 5:
+            if (!(n < L.cycles[k].length)) {
+              _context10.n = 7;
+              break;
+            }
+            _context10.n = 6;
+            return root().collection('cycles').doc(k + '_' + n).set(L.cycles[k][n]);
+          case 6:
+            n++;
+            _context10.n = 5;
+            break;
+          case 7:
+            _i++;
+            _context10.n = 4;
+            break;
+          case 8:
+            return _context10.a(2, L);
+          case 9:
+            return _context10.a(2, st);
+          case 10:
+            _context10.p = 10;
+            _t9 = _context10.v;
+            dbOn = false;
+            return _context10.a(2, L);
+        }
+      }, _callee10, null, [[2, 10]]);
+    }));
+    return _loadState.apply(this, arguments);
+  }
+  var writing = Promise.resolve();
+  var save = function save() {
+    saveLocal();
+    if (!dbOn) return;
+    var lv = S.level,
+      n = S.cycles[lv].length - 1,
+      c = S.cycles[lv][n];
+    if (!c) return;
+    var body = JSON.parse(JSON.stringify(c));
+    writing = writing.then(function () {
+      return root().collection('cycles').doc(lv + '_' + n).set(body);
+    }).catch(function () {});
+  };
+  var today = function today() {
+    return new Date().toISOString().slice(0, 10);
   };
   var fmt = function fmt(s) {
     s = Math.round(s);
@@ -11266,33 +11440,43 @@ var BOOKS = {
     return _open.apply(this, arguments);
   } // cycles table and progress
   function _open() {
-    _open = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee1() {
-      var _t8;
-      return _regenerator().w(function (_context1) {
-        while (1) switch (_context1.p = _context1.n) {
+    _open = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee11() {
+      var _t0;
+      return _regenerator().w(function (_context11) {
+        while (1) switch (_context11.p = _context11.n) {
           case 0:
-            if (!S) S = load();
+            if (S) {
+              _context11.n = 2;
+              break;
+            }
+            $w('wpBox').innerHTML = '<p class="empty">Cargando tus ciclos…</p>';
+            _context11.n = 1;
+            return loadState();
+          case 1:
+            S = _context11.v;
+            $w('wpBox').innerHTML = '';
+          case 2:
             if (P) {
-              _context1.n = 4;
+              _context11.n = 6;
               break;
             }
             $w('wpBox').innerHTML = '<p class="empty">Cargando ejercicios…</p>';
-            _context1.p = 1;
-            _context1.n = 2;
+            _context11.p = 3;
+            _context11.n = 4;
             return fetch(GAMES_BASE + 'woodpecker.json').then(function (r) {
               if (!r.ok) throw 0;
               return r.json();
             });
-          case 2:
-            P = _context1.v;
-            _context1.n = 4;
-            break;
-          case 3:
-            _context1.p = 3;
-            _t8 = _context1.v;
-            $w('wpBox').innerHTML = '<p class="empty">No se han podido cargar los ejercicios.</p>';
-            return _context1.a(2);
           case 4:
+            P = _context11.v;
+            _context11.n = 6;
+            break;
+          case 5:
+            _context11.p = 5;
+            _t0 = _context11.v;
+            $w('wpBox').innerHTML = '<p class="empty">No se han podido cargar los ejercicios.</p>';
+            return _context11.a(2);
+          case 6:
             $w('wpLevel').value = S.level;
             $w('wpLevel').onchange = function () {
               S.level = $w('wpLevel').value;
@@ -11305,7 +11489,8 @@ var BOOKS = {
               S.cycles[S.level].push({
                 start: Date.now(),
                 end: null,
-                res: {}
+                res: {},
+                days: []
               });
               save();
               stop();
@@ -11313,19 +11498,22 @@ var BOOKS = {
               next();
             };
             $w('wpGo').onclick = function () {
-              if (!cycle() || cycle().end) S.cycles[S.level].push({
-                start: Date.now(),
-                end: null,
-                res: {}
-              });
-              save();
+              if (!cycle() || cycle().end) {
+                S.cycles[S.level].push({
+                  start: Date.now(),
+                  end: null,
+                  res: {},
+                  days: []
+                });
+                save();
+              }
               next();
             };
             panel();
-          case 5:
-            return _context1.a(2);
+          case 7:
+            return _context11.a(2);
         }
-      }, _callee1, null, [[1, 3]]);
+      }, _callee11, null, [[3, 5]]);
     }));
     return _open.apply(this, arguments);
   }
@@ -11340,15 +11528,18 @@ var BOOKS = {
           t = r.reduce(function (a, x) {
             return a + x[1];
           }, 0);
-        return "<tr><td>".concat(i + 1, "</td><td>").concat(r.length, " de ").concat(n, "</td><td>").concat(r.length ? Math.round(100 * ok / r.length) + ' %' : '–', "</td><td>").concat(r.length ? fmt(t) : '–', "</td><td>").concat(r.length ? fmt(t / r.length) : '–', "</td><td>").concat(new Date(c.start).toLocaleDateString('es-ES')).concat(c.end ? ' – ' + new Date(c.end).toLocaleDateString('es-ES') : ' (en curso)', "</td></tr>");
+        var nat = Math.max(1, Math.round(((c.end || Date.now()) - c.start) / 864e5) + 1),
+          wd = (c.days || []).length;
+        return "<tr><td>".concat(i + 1, "</td><td>").concat(r.length, " de ").concat(n, "</td><td>").concat(r.length ? Math.round(100 * ok / r.length) + ' %' : '–', "</td><td><b>").concat(nat, "</b>").concat(c.end ? '' : ' (en curso)', "</td><td>").concat(wd || '–', "</td><td>").concat(r.length ? fmt(t) : '–', "</td><td>").concat(r.length ? fmt(t / r.length) : '–', "</td><td>").concat(new Date(c.start).toLocaleDateString('es-ES')).concat(c.end ? ' – ' + new Date(c.end).toLocaleDateString('es-ES') : '', "</td></tr>");
       });
     var c = cycle(),
       doneN = c ? Object.keys(c.res).length : 0;
+    var where = "<p class=\"sumline\">".concat(dbOn ? 'Tus ciclos se guardan en tu cuenta de Claude: los verás en cualquier dispositivo donde abras este Taller desde claude.ai.' : 'Tus ciclos se guardan en este dispositivo.', "</p>");
     var avail = P.length < 1128 ? "<p class=\"sumline\">Disponibles ahora: ".concat(P.length, " de 1.128 ejercicios (el resto se est\xE1 calculando).</p>") : '';
-    $w('wpCycles').innerHTML = cs.length ? "<div class=\"tscroll\"><table class=\"stbl\"><thead><tr><th>Ciclo</th><th>Hechos</th><th>A la primera</th><th>Tiempo total</th><th>Por ejercicio</th><th>Fechas</th></tr></thead><tbody>".concat(rows.join(''), "</tbody></table></div>") : '<p class="sumline">Aún no has empezado ningún ciclo en este nivel.</p>';
+    $w('wpCycles').innerHTML = cs.length ? "<div class=\"tscroll\"><table class=\"stbl\"><thead><tr><th>Ciclo</th><th>Hechos</th><th>A la primera</th><th>D\xEDas</th><th>D\xEDas entrenando</th><th>Tiempo total</th><th>Por ejercicio</th><th>Fechas</th></tr></thead><tbody>".concat(rows.join(''), "</tbody></table></div>") : '<p class="sumline">Aún no has empezado ningún ciclo en este nivel.</p>';
     var prev = cs.length >= 2 ? cs[cs.length - 2] : null,
       goal = prev && prev.end ? (prev.end - prev.start) / 2 : null;
-    $w('wpProg').innerHTML = avail + (c && !c.end ? "<div class=\"wpbar\"><i style=\"width:".concat((100 * doneN / n).toFixed(1), "%\"></i></div><p class=\"sumline\">Ciclo ").concat(cs.length, ": ").concat(doneN, " de ").concat(n, " ejercicios.").concat(goal ? " Objetivo del m\xE9todo: terminarlo en la mitad de d\xEDas que el anterior (".concat(Math.ceil(goal / 864e5), " d\xEDas).") : '', "</p>") : '');
+    $w('wpProg').innerHTML = where + avail + (c && !c.end ? "<div class=\"wpbar\"><i style=\"width:".concat((100 * doneN / n).toFixed(1), "%\"></i></div><p class=\"sumline\">Ciclo ").concat(cs.length, ": ").concat(doneN, " de ").concat(n, " ejercicios.").concat(goal ? " Objetivo del m\xE9todo: terminarlo en la mitad de d\xEDas que el anterior (".concat(Math.ceil(goal / 864e5), " d\xEDas).") : '', "</p>") : '');
     $w('wpGo').textContent = c && !c.end ? 'Continuar el ciclo' : 'Empezar un ciclo';
   }
   function stop() {
@@ -11415,6 +11606,8 @@ var BOOKS = {
       secs = (Date.now() - cur.t0) / 1000;
     clearInterval(tick);
     c.res[cur.p[0]] = [ok && !cur.fails && !cur.shown ? 1 : 0, Math.round(secs)];
+    c.days = c.days || [];
+    if (!c.days.includes(today())) c.days.push(today());
     save();
     panel();
     say(msg + " <button type=\"button\" class=\"btn small primary\" id=\"wpNext\">Siguiente</button>");
@@ -11425,20 +11618,20 @@ var BOOKS = {
     return _tap.apply(this, arguments);
   }
   function _tap() {
-    _tap = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee10(sq) {
+    _tap = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee12(sq) {
       var g, _pc, from, pc, m, u, want, ok;
-      return _regenerator().w(function (_context10) {
-        while (1) switch (_context10.n) {
+      return _regenerator().w(function (_context12) {
+        while (1) switch (_context12.n) {
           case 0:
             if (!(!cur || cur.busy)) {
-              _context10.n = 1;
+              _context12.n = 1;
               break;
             }
-            return _context10.a(2);
+            return _context12.a(2);
           case 1:
             g = new Chess(cur.fen);
             if (cur.sel) {
-              _context10.n = 2;
+              _context12.n = 2;
               break;
             }
             _pc = g.get(sq);
@@ -11446,25 +11639,25 @@ var BOOKS = {
               cur.sel = sq;
               draw();
             }
-            return _context10.a(2);
+            return _context12.a(2);
           case 2:
             from = cur.sel;
             cur.sel = null;
             if (!(from === sq)) {
-              _context10.n = 3;
+              _context12.n = 3;
               break;
             }
             draw();
-            return _context10.a(2);
+            return _context12.a(2);
           case 3:
             pc = g.get(sq);
             if (!(pc && pc.color === g.turn())) {
-              _context10.n = 4;
+              _context12.n = 4;
               break;
             }
             cur.sel = sq;
             draw();
-            return _context10.a(2);
+            return _context12.a(2);
           case 4:
             m = g.move({
               from: from,
@@ -11472,43 +11665,43 @@ var BOOKS = {
               promotion: 'q'
             });
             if (m) {
-              _context10.n = 5;
+              _context12.n = 5;
               break;
             }
             draw();
-            return _context10.a(2);
+            return _context12.a(2);
           case 5:
             u = m.from + m.to + (m.promotion ? m.promotion : ''), want = cur.pv[cur.k];
             if (!(want && (u === want || u.slice(0, 4) === want.slice(0, 4)))) {
-              _context10.n = 6;
+              _context12.n = 6;
               break;
             }
-            return _context10.a(2, advance(g, m));
+            return _context12.a(2, advance(g, m));
           case 6:
             // another move: ask the browser engine whether it is as good as the solution
             cur.busy = true;
             say("Compruebo ".concat(es(m.san), " con el motor\u2026"));
-            _context10.n = 7;
+            _context12.n = 7;
             return altOk(g.fen());
           case 7:
-            ok = _context10.v;
+            ok = _context12.v;
             cur.busy = false;
             if (!ok) {
-              _context10.n = 8;
+              _context12.n = 8;
               break;
             }
             cur.fen = g.fen();
             cur.last = m.from + m.to;
             draw();
-            return _context10.a(2, finish(true, "<b style=\"color:#2f7d4f\">\xA1Bien! ".concat(es(m.san), "</b> tambi\xE9n ").concat(cur.p[3] === '1/2-1/2' ? 'aguanta' : 'gana', " (no es la l\xEDnea del libro, pero el motor la da por buena).")));
+            return _context12.a(2, finish(true, "<b style=\"color:#2f7d4f\">\xA1Bien! ".concat(es(m.san), "</b> tambi\xE9n ").concat(cur.p[3] === '1/2-1/2' ? 'aguanta' : 'gana', " (no es la l\xEDnea del libro, pero el motor la da por buena).")));
           case 8:
             cur.fails++;
             draw();
             say("<b style=\"color:#c0392b\">".concat(es(m.san), " no es.</b> Int\xE9ntalo otra vez o pulsa \xABVer la soluci\xF3n\xBB."));
           case 9:
-            return _context10.a(2);
+            return _context12.a(2);
         }
-      }, _callee10);
+      }, _callee12);
     }));
     return _tap.apply(this, arguments);
   }
@@ -11551,43 +11744,43 @@ var BOOKS = {
     return _altOk.apply(this, arguments);
   }
   function _altOk() {
-    _altOk = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee11(fen) {
+    _altOk = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee13(fen) {
       var r, l, sgn, v, sc;
-      return _regenerator().w(function (_context11) {
-        while (1) switch (_context11.n) {
+      return _regenerator().w(function (_context13) {
+        while (1) switch (_context13.n) {
           case 0:
             if (!(typeof ENGINE === 'undefined')) {
-              _context11.n = 1;
+              _context13.n = 1;
               break;
             }
-            return _context11.a(2, false);
+            return _context13.a(2, false);
           case 1:
-            _context11.n = 2;
+            _context13.n = 2;
             return ENGINE.evaluate(fen, 14);
           case 2:
-            r = _context11.v;
+            r = _context13.v;
             if (!(!r || !r.lines || !r.lines[0])) {
-              _context11.n = 3;
+              _context13.n = 3;
               break;
             }
-            return _context11.a(2, false);
+            return _context13.a(2, false);
           case 3:
             l = r.lines[0], sgn = cur.me === 'w' ? 1 : -1, v = engCp(l) * sgn, sc = cur.p[5] || '0';
             if (!(sc[0] === '#')) {
-              _context11.n = 4;
+              _context13.n = 4;
               break;
             }
-            return _context11.a(2, l.mate != null && l.mate * sgn > 0);
+            return _context13.a(2, l.mate != null && l.mate * sgn > 0);
           case 4:
             if (!(cur.p[3] === '1/2-1/2')) {
-              _context11.n = 5;
+              _context13.n = 5;
               break;
             }
-            return _context11.a(2, v >= -60);
+            return _context13.a(2, v >= -60);
           case 5:
-            return _context11.a(2, v >= Math.min(+sc - 100, 300));
+            return _context13.a(2, v >= Math.min(+sc - 100, 300));
         }
-      }, _callee11);
+      }, _callee13);
     }));
     return _altOk.apply(this, arguments);
   }
@@ -15841,18 +16034,18 @@ var LIVE_USER = '';
     return _fetchGames.apply(this, arguments);
   }
   function _fetchGames() {
-    _fetchGames = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee12() {
-      var user, st, cache, ar, months, nowKey, todo, i, _iterator3, _step4, _loop4, _t9, _t0;
-      return _regenerator().w(function (_context13) {
-        while (1) switch (_context13.p = _context13.n) {
+    _fetchGames = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee14() {
+      var user, st, cache, ar, months, nowKey, todo, i, _iterator3, _step4, _loop4, _t1, _t10;
+      return _regenerator().w(function (_context15) {
+        while (1) switch (_context15.p = _context15.n) {
           case 0:
             user = $('liveUser').value.trim().toLowerCase();
             if (user) {
-              _context13.n = 1;
+              _context15.n = 1;
               break;
             }
             $('liveUser').focus();
-            return _context13.a(2);
+            return _context15.a(2);
           case 1:
             try {
               localStorage.setItem('taller.user', user);
@@ -15866,14 +16059,14 @@ var LIVE_USER = '';
               g: [],
               done: []
             };
-            _context13.p = 2;
-            _context13.n = 3;
+            _context15.p = 2;
+            _context15.n = 3;
             return fetch("https://api.chess.com/pub/player/".concat(encodeURIComponent(user), "/games/archives")).then(function (r) {
               if (!r.ok) throw new Error(r.status === 404 ? 'Usuario no encontrado' : 'Error ' + r.status);
               return r.json();
             });
           case 3:
-            ar = _context13.v;
+            ar = _context15.v;
             months = ar.archives;
             nowKey = months[months.length - 1];
             todo = months.filter(function (m) {
@@ -15881,21 +16074,21 @@ var LIVE_USER = '';
             });
             i = 0;
             _iterator3 = _createForOfIteratorHelper(todo);
-            _context13.p = 4;
+            _context15.p = 4;
             _loop4 = /*#__PURE__*/_regenerator().m(function _loop4() {
               var m, j, key;
-              return _regenerator().w(function (_context12) {
-                while (1) switch (_context12.n) {
+              return _regenerator().w(function (_context14) {
+                while (1) switch (_context14.n) {
                   case 0:
                     m = _step4.value;
                     i++;
                     st.textContent = "Descargando ".concat(i, " de ").concat(todo.length, "\u2026");
-                    _context12.n = 1;
+                    _context14.n = 1;
                     return fetch(m).then(function (r) {
                       return r.json();
                     });
                   case 1:
-                    j = _context12.v;
+                    j = _context14.v;
                     key = m.slice(-7);
                     cache.g = cache.g.filter(function (x) {
                       return x.m !== key;
@@ -15925,31 +16118,31 @@ var LIVE_USER = '';
                     });
                     if (cache.done.indexOf(m) < 0) cache.done.push(m);
                   case 2:
-                    return _context12.a(2);
+                    return _context14.a(2);
                 }
               }, _loop4);
             });
             _iterator3.s();
           case 5:
             if ((_step4 = _iterator3.n()).done) {
-              _context13.n = 7;
+              _context15.n = 7;
               break;
             }
-            return _context13.d(_regeneratorValues(_loop4()), 6);
+            return _context15.d(_regeneratorValues(_loop4()), 6);
           case 6:
-            _context13.n = 5;
+            _context15.n = 5;
             break;
           case 7:
-            _context13.n = 9;
+            _context15.n = 9;
             break;
           case 8:
-            _context13.p = 8;
-            _t9 = _context13.v;
-            _iterator3.e(_t9);
+            _context15.p = 8;
+            _t1 = _context15.v;
+            _iterator3.e(_t1);
           case 9:
-            _context13.p = 9;
+            _context15.p = 9;
             _iterator3.f();
-            return _context13.f(9);
+            return _context15.f(9);
           case 10:
             cache.g.sort(function (a, b) {
               return a.t - b.t;
@@ -15958,16 +16151,16 @@ var LIVE_USER = '';
             GAMES = cache.g;
             st.textContent = "".concat(GAMES.length, " partidas blitz \xB7 actualizado");
             renderGames();
-            _context13.n = 12;
+            _context15.n = 12;
             break;
           case 11:
-            _context13.p = 11;
-            _t0 = _context13.v;
-            st.textContent = 'No he podido descargar: ' + (_t0 && _t0.message ? _t0.message : _t0) + '. Si estás dentro de Claude, prueba la versión del iPad.';
+            _context15.p = 11;
+            _t10 = _context15.v;
+            st.textContent = 'No he podido descargar: ' + (_t10 && _t10.message ? _t10.message : _t10) + '. Si estás dentro de Claude, prueba la versión del iPad.';
           case 12:
-            return _context13.a(2);
+            return _context15.a(2);
         }
-      }, _callee12, null, [[4, 8, 9, 10], [2, 11]]);
+      }, _callee14, null, [[4, 8, 9, 10], [2, 11]]);
     }));
     return _fetchGames.apply(this, arguments);
   }
