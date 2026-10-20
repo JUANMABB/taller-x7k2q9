@@ -10348,6 +10348,7 @@ var GAMES_BASE = 'partidas/',
     var c = new Chess(fen),
       files = 'abcdefgh';
     el.innerHTML = '';
+    if (el.offsetWidth && !(window.CSS && CSS.supports && CSS.supports('aspect-ratio', '1'))) el.style.height = el.offsetWidth + 'px';else if (el.offsetWidth && getComputedStyle(el).aspectRatio === 'auto') el.style.height = el.offsetWidth + 'px';
     for (var r = 0; r < 8; r++) for (var f = 0; f < 8; f++) {
       var rank = flip ? r + 1 : 8 - r,
         file = flip ? files[7 - f] : files[f],
@@ -14814,9 +14815,14 @@ var LIVE_USER = '';
 
 // --- iPad helpers: square board without aspect-ratio, tap-to-move without pointer events ---
 function sizeBoard() {
-  var w = boardEl.offsetWidth;
-  if (w) boardEl.style.height = w + 'px';
+  Array.prototype.forEach.call(document.querySelectorAll('.board'), function (b) {
+    var w = b.offsetWidth;
+    if (w) b.style.height = w + 'px';
+  });
 }
+document.addEventListener('click', function () {
+  setTimeout(sizeBoard, 0);
+}, true);
 window.addEventListener('resize', sizeBoard);
 window.addEventListener('orientationchange', function () {
   setTimeout(sizeBoard, 300);
