@@ -9,7 +9,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <link rel="apple-touch-icon" href="icon.png">
 <style>html{-webkit-text-size-adjust:100%}body{margin:0;font-family:-apple-system,Helvetica,Arial,sans-serif}img{max-width:100%}[hidden]{display:none!important}</style>
-<title>Taller de aperturas</title>
+<title>Taller de ajedrez</title>
 <style>
 /* Layout: a club analysis table. Openings rack on the left, board in the middle, the "why" notebook on the right; stacks on phones. */
 :root {
@@ -371,6 +371,10 @@ footer { font-size: 12px; color: var(--muted); max-width: 90ch; }
 .gpv { color: var(--muted); font-size: 12.5px; }
 .etables { display: grid; gap: 12px; margin-top: 12px; }
 .tscroll { overflow-x: auto; }
+.erwch { display: flex; flex-wrap: wrap; gap: 6px; margin: 10px 0; }
+.erwch button { all: unset; cursor: pointer; font-size: 13px; padding: 6px 10px; border: 1px solid var(--line); border-radius: 999px; background: var(--panel); }
+.erwch button[aria-pressed="true"] { background: var(--walnut); color: #fff; border-color: var(--walnut); }
+.erwnone { color: var(--muted); font-size: 12.5px; }
 .elist { display: grid; gap: 6px; }
 .erow { all: unset; cursor: pointer; display: grid; grid-template-columns: 92px 1fr auto; gap: 10px; align-items: center; padding: 8px 12px; background: var(--card, #fff); border: 1px solid var(--line, #e3e1da); border-radius: 10px; font-size: 13.5px; }
 .erow:hover { border-color: var(--walnut); }
@@ -2153,7 +2157,7 @@ if (typeof define !== 'undefined')
 
 <div class="wrap">
   <header class="top">
-    <h1>Taller de aperturas<small>Tu repertorio, jugada a jugada, con los errores de tus últimas 20 partidas en cada apertura</small></h1>
+    <h1>Taller de ajedrez<small>Aperturas, tácticas, finales y tus partidas analizadas</small></h1>
     <div class="scorebar" aria-label="Marcador">
       <div class="stat"><b id="xp">0</b><span>Puntos</span></div>
       <div class="stat"><b id="streak">0</b><span>Días seguidos</span></div>
@@ -2163,7 +2167,10 @@ if (typeof define !== 'undefined')
   </header>
 
   <nav class="mainnav" role="tablist" aria-label="Sección">
-    <button type="button" role="tab" data-main="train" aria-selected="true">Entrenar aperturas</button>
+    <button type="button" role="tab" data-main="train" aria-selected="true">Aperturas</button>
+    <button type="button" role="tab" data-main="tac" aria-selected="false">Tácticas</button>
+    <button type="button" role="tab" data-main="end" aria-selected="false">Finales</button>
+    <button type="button" role="tab" data-main="report" aria-selected="false">Informe</button>
     <button type="button" role="tab" data-main="stats" aria-selected="false">Estadísticas</button>
     <button type="button" role="tab" data-main="games" aria-selected="false">Mis partidas</button>
     <button type="button" role="tab" data-main="errors" aria-selected="false">Errores</button>
@@ -2296,7 +2303,7 @@ if (typeof define !== 'undefined')
   </div>
   <section class="stats" id="viewStats" hidden aria-label="Estadísticas">
   <div class="subnav" role="tablist" aria-label="Secciones de estadísticas">
-    <button type="button" role="tab" data-sv="sum" aria-selected="true">Informe</button>
+    <button type="button" role="tab" data-sv="sum" aria-selected="true" hidden>Informe</button>
     <button type="button" role="tab" data-sv="evo" aria-selected="false">Evolución</button>
     <button type="button" role="tab" data-sv="trn" aria-selected="false">Mis fallos</button>
     <button type="button" role="tab" data-sv="tac" aria-selected="false">Tácticas</button>
@@ -2378,7 +2385,9 @@ if (typeof define !== 'undefined')
   </div>
 
   <div data-sp="tac" hidden>
-    <p class="note" style="font-size:13px;color:var(--muted);margin:0 0 8px">Tácticas que aparecieron en tus partidas y qué porcentaje encontraste, según Insights. Ordenadas de peor a mejor en el último año. Pulsa una fila para ver su evolución por trimestre.</p>
+    <p class="note" style="font-size:13px;color:var(--muted);margin:0 0 8px">Tácticas que aparecieron en tus partidas y qué porcentaje encontraste, de dos fuentes: <b>según Chess.com</b> (Insights) y <b>calculadas</b> (mi análisis con Stockfish de todas tus partidas, el mismo de «Mis partidas»). Cuentan las oportunidades de forma distinta, así que las cifras no coinciden del todo. Ordenadas de peor a mejor en el último año. Pulsa una fila para ver su evolución por trimestre.</p>
+    <div class="sbar"><div class="seg" id="tacSrc"><button type="button" data-s="calc" aria-pressed="true">Calculadas (Stockfish)</button><button type="button" data-s="chess" aria-pressed="false">Según Chess.com</button></div></div>
+    <p class="note" id="tacSrcNote" style="font-size:12.5px;color:var(--muted);margin:6px 0 8px"></p>
     <div class="tblwrap" id="tacTable"></div>
     <div class="cgrid" id="tacCharts" style="margin-top:14px"></div>
   </div>
@@ -2431,7 +2440,7 @@ if (typeof define !== 'undefined')
       <input id="gEco" placeholder="Apertura (en inglés: Scotch, Sicilian…)" autocomplete="off" size="26">
       <span class="chip" id="gCount"></span>
     </div>
-    <details open><summary style="cursor:pointer;font-weight:600">Tácticas por tema</summary><div class="tblwrap" id="gSum" style="margin-top:8px"></div></details>
+    <div class="tblwrap" id="gSum"></div>
     <div class="ggrid">
       <div class="glist2" id="gList"></div>
       <div class="gview card" id="gView" hidden>
@@ -2448,6 +2457,7 @@ if (typeof define !== 'undefined')
   </section>
   <section class="games" id="viewErrors" hidden aria-label="Errores">
     <p class="note" style="font-size:13px;color:var(--muted);margin:0">Errores graves: jugadas tuyas que le dejaron una táctica al rival (pierdes 2 peones o más). Tácticas perdidas: las tenías y no las jugaste. El tiempo pensado sale del reloj de cada jugada (reloj antes menos reloj después, más el incremento).</p>
+    <div class="sbar"><label for="ePer">Periodo</label><select id="ePer"></select></div>
     <div class="kpis" id="eKpis"></div>
     <div class="etables" id="eTables"></div>
     <h3 class="gsubh">Tus errores, uno a uno</h3>
@@ -2455,10 +2465,29 @@ if (typeof define !== 'undefined')
       <select id="eType" aria-label="Tipo de error"><option value="c">Errores graves</option><option value="e">Errores graves evitables</option><option value="m">Tácticas perdidas</option></select>
       <select id="eSp" aria-label="Tiempo pensado"><option value="">Cualquier tiempo pensado</option><option value="0-2">Menos de 2 s</option><option value="2-10">2–10 s</option><option value="10-1e9">10 s o más</option></select>
       <select id="eLeft" aria-label="Reloj"><option value="">Cualquier reloj</option><option value="0-30">Menos de 30 s en el reloj</option><option value="30-120">30 s – 2 min</option><option value="120-1e9">Más de 2 min</option></select>
-      <select id="eYear" aria-label="Año"></select>
+      
       <span class="sumline" id="eCount"></span>
     </div>
     <div class="elist" id="eList"></div>
+  </section>
+  <section class="games" id="viewTac" hidden aria-label="Tácticas">
+    <p class="note" style="font-size:13px;color:var(--muted);margin:0">Las tácticas de tus partidas, calculadas con Stockfish. <b>Tuyas</b>: las tenías tú (aprovechadas o perdidas). <b>Del rival</b>: se las dejaste tú con un error. Pulsa una fila para ver esas partidas en «Mis partidas».</p>
+    <div class="sbar"><div class="seg" id="tView"><button type="button" data-v="theme" aria-pressed="true">Por tema</button><button type="button" data-v="erw" aria-pressed="false">100 patrones (Erwich)</button></div></div>
+    <div id="tThemeBox">
+    <div class="sbar"><select id="tCol" aria-label="Color"><option value="">Blancas y negras</option><option value="w">Con blancas</option><option value="b">Con negras</option></select><label for="tYear">Año</label><select id="tYear"></select></div>
+    <div class="tblwrap" id="tSum"></div>
+    </div>
+    <div id="tErwBox" hidden>
+      <p class="note" style="font-size:13px;color:var(--muted);margin:0">Los 100 patrones del libro <i>100 Tactical Patterns You Must Know</i> (Frank Erwich, New in Chess), con la numeración del libro. Elige un capítulo para ver sus patrones y tus estadísticas en cada uno; pulsa un patrón para ver su historial.</p>
+      <div class="erwch" id="eChap"></div>
+      <div class="tblwrap" id="ePat"></div>
+      <div id="eHist"></div>
+    </div>
+  </section>
+  <section class="games" id="viewEnd" hidden aria-label="Finales">
+    <p class="note" style="font-size:13px;color:var(--muted);margin:0">Los mates de tus partidas, calculados con Stockfish: por número de jugadas y por tipo de mate (según la posición final). Un ataque de mate cuenta una vez y solo es aprovechado si lo rematas. Pulsa una fila para ver esas partidas en «Mis partidas».</p>
+    <div class="sbar"><select id="fCol" aria-label="Color"><option value="">Blancas y negras</option><option value="w">Con blancas</option><option value="b">Con negras</option></select><label for="fYear">Año</label><select id="fYear"></select></div>
+    <div class="tblwrap" id="fSum"></div>
   </section>
 
 
@@ -9465,16 +9494,16 @@ function engJudge(_x2, _x3, _x4) {
   return _engJudge.apply(this, arguments);
 } // free exploration from the current position: any legal move for either side
 function _engJudge() {
-  _engJudge = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee8(seq, played, want) {
+  _engJudge = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee10(seq, played, want) {
     var tok, msgEl, before, g1, g2, white, a, b, s, pa, pb, f, diff, txt;
-    return _regenerator().w(function (_context9) {
-      while (1) switch (_context9.n) {
+    return _regenerator().w(function (_context11) {
+      while (1) switch (_context11.n) {
         case 0:
           if (!(!ENG_ON || ENGINE.status() === 'broken' || !want)) {
-            _context9.n = 1;
+            _context11.n = 1;
             break;
           }
-          return _context9.a(2);
+          return _context11.a(2);
         case 1:
           tok = ++engJudgeTok, msgEl = engEl('msg'), before = msgEl.innerHTML;
           g1 = new Chess(), g2 = new Chess();
@@ -9501,33 +9530,33 @@ function _engJudge() {
             to: want.slice(2, 4),
             promotion: 'q'
           });
-          _context9.n = 2;
+          _context11.n = 2;
           return ENGINE.evaluate(g1.fen(), 13);
         case 2:
-          a = _context9.v;
+          a = _context11.v;
           if (!(tok !== engJudgeTok || !a)) {
-            _context9.n = 3;
+            _context11.n = 3;
             break;
           }
-          return _context9.a(2);
+          return _context11.a(2);
         case 3:
-          _context9.n = 4;
+          _context11.n = 4;
           return ENGINE.evaluate(g2.fen(), 13);
         case 4:
-          b = _context9.v;
+          b = _context11.v;
           if (!(tok !== engJudgeTok || !b)) {
-            _context9.n = 5;
+            _context11.n = 5;
             break;
           }
-          return _context9.a(2);
+          return _context11.a(2);
         case 5:
           engKey = null;
           engUpdate(); // resume the panel's analysis
           if (!(msgEl.innerHTML !== before)) {
-            _context9.n = 6;
+            _context11.n = 6;
             break;
           }
-          return _context9.a(2);
+          return _context11.a(2);
         case 6:
           s = function s(x) {
             return (white ? 1 : -1) * engCp(x.lines[0]);
@@ -9542,9 +9571,9 @@ function _engJudge() {
           diff = pb - pa, txt = diff < 40 ? 'para el motor es igual de buena; aun así, apréndete la del plan' : diff < 120 ? 'un poco peor que la del plan' : diff < 300 ? 'claramente peor que la del plan' : 'un error grave';
           msgEl.insertAdjacentHTML('beforeend', "<div class=\"engjudge\">Motor: tu jugada ".concat(f(pa), " \xB7 la del plan ").concat(f(pb), " (desde tu lado): ").concat(txt, ".</div>"));
         case 7:
-          return _context9.a(2);
+          return _context11.a(2);
       }
-    }, _callee8);
+    }, _callee10);
   }));
   return _engJudge.apply(this, arguments);
 }
@@ -9642,6 +9671,10 @@ ENGINE.on(function () {
 });
 var GAMES_BASE = 'partidas/',
   GAMES_LINKS = false;
+// The 12 chapters / 100 patterns of F. Erwich, "100 Tactical Patterns You Must Know" (New in Chess, 2024).
+// Short Spanish labels of our own, numbered as in the book so the reader can follow along. Detectors come later.
+var ERWICH = [['Ataque doble', [[1, 'Horquilla de peón tras aumentar la tensión'], [2, 'Horquilla de peón tras liberar la tensión'], [3, 'Captura «antiposicional» para hacer horquilla o atrapar'], [4, 'Sacrificar torre por una horquilla de alfil'], [5, 'Sacrificio de dama en la esquina y horquilla de caballo'], [6, 'Dama contra rey en el centro y pieza suelta'], [7, 'Enroque largo con doble amenaza']]], ['Descubiertas y despeje de líneas', [[8, 'Descubierta alfil + peón contra alfil'], [9, 'Descubierta «india de dama»'], [10, 'El carrusel'], [11, 'Colaboración de caballo y alfil'], [12, 'Secuencia de capturas desesperadas'], [13, 'Descubierta dama + caballo contra dama'], [14, 'Doble amenaza de dama y caballo'], [15, 'El truco del gambito Milner-Barry'], [16, 'El molino al revés'], [17, 'Doble jaque de torre y alfil'], [18, 'El molino'], [19, 'La contradescubierta'], [20, 'Despeje de la última fila'], [21, 'Despeje con dama y alfil']]], ['Ensartadas y clavadas', [[22, 'Ensartada de alfil en la diagonal a3–f8'], [23, 'Sacrificar torre para una ensartada absoluta'], [24, 'Desviar para clavar en la diagonal a2–g8'], [25, 'Explotar la clavada del caballo en a4–e8'], [26, 'Clavada en la última fila'], [27, 'Atacar el peón de g clavado'], [28, 'El peón de f clavado defiende mal'], [29, 'La clavada eterna'], [30, 'La cruz de San Andrés'], [31, 'La cruz de Malta'], [32, 'La cruz oblicua'], [33, 'Dama y torre en la apertura']]], ['Alfil que clava contra batería dama + caballo', [[34, 'Mover el caballo clavado dando jaque'], [35, 'Mover el caballo clavado para atacar f7'], [36, 'Mover el caballo clavado y usar la diagonal a4–e8'], [37, 'Mover el caballo clavado para abrir la columna e'], [38, 'Mover el caballo clavado con un ataque']]], ['Eliminación de la defensa', [[39, 'Desviar con el alfil la dama que protege'], [40, 'Desviar con el alfil la torre que protege'], [41, 'El truco del gancho y la escalera'], [42, 'Gancho y escalera ampliado'], [43, 'Doble sacrificio de torre en la última fila'], [44, 'Desviar con la torre la dama que protege'], [45, 'Desviar el alfil de dama'], [46, 'Desviar el alfil de rey'], [47, 'Aprovechar la casilla f3/f6'], [48, 'El truco del gambito Smith-Morra'], [49, 'Cambiar damas para una doble amenaza']]], ['Atrapar piezas', [[50, 'La trampa al paso'], [51, 'El avance de peón ingenioso'], [52, 'La trampa del Arca de Noé'], [53, 'Cortar la diagonal al alfil'], [54, 'Encerrar el alfil «de Fischer»'], [55, 'Atrapar el caballo en la banda'], [56, 'La retirada del caballo'], [57, 'Atrapar la torre en la esquina'], [58, 'Atrapar la dama en la esquina'], [59, 'Atrapar la dama en b2/b7'], [60, 'Obstruir a la dama'], [61, 'Atrapar la dama con un giro'], [62, 'Atrapar la dama en la banda'], [63, 'La trampa Rubinstein']]], ['Coronación', [[64, 'Sacrificar la dama por una doble amenaza de coronar'], [65, 'La táctica Lasker-Loman'], [66, 'Atraer la torre de la última fila con un peón'], [67, 'Coronar ignorando la captura'], [68, 'Jaque intermedio en la última fila'], [69, 'Construir el puente'], [70, 'Obstrucción para coronar'], [71, 'Ensartada para coronar'], [72, 'Dos peones en sexta contra torre'], [73, 'El peón de torre contra el caballo'], [74, 'Subpromoción a caballo con horquilla']]], ['Recursos para hacer tablas', [[75, 'Jaque perpetuo de caballo'], [76, 'El «perpetuum mobile» de Nimzowitsch'], [77, 'Jaque perpetuo de torre'], [78, 'Perpetuo bloqueando'], [79, 'La torre loca'], [80, 'Ahogado con rey contra dama']]], ['Recursos defensivos', [[81, 'Subpromoción para evitar el ahogado'], [82, 'Defenderse de la clavada en la columna e'], [83, 'Contraclavada (atacar y defenderse)'], [84, 'Desclavar el caballo atacando al alfil'], [85, 'Avanzar el peón de b'], [86, 'Defenderse de un ataque doble'], [87, 'La interposición «de principiante»'], [88, 'Despeje defensivo de la séptima']]], ['Maniobras de dama y el punto f2/f7', [[89, 'La maniobra en escalera'], [90, 'Maniobra Dh5–e5 (…Dh4–e4)'], [91, 'Maniobra Dh5–d5 (…Dh4–d4)'], [92, 'Dd5 directa'], [93, 'Sacrificio en f2/f7 para el salto de caballo'], [94, 'Sacrificio de caballo en f2/f7']]], ['Recursos de ataque', [[95, 'Dos torres en séptima'], [96, 'El sacrificio griego'], [97, 'El doble sacrificio de alfiles de Lasker'], [98, 'Bloquear el peón de f'], [99, 'El doble sacrificio de torres'], [100, 'El sacrificio imán']]], ['Combinaciones de patrones', []]];
+
 // ---------- Mis partidas: catalogue of analysed games with tactic tags, viewer and "solve it" ----------
 (function () {
   var $g = function $g(id) {
@@ -9785,33 +9818,33 @@ var GAMES_BASE = 'partidas/',
     return _load.apply(this, arguments);
   }
   function _load() {
-    _load = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee4() {
+    _load = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee5() {
       var years, _t4;
-      return _regenerator().w(function (_context4) {
-        while (1) switch (_context4.p = _context4.n) {
+      return _regenerator().w(function (_context5) {
+        while (1) switch (_context5.p = _context5.n) {
           case 0:
             if (!CAT) {
-              _context4.n = 1;
+              _context5.n = 1;
               break;
             }
-            return _context4.a(2);
+            return _context5.a(2);
           case 1:
             $g('gList').innerHTML = '<p class="empty">Cargando partidas…</p>';
-            _context4.p = 2;
-            _context4.n = 3;
+            _context5.p = 2;
+            _context5.n = 3;
             return fetch(GAMES_BASE + 'catalog.json').then(function (r) {
               if (!r.ok) throw new Error(r.status);
               return r.json();
             });
           case 3:
-            CAT = _context4.v;
-            _context4.n = 5;
+            CAT = _context5.v;
+            _context5.n = 5;
             break;
           case 4:
-            _context4.p = 4;
-            _t4 = _context4.v;
+            _context5.p = 4;
+            _t4 = _context5.v;
             $g('gList').innerHTML = '<p class="empty">No se han podido cargar las partidas.</p>';
-            return _context4.a(2);
+            return _context5.a(2);
           case 5:
             years = _toConsumableArray(new Set(CAT.map(function (r) {
               return r[1].slice(0, 4);
@@ -9848,9 +9881,9 @@ var GAMES_BASE = 'partidas/',
             };
             render();
           case 6:
-            return _context4.a(2);
+            return _context5.a(2);
         }
-      }, _callee4, null, [[2, 4]]);
+      }, _callee5, null, [[2, 4]]);
     }));
     return _load.apply(this, arguments);
   }
@@ -9929,30 +9962,13 @@ var GAMES_BASE = 'partidas/',
     });
     sumTable.S = S;
     var n100 = base.length ? 100 * E / base.length : 0;
-    $g('gSum').innerHTML = (E ? "<p class=\"sumline\"><b>Tus errores que dieron una t\xE1ctica al rival:</b> ".concat(E.toLocaleString('es-ES'), " en ").concat(EG.toLocaleString('es-ES'), " de ").concat(base.length.toLocaleString('es-ES'), " partidas (").concat(String(n100.toFixed(0)), " por cada 100 partidas). <b>").concat(Math.round(100 * EE / E), " %</b> eran evitables: hab\xEDa m\xE1s de una jugada que no dejaba nada. <button type=\"button\" class=\"btn small\" id=\"gErr\">Ver los errores evitables</button></p>") : '') + sumTable('Táctica', TH_ORDER.filter(function (k) {
-      return S[k];
-    }).map(function (k) {
-      return [k, k.length === 3 ? '&nbsp;&nbsp;↳ ' + TH[k].split(': ')[1] : TH[k] + (k === 'PG' || k === 'GM' ? ' (total)' : ''), k.length === 3];
-    })) + (MP_ORDER.some(function (k) {
-      return S['P:' + k];
-    }) ? "<h4 class=\"gsubh\">Tipos de mate</h4><p class=\"sumline\" style=\"margin-top:0\">Seg\xFAn la posici\xF3n final del mate (en los mates largos, la l\xEDnea del motor).</p>" + sumTable('Tipo de mate', MP_ORDER.filter(function (k) {
-      return S['P:' + k];
-    }).map(function (k) {
-      return ['P:' + k, "".concat(MPN[k], "<br><small>").concat(MPD[k], "</small>"), false];
-    })) : '');
+    $g('gSum').innerHTML = (E ? "<p class=\"sumline\"><b>Tus errores que dieron una t\xE1ctica al rival:</b> ".concat(E.toLocaleString('es-ES'), " en ").concat(EG.toLocaleString('es-ES'), " de ").concat(base.length.toLocaleString('es-ES'), " partidas (").concat(String(n100.toFixed(0)), " por cada 100 partidas). <b>").concat(Math.round(100 * EE / E), " %</b> eran evitables: hab\xEDa m\xE1s de una jugada que no dejaba nada. <button type=\"button\" class=\"btn small\" id=\"gErr\">Ver los errores evitables</button></p>") : '') + '';
     var ge = $g('gErr');
     if (ge) ge.onclick = function () {
       $g('gOut').value = 'e';
       page = 60;
       render();
     };
-    $g('gSum').querySelectorAll('tr.click').forEach(function (tr) {
-      return tr.onclick = function () {
-        $g('gTheme').value = tr.dataset.k;
-        page = 60;
-        render();
-      };
-    });
     $g('gCount').textContent = "".concat(rows.length.toLocaleString('es-ES'), " partidas") + (rows.length !== CAT.length ? " de ".concat(CAT.length.toLocaleString('es-ES')) : '') + " \xB7 analizadas ".concat(CAT.length.toLocaleString('es-ES'));
     var L = $g('gList');
     L.innerHTML = rows.slice(0, page).map(function (r) {
@@ -9978,36 +9994,36 @@ var GAMES_BASE = 'partidas/',
     return _openGame.apply(this, arguments);
   }
   function _openGame() {
-    _openGame = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee5(r, scroll) {
+    _openGame = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee6(r, scroll) {
       var mon, d, sans, g, fens, ucis, th, out, first, link, _t5;
-      return _regenerator().w(function (_context5) {
-        while (1) switch (_context5.p = _context5.n) {
+      return _regenerator().w(function (_context6) {
+        while (1) switch (_context6.p = _context6.n) {
           case 0:
             mon = r[1].slice(0, 7);
             if (DET[mon]) {
-              _context5.n = 4;
+              _context6.n = 4;
               break;
             }
-            _context5.p = 1;
-            _context5.n = 2;
+            _context6.p = 1;
+            _context6.n = 2;
             return fetch(GAMES_BASE + mon + '.json').then(function (x) {
               return x.json();
             });
           case 2:
-            DET[mon] = _context5.v;
-            _context5.n = 4;
+            DET[mon] = _context6.v;
+            _context6.n = 4;
             break;
           case 3:
-            _context5.p = 3;
-            _t5 = _context5.v;
+            _context6.p = 3;
+            _t5 = _context6.v;
             DET[mon] = {};
           case 4:
             d = DET[mon][r[0]];
             if (d) {
-              _context5.n = 5;
+              _context6.n = 5;
               break;
             }
-            return _context5.a(2);
+            return _context6.a(2);
           case 5:
             sans = d.s ? d.s.split(' ') : [];
             g = new Chess(), fens = [g.fen()], ucis = [];
@@ -10060,9 +10076,9 @@ var GAMES_BASE = 'partidas/',
               behavior: 'smooth'
             });
           case 6:
-            return _context5.a(2);
+            return _context6.a(2);
         }
-      }, _callee5, null, [[1, 3]]);
+      }, _callee6, null, [[1, 3]]);
     }));
     return _openGame.apply(this, arguments);
   }
@@ -10577,77 +10593,152 @@ var GAMES_BASE = 'partidas/',
   var fmtClk = function fmtClk(x) {
     return x >= 60 ? Math.floor(x / 60) + ':' + String(Math.round(x % 60)).padStart(2, '0') : Math.round(x) + ' s';
   };
+  var qOf = function qOf(m) {
+    return m.slice(0, 4) + 'T' + (Math.floor((+m.slice(5, 7) - 1) / 3) + 1);
+  };
+  var perOk = function perOk(mon) {
+    var v = $g('ePer').value;
+    if (!v) return true;
+    var _ref6 = [v[0], v.slice(2)],
+      k = _ref6[0],
+      x = _ref6[1];
+    return k === 'y' ? mon.startsWith(x) : k === 'q' ? qOf(mon) === x : mon === x;
+  };
   function errorsOpen() {
     return _errorsOpen.apply(this, arguments);
   }
   function _errorsOpen() {
-    _errorsOpen = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee6() {
-      var years, _t6;
-      return _regenerator().w(function (_context6) {
-        while (1) switch (_context6.p = _context6.n) {
+    _errorsOpen = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee7() {
+      var mons, years, qs, MN, _t6;
+      return _regenerator().w(function (_context7) {
+        while (1) switch (_context7.p = _context7.n) {
           case 0:
-            _context6.n = 1;
+            _context7.n = 1;
             return load();
           case 1:
             if (CAT) {
-              _context6.n = 2;
+              _context7.n = 2;
               break;
             }
-            return _context6.a(2);
+            return _context7.a(2);
           case 2:
             if (ERR) {
-              _context6.n = 6;
+              _context7.n = 6;
               break;
             }
-            _context6.p = 3;
-            _context6.n = 4;
+            _context7.p = 3;
+            _context7.n = 4;
             return fetch(GAMES_BASE + 'errors.json').then(function (r) {
               return r.json();
             });
           case 4:
-            ERR = _context6.v;
-            _context6.n = 6;
+            ERR = _context7.v;
+            _context7.n = 6;
             break;
           case 5:
-            _context6.p = 5;
-            _t6 = _context6.v;
+            _context7.p = 5;
+            _t6 = _context7.v;
             ERR = {};
           case 6:
-            years = _toConsumableArray(new Set(CAT.map(function (r) {
-              return r[1].slice(0, 4);
-            }))).sort().reverse();
-            if (!$g('eYear').options.length) {
-              $g('eYear').innerHTML = '<option value="">Todos los años</option>' + years.map(function (y) {
-                return "<option>".concat(y, "</option>");
-              }).join('');
-              ['eType', 'eSp', 'eLeft', 'eYear'].forEach(function (id) {
+            mons = _toConsumableArray(new Set(CAT.map(function (r) {
+              return r[1].slice(0, 7);
+            }))).sort().reverse(), years = _toConsumableArray(new Set(mons.map(function (m) {
+              return m.slice(0, 4);
+            }))), qs = _toConsumableArray(new Set(mons.map(qOf)));
+            MN = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+            if (!$g('ePer').options.length) {
+              $g('ePer').innerHTML = '<option value="">Todo el periodo</option>' + "<optgroup label=\"A\xF1os\">".concat(years.map(function (y) {
+                return "<option value=\"y:".concat(y, "\">").concat(y, "</option>");
+              }).join(''), "</optgroup><optgroup label=\"Trimestres\">").concat(qs.map(function (q) {
+                return "<option value=\"q:".concat(q, "\">").concat(q.slice(5), "\xBA trimestre ").concat(q.slice(0, 4), "</option>");
+              }).join(''), "</optgroup><optgroup label=\"Meses\">").concat(mons.map(function (m) {
+                return "<option value=\"m:".concat(m, "\">").concat(MN[+m.slice(5) - 1], " ").concat(m.slice(0, 4), "</option>");
+              }).join(''), "</optgroup>");
+              ['eType', 'eSp', 'eLeft'].forEach(function (id) {
                 return $g(id).onchange = function () {
                   ePage = 50;
                   renderErrList();
                 };
               });
+              $g('ePer').onchange = function () {
+                ePage = 50;
+                renderErrStats();
+                renderErrList();
+              };
             }
             renderErrStats();
             renderErrList();
           case 7:
-            return _context6.a(2);
+            return _context7.a(2);
         }
-      }, _callee6, null, [[3, 5]]);
+      }, _callee7, null, [[3, 5]]);
     }));
     return _errorsOpen.apply(this, arguments);
   }
   function renderErrStats() {
-    var E = ERR || {};
-    if (!E.sp) {
+    var E0 = ERR || {};
+    if (!E0.sp) {
       $g('eTables').innerHTML = '<p class="empty">Sin datos de reloj.</p>';
       return;
     }
+    var E = E0;
+    if (E0.mon) {
+      // sum the months of the chosen period
+      var ms = Object.keys(E0.mon).filter(perOk),
+        A = {
+          sp: E0.lab.sp.map(function (l) {
+            return [l, 0, 0, 0];
+          }),
+          left: E0.lab.left.map(function (l) {
+            return [l, 0, 0, 0];
+          }),
+          ph: E0.lab.ph.map(function (l) {
+            return [l, 0, 0, 0];
+          })
+        },
+        h = new Array(121).fill(0),
+        hc = new Array(121).fill(0);
+      ms.forEach(function (m) {
+        var M = E0.mon[m];
+        ['sp', 'left', 'ph'].forEach(function (k) {
+          return M[k].forEach(function (b, j) {
+            A[k][j][1] += b[0];
+            A[k][j][2] += b[1];
+            A[k][j][3] += b[2];
+          });
+        });
+        M.h.forEach(function (v, j) {
+          h[j] += v;
+          hc[j] += M.hc[j];
+        });
+      });
+      var med = function med(H) {
+        var n = H.reduce(function (a, b) {
+          return a + b;
+        }, 0);
+        var c = 0;
+        for (var j = 0; j < H.length; j++) {
+          c += H[j];
+          if (c * 2 >= n) return j / 2 + 0.25;
+        }
+        return 0;
+      };
+      E = Object.assign({}, E0, A, {
+        avg: {
+          medAll: med(h),
+          medConc: med(hc)
+        }
+      });
+    }
+    var PC = CAT.filter(function (r) {
+      return perOk(r[1].slice(0, 7));
+    });
     var nc = 0,
       ne = 0,
       nm = 0,
       low = 0,
       fast = 0;
-    CAT.forEach(function (r) {
+    PC.forEach(function (r) {
       return r[9].forEach(function (t) {
         if ('cx'.includes(t[2])) {
           nc++;
@@ -10660,7 +10751,7 @@ var GAMES_BASE = 'partidas/',
     var kpi = function kpi(v, l) {
       return "<div class=\"kpi\"><b>".concat(v, "</b><span>").concat(l, "</span></div>");
     };
-    $g('eKpis').innerHTML = kpi(nc.toLocaleString('es-ES'), "errores graves (".concat((100 * nc / CAT.length).toFixed(0), " por cada 100 partidas)")) + kpi(Math.round(100 * ne / nc) + ' %', 'eran evitables') + kpi(fmtS(E.avg.medAll), 'pensaste en una jugada normal (mediana)') + kpi(fmtS(E.avg.medConc), 'pensaste en un error grave (mediana)') + kpi(Math.round(100 * fast / nc) + ' %', 'de los errores graves, pensados menos de 2 s') + kpi(Math.round(100 * low / nc) + ' %', 'de los errores graves, con menos de 30 s en el reloj');
+    $g('eKpis').innerHTML = kpi(nc.toLocaleString('es-ES'), "errores graves en ".concat(PC.length.toLocaleString('es-ES'), " partidas (").concat(PC.length ? (100 * nc / PC.length).toFixed(0) : 0, " por cada 100)")) + kpi(nc ? Math.round(100 * ne / nc) + ' %' : '–', 'eran evitables') + kpi(fmtS(E.avg.medAll), 'pensaste en una jugada normal (mediana)') + kpi(fmtS(E.avg.medConc), 'pensaste en un error grave (mediana)') + kpi(nc ? Math.round(100 * fast / nc) + ' %' : '–', 'de los errores graves, pensados menos de 2 s') + kpi(nc ? Math.round(100 * low / nc) + ' %' : '–', 'de los errores graves, con menos de 30 s en el reloj');
     var tbl = function tbl(title, rows) {
       var rate = rows.map(function (r) {
           return r[1] ? 100 * r[2] / r[1] : 0;
@@ -10680,7 +10771,6 @@ var GAMES_BASE = 'partidas/',
     var ty = $g('eType').value,
       sp = $g('eSp').value,
       lf = $g('eLeft').value,
-      y = $g('eYear').value,
       rng = function rng(v) {
         return v ? v.split('-').map(Number) : null;
       },
@@ -10688,7 +10778,7 @@ var GAMES_BASE = 'partidas/',
       L = rng(lf),
       out = [];
     CAT.forEach(function (r) {
-      if (y && !r[1].startsWith(y)) return;
+      if (!perOk(r[1].slice(0, 7))) return;
       r[9].forEach(function (t) {
         if (ty === 'm' ? t[2] !== 'm' : !'cx'.includes(t[2]) || ty === 'e' && t[6] !== 'e') return;
         if (S && !(t[9] != null && t[9] >= S[0] && t[9] < S[1])) return;
@@ -10701,10 +10791,10 @@ var GAMES_BASE = 'partidas/',
   function renderErrList() {
     var it = errItems();
     $g('eCount').textContent = it.length.toLocaleString('es-ES') + ' errores';
-    $g('eList').innerHTML = it.slice(0, ePage).map(function (_ref6, i) {
-      var _ref7 = _slicedToArray(_ref6, 2),
-        r = _ref7[0],
-        t = _ref7[1];
+    $g('eList').innerHTML = it.slice(0, ePage).map(function (_ref7, i) {
+      var _ref8 = _slicedToArray(_ref7, 2),
+        r = _ref8[0],
+        t = _ref8[1];
       var ply = t[2] === 'm' && /^M/.test(t[1]) && typeof t[5] === 'number' && t[5] > t[0] ? t[5] : t[0];
       return "<button type=\"button\" class=\"erow\" data-i=\"".concat(i, "\"><span><b>").concat(fmtDate(r[1]), "</b><br><small>").concat(r[2] === 'w' ? 'blancas' : 'negras', " \xB7 ").concat(RES[r[5]].toLowerCase(), "</small></span><span><b>").concat(Math.floor(ply / 2) + 1).concat(ply % 2 ? '…' : '.', "</b> ").concat(TH[t[1]] || t[1]).concat(t[8] && MPS[t[8]] ? ' (' + MPS[t[8]] + ')' : '', " \xB7 ").concat(t[2] === 'm' ? 'la tenías y no la jugaste' : 'se la dejaste al rival' + (t[2] === 'x' ? ' (no la vio)' : ''), " \xB7 \u2212").concat(t[3] >= 50 || /^M/.test(t[1]) ? 'mate' : String(t[3]).replace('.', ','), "</span><span class=\"et\">").concat(t[9] != null ? "pensaste <b class=\"".concat(t[9] < 2 ? 'fast' : '', "\">").concat(fmtS(t[9]), "</b><br>reloj <b class=\"").concat(t[10] < 30 ? 'low' : '', "\">").concat(fmtClk(t[10]), "</b>") : '', "</span></button>");
     }).join('') + (it.length > ePage ? "<button type=\"button\" class=\"btn small\" id=\"eMore\">Ver ".concat(Math.min(50, it.length - ePage), " m\xE1s</button>") : '') + (it.length ? '' : '<p class="empty">Ningún error con estos filtros.</p>');
@@ -10735,6 +10825,310 @@ var GAMES_BASE = 'partidas/',
     };
   }
   window.errorsOpen = errorsOpen;
+  // ---------- Tácticas / Finales: tables over the whole catalogue (own colour/year filters); a row opens Mis partidas ----------
+  function themeStats(rows) {
+    var S = {};
+    rows.forEach(function (r) {
+      return r[9].forEach(function (t) {
+        var ks = [t[1]];
+        if (t[1].length === 3) ks.push(t[1].slice(0, 2));
+        if (t[8]) ks.push('P:' + t[8]);
+        ks.forEach(function (k) {
+          var s = S[k] = S[k] || {
+            f: 0,
+            m: 0,
+            c: 0,
+            x: 0,
+            e: 0
+          };
+          s[t[2]]++;
+          if ('cx'.includes(t[2]) && t[6] === 'e') s.e++;
+        });
+      });
+    });
+    return S;
+  }
+  function secRows(c, y) {
+    var col = $g(c).value,
+      yr = $g(y).value;
+    return CAT.filter(function (r) {
+      return (!col || r[2] === col) && (!yr || r[1].startsWith(yr));
+    });
+  }
+  function secInit(c, y, fn) {
+    if ($g(y).options.length) return;
+    var years = _toConsumableArray(new Set(CAT.map(function (r) {
+      return r[1].slice(0, 4);
+    }))).sort().reverse();
+    $g(y).innerHTML = '<option value="">Todos</option>' + years.map(function (x) {
+      return "<option>".concat(x, "</option>");
+    }).join('');
+    [c, y].forEach(function (id) {
+      return $g(id).onchange = fn;
+    });
+  }
+  function goGames(k, col, yr) {
+    ['gOut', 'gRes', 'gEco'].forEach(function (id) {
+      $g(id).value = '';
+    });
+    $g('gCol').value = col || '';
+    $g('gYear').value = yr || '';
+    $g('gTheme').value = k;
+    page = 60;
+    document.querySelector('[data-main="games"]').click();
+    render();
+  }
+  function bindRows(host, c, y) {
+    $g(host).querySelectorAll('tr.click').forEach(function (tr) {
+      return tr.onclick = function () {
+        return goGames(tr.dataset.k, $g(c).value, $g(y).value);
+      };
+    });
+  }
+  function tacOpen() {
+    return _tacOpen.apply(this, arguments);
+  }
+  function _tacOpen() {
+    _tacOpen = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee8() {
+      var R;
+      return _regenerator().w(function (_context8) {
+        while (1) switch (_context8.n) {
+          case 0:
+            _context8.n = 1;
+            return load();
+          case 1:
+            if (CAT) {
+              _context8.n = 2;
+              break;
+            }
+            return _context8.a(2);
+          case 2:
+            secInit('tCol', 'tYear', tacOpen);
+            R = secRows('tCol', 'tYear');
+            sumTable.S = themeStats(R);
+            $g('tSum').innerHTML = "<p class=\"sumline\">".concat(R.length.toLocaleString('es-ES'), " partidas.</p>") + sumTable('Táctica', TH_ORDER.filter(function (k) {
+              return !/^M/.test(k) && sumTable.S[k];
+            }).map(function (k) {
+              return [k, k.length === 3 ? '&nbsp;&nbsp;↳ ' + TH[k].split(': ')[1] : TH[k] + (k === 'PG' || k === 'GM' ? ' (total)' : ''), k.length === 3];
+            }));
+            bindRows('tSum', 'tCol', 'tYear');
+          case 3:
+            return _context8.a(2);
+        }
+      }, _callee8);
+    }));
+    return _tacOpen.apply(this, arguments);
+  }
+  function endOpen() {
+    return _endOpen.apply(this, arguments);
+  } // ---------- 100 patrones (Erwich): chapters → patterns → history. ERW = {n: [[id, ply, outcome], ...]} once detectors exist ----------
+  function _endOpen() {
+    _endOpen = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee9() {
+      var R, S;
+      return _regenerator().w(function (_context9) {
+        while (1) switch (_context9.n) {
+          case 0:
+            _context9.n = 1;
+            return load();
+          case 1:
+            if (CAT) {
+              _context9.n = 2;
+              break;
+            }
+            return _context9.a(2);
+          case 2:
+            secInit('fCol', 'fYear', endOpen);
+            R = secRows('fCol', 'fYear');
+            S = sumTable.S = themeStats(R);
+            $g('fSum').innerHTML = "<p class=\"sumline\">".concat(R.length.toLocaleString('es-ES'), " partidas.</p><h4 class=\"gsubh\">Mates por n\xFAmero de jugadas</h4>") + sumTable('Mate', ['M1', 'M2', 'M3', 'M4', 'M5'].filter(function (k) {
+              return S[k];
+            }).map(function (k) {
+              return [k, TH[k], false];
+            })) + (MP_ORDER.some(function (k) {
+              return S['P:' + k];
+            }) ? "<h4 class=\"gsubh\">Tipos de mate</h4><p class=\"sumline\" style=\"margin-top:0\">Seg\xFAn la posici\xF3n final del mate (en los mates largos, la l\xEDnea del motor).</p>" + sumTable('Tipo de mate', MP_ORDER.filter(function (k) {
+              return S['P:' + k];
+            }).map(function (k) {
+              return ['P:' + k, "".concat(MPN[k], "<br><small>").concat(MPD[k], "</small>"), false];
+            })) : '');
+            bindRows('fSum', 'fCol', 'fYear');
+          case 3:
+            return _context9.a(2);
+        }
+      }, _callee9);
+    }));
+    return _endOpen.apply(this, arguments);
+  }
+  var ERW = null,
+    eChap = 0;
+  function erwOpen() {
+    return _erwOpen.apply(this, arguments);
+  }
+  function _erwOpen() {
+    _erwOpen = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee0() {
+      var _ERWICH$eChap, name, pats, byId, st, _t7;
+      return _regenerator().w(function (_context0) {
+        while (1) switch (_context0.p = _context0.n) {
+          case 0:
+            _context0.n = 1;
+            return load();
+          case 1:
+            if (CAT) {
+              _context0.n = 2;
+              break;
+            }
+            return _context0.a(2);
+          case 2:
+            if (!(ERW === null)) {
+              _context0.n = 6;
+              break;
+            }
+            _context0.p = 3;
+            _context0.n = 4;
+            return fetch(GAMES_BASE + 'erwich.json').then(function (r) {
+              if (!r.ok) throw 0;
+              return r.json();
+            });
+          case 4:
+            ERW = _context0.v;
+            _context0.n = 6;
+            break;
+          case 5:
+            _context0.p = 5;
+            _t7 = _context0.v;
+            ERW = {};
+          case 6:
+            $g('eChap').innerHTML = ERWICH.map(function (c, i) {
+              return "<button type=\"button\" data-i=\"".concat(i, "\" aria-pressed=\"").concat(i === eChap, "\">").concat(i + 1, ". ").concat(c[0], "</button>");
+            }).join('');
+            $g('eChap').querySelectorAll('button').forEach(function (b) {
+              return b.onclick = function () {
+                eChap = +b.dataset.i;
+                $g('eHist').innerHTML = '';
+                erwOpen();
+              };
+            });
+            _ERWICH$eChap = _slicedToArray(ERWICH[eChap], 2), name = _ERWICH$eChap[0], pats = _ERWICH$eChap[1], byId = {};
+            CAT.forEach(function (r) {
+              byId[r[0]] = r;
+            });
+            if (pats.length) {
+              _context0.n = 7;
+              break;
+            }
+            $g('ePat').innerHTML = '<p class="empty">Este capítulo combina patrones de los anteriores: no tiene patrones propios.</p>';
+            return _context0.a(2);
+          case 7:
+            st = function st(n) {
+              var s = {
+                f: 0,
+                m: 0,
+                c: 0,
+                x: 0
+              };
+              (ERW[n] || []).forEach(function (o) {
+                s[o[2]]++;
+              });
+              return s;
+            };
+            $g('ePat').innerHTML = "<h4 class=\"gsubh\">Cap\xEDtulo ".concat(eChap + 1, ": ").concat(name, "</h4><table class=\"stbl gsum\"><thead><tr><th rowspan=\"2\">Patr\xF3n</th><th colspan=\"4\" class=\"grp\">Tuyos</th><th colspan=\"3\" class=\"grp\">Del rival, por un error tuyo</th></tr><tr><th>Total</th><th>Aprovechados</th><th>Perdidos</th><th>% visto</th><th>Total</th><th>Lo aprovech\xF3</th><th>No lo vio</th></tr></thead><tbody>").concat(pats.map(function (_ref13) {
+              var _ref14 = _slicedToArray(_ref13, 2),
+                n = _ref14[0],
+                lb = _ref14[1];
+              var has = n in ERW,
+                s = st(n),
+                tot = s.f + s.m,
+                pc = tot ? Math.round(100 * s.f / tot) + ' %' : '–';
+              return "<tr class=\"click\" data-n=\"".concat(n, "\"><td><b>").concat(n, ".</b> ").concat(lb).concat(has ? '' : '<br><span class="erwnone">sin detector todavía</span>', "</td>").concat(has ? "<td><b>".concat(tot, "</b></td><td>").concat(s.f, "</td><td>").concat(s.m, "</td><td>").concat(pc, "</td><td><b>").concat(s.c + s.x, "</b></td><td>").concat(s.c, "</td><td>").concat(s.x, "</td>") : '<td colspan="7" class="erwnone">–</td>', "</tr>");
+            }).join(''), "</tbody></table>");
+            $g('ePat').querySelectorAll('tr.click').forEach(function (tr) {
+              return tr.onclick = function () {
+                return erwHist(+tr.dataset.n, byId);
+              };
+            });
+          case 8:
+            return _context0.a(2);
+        }
+      }, _callee0, null, [[3, 5]]);
+    }));
+    return _erwOpen.apply(this, arguments);
+  }
+  function erwHist(n, byId) {
+    var lb = ERWICH.reduce(function (a, c) {
+        return a.concat(c[1]);
+      }, []).find(function (p) {
+        return p[0] === n;
+      })[1],
+      occ = ERW[n];
+    if (!occ) {
+      $g('eHist').innerHTML = "<div class=\"card\"><h4 class=\"gsubh\" style=\"margin-top:0\">".concat(n, ". ").concat(lb, "</h4><p class=\"erwnone\">Todav\xEDa no hay detector para este patr\xF3n, as\xED que no hay historial. Los detectores se ir\xE1n a\xF1adiendo cap\xEDtulo a cap\xEDtulo.</p></div>");
+      return;
+    }
+    var rows = occ.map(function (o) {
+      return [byId[o[0]], o];
+    }).filter(function (x) {
+      return x[0];
+    }).sort(function (a, b) {
+      return a[0][1] < b[0][1] ? 1 : -1;
+    });
+    var Q = {};
+    rows.forEach(function (_ref0) {
+      var _ref1 = _slicedToArray(_ref0, 2),
+        r = _ref1[0],
+        o = _ref1[1];
+      var q = r[1].slice(0, 4) + 'T' + (Math.floor((+r[1].slice(5, 7) - 1) / 3) + 1),
+        x = Q[q] = Q[q] || {
+          f: 0,
+          m: 0,
+          c: 0
+        };
+      if (o[2] === 'f') x.f++;else if (o[2] === 'm') x.m++;else x.c++;
+    });
+    $g('eHist').innerHTML = "<div class=\"card\"><h4 class=\"gsubh\" style=\"margin-top:0\">".concat(n, ". ").concat(lb, ": historial</h4><table class=\"stbl\"><thead><tr><th>Trimestre</th><th>Aprovechados</th><th>Perdidos</th><th>Se lo diste al rival</th></tr></thead><tbody>").concat(Object.keys(Q).sort().reverse().map(function (q) {
+      return "<tr><td>".concat(q, "</td><td>").concat(Q[q].f, "</td><td>").concat(Q[q].m, "</td><td>").concat(Q[q].c, "</td></tr>");
+    }).join(''), "</tbody></table>\n      <div class=\"elist\" style=\"margin-top:10px\">").concat(rows.slice(0, 100).map(function (_ref10, i) {
+      var _ref11 = _slicedToArray(_ref10, 2),
+        r = _ref11[0],
+        o = _ref11[1];
+      return "<button type=\"button\" class=\"erow\" data-i=\"".concat(i, "\"><span><b>").concat(fmtDate(r[1]), "</b><br><small>").concat(r[2] === 'w' ? 'blancas' : 'negras', " \xB7 ").concat(RES[r[5]].toLowerCase(), "</small></span><span><b>").concat(Math.floor(o[1] / 2) + 1).concat(o[1] % 2 ? '…' : '.', "</b> ").concat(OUT[o[2]], "</span><span></span></button>");
+    }).join(''), "</div></div>");
+    $g('eHist').querySelectorAll('.erow').forEach(function (b) {
+      return b.onclick = /*#__PURE__*/_asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee4() {
+        var _rows$b$dataset$i, r, o;
+        return _regenerator().w(function (_context4) {
+          while (1) switch (_context4.n) {
+            case 0:
+              _rows$b$dataset$i = _slicedToArray(rows[+b.dataset.i], 2), r = _rows$b$dataset$i[0], o = _rows$b$dataset$i[1];
+              document.querySelector('[data-main="games"]').click();
+              _context4.n = 1;
+              return openGame(r, true);
+            case 1:
+              view.tag = r[9].find(function (t) {
+                return t[0] === o[1];
+              }) || null;
+              go(o[1]);
+            case 2:
+              return _context4.a(2);
+          }
+        }, _callee4);
+      }));
+    });
+  }
+  function tView(v) {
+    $g('tThemeBox').hidden = v !== 'theme';
+    $g('tErwBox').hidden = v !== 'erw';
+    if (v === 'erw') erwOpen();
+  }
+  $g('tView').querySelectorAll('button').forEach(function (b) {
+    return b.onclick = function () {
+      $g('tView').querySelectorAll('button').forEach(function (x) {
+        return x.setAttribute('aria-pressed', x === b);
+      });
+      tView(b.dataset.v);
+    };
+  });
+  window.tacOpen = tacOpen;
+  window.endOpen = endOpen;
   window.gamesOpen = load;
   if (!$g('viewGames').hidden) load();
 })();
@@ -10767,6 +11161,489 @@ var first = propose();
 start(first.id);
 // ================= Estadísticas =================
 var SD = {
+  "tc": {
+    "th": [["M1", "Mate en 1"], ["M2", "Mate en 2"], ["M3", "Mate en 3"], ["M4", "Mate en 4"], ["M5", "Mate en 5 o más"], ["PG", "Pieza gratis (total)"], ["PGq", "Pieza gratis: dama"], ["PGr", "Pieza gratis: torre"], ["PGb", "Pieza gratis: alfil"], ["PGn", "Pieza gratis: caballo"], ["GM", "Ganar material (total)"], ["GMq", "Ganar material: dama"], ["GMr", "Ganar material: torre"], ["GMb", "Ganar material: alfil"], ["GMn", "Ganar material: caballo"], ["GMp", "Ganar material: peón"], ["HN", "Horquilla de caballo"], ["HP", "Horquilla de peón"], ["HB", "Horquilla de alfil"], ["HR", "Horquilla de torre"], ["HQ", "Horquilla de dama"], ["CL", "Clavada"], ["EN", "Ensartada"], ["DS", "Ataque a la descubierta"], ["DJ", "Jaque a la descubierta"], ["CO", "Coronación"], ["OT", "Otra táctica"]],
+    "q": [["2022T4", 492, {
+      "GMb": [7, 7, 17],
+      "GM": [63, 36, 80],
+      "GMn": [6, 8, 15],
+      "M5": [20, 20, 44],
+      "M1": [24, 7, 52],
+      "M3": [8, 9, 22],
+      "DS": [21, 3, 23],
+      "OT": [19, 21, 22],
+      "GMq": [10, 3, 10],
+      "CO": [4, 0, 1],
+      "GMp": [31, 11, 31],
+      "PGr": [20, 7, 17],
+      "PG": [64, 24, 74],
+      "HQ": [8, 4, 16],
+      "HP": [2, 1, 6],
+      "M2": [24, 2, 33],
+      "EN": [13, 4, 9],
+      "PGq": [18, 10, 18],
+      "CL": [11, 8, 18],
+      "PGn": [13, 4, 25],
+      "HN": [9, 3, 14],
+      "GMr": [9, 7, 7],
+      "HB": [0, 0, 9],
+      "PGb": [13, 3, 14],
+      "M4": [4, 10, 14],
+      "HR": [2, 0, 3],
+      "DJ": [3, 2, 1]
+    }], ["2023T1", 877, {
+      "DS": [17, 21, 23],
+      "HN": [25, 12, 53],
+      "M4": [11, 20, 41],
+      "M2": [39, 27, 48],
+      "GMq": [16, 5, 9],
+      "GM": [124, 57, 129],
+      "GMn": [19, 10, 27],
+      "HR": [7, 3, 11],
+      "PGr": [39, 9, 32],
+      "PG": [133, 33, 136],
+      "PGq": [25, 7, 35],
+      "GMp": [48, 25, 54],
+      "M5": [31, 53, 86],
+      "GMr": [25, 8, 14],
+      "CL": [20, 8, 34],
+      "M1": [52, 16, 76],
+      "PGn": [33, 5, 38],
+      "PGb": [36, 12, 31],
+      "GMb": [16, 9, 25],
+      "OT": [36, 20, 43],
+      "EN": [21, 9, 14],
+      "CO": [10, 1, 3],
+      "M3": [17, 17, 43],
+      "HQ": [14, 8, 27],
+      "HP": [9, 1, 8],
+      "HB": [7, 2, 10],
+      "DJ": [2, 2, 4]
+    }], ["2023T2", 639, {
+      "HN": [14, 6, 29],
+      "GMb": [15, 2, 15],
+      "GM": [100, 32, 83],
+      "GMn": [16, 6, 20],
+      "GMq": [16, 3, 6],
+      "OT": [35, 30, 34],
+      "GMp": [33, 21, 36],
+      "PGn": [17, 7, 24],
+      "PG": [86, 32, 86],
+      "M5": [24, 29, 58],
+      "M4": [8, 15, 24],
+      "M1": [41, 14, 58],
+      "PGq": [17, 5, 11],
+      "PGb": [18, 10, 31],
+      "CL": [20, 9, 24],
+      "HR": [8, 2, 4],
+      "M3": [21, 15, 35],
+      "EN": [11, 6, 16],
+      "PGr": [34, 10, 20],
+      "DS": [16, 3, 26],
+      "M2": [17, 15, 40],
+      "DJ": [3, 0, 5],
+      "HQ": [10, 5, 13],
+      "GMr": [20, 0, 6],
+      "CO": [8, 0, 2],
+      "HP": [4, 5, 9],
+      "HB": [2, 1, 5]
+    }], ["2023T3", 812, {
+      "CL": [13, 21, 34],
+      "GMp": [28, 15, 44],
+      "GM": [86, 42, 101],
+      "M5": [21, 18, 60],
+      "PGn": [28, 9, 32],
+      "PG": [109, 31, 116],
+      "HQ": [9, 11, 19],
+      "GMr": [19, 3, 16],
+      "PGb": [35, 8, 33],
+      "GMn": [11, 16, 18],
+      "M2": [27, 14, 56],
+      "GMb": [8, 4, 14],
+      "M1": [56, 11, 67],
+      "M3": [24, 9, 41],
+      "DS": [18, 7, 30],
+      "HN": [25, 11, 40],
+      "PGr": [32, 9, 24],
+      "OT": [29, 25, 31],
+      "GMq": [20, 4, 9],
+      "PGq": [14, 5, 27],
+      "HR": [8, 8, 7],
+      "HP": [5, 3, 14],
+      "M4": [10, 8, 21],
+      "EN": [11, 3, 14],
+      "DJ": [4, 1, 6],
+      "HB": [8, 2, 5],
+      "CO": [4, 2, 2]
+    }], ["2023T4", 820, {
+      "HP": [6, 3, 15],
+      "M1": [58, 17, 79],
+      "HB": [7, 2, 8],
+      "M5": [22, 23, 79],
+      "PGr": [35, 12, 21],
+      "PG": [100, 36, 115],
+      "GMn": [12, 13, 24],
+      "GM": [125, 41, 113],
+      "EN": [9, 10, 18],
+      "OT": [25, 27, 45],
+      "M3": [15, 9, 33],
+      "PGb": [26, 9, 34],
+      "PGq": [22, 5, 28],
+      "PGn": [17, 10, 32],
+      "GMp": [58, 14, 42],
+      "M2": [23, 8, 50],
+      "HN": [20, 12, 41],
+      "GMq": [19, 5, 18],
+      "M4": [7, 15, 33],
+      "CL": [29, 11, 22],
+      "HQ": [8, 2, 27],
+      "DS": [16, 15, 24],
+      "GMr": [24, 5, 13],
+      "HR": [5, 3, 2],
+      "DJ": [4, 2, 6],
+      "GMb": [12, 4, 16],
+      "CO": [6, 1, 2]
+    }], ["2024T1", 847, {
+      "GMp": [50, 11, 37],
+      "GM": [107, 37, 117],
+      "HN": [23, 7, 38],
+      "PGq": [28, 9, 19],
+      "PG": [102, 39, 109],
+      "M5": [20, 15, 85],
+      "M3": [20, 9, 56],
+      "GMn": [13, 8, 22],
+      "GMq": [18, 6, 17],
+      "M2": [33, 9, 40],
+      "M4": [16, 12, 34],
+      "EN": [13, 13, 18],
+      "DS": [12, 4, 24],
+      "PGn": [20, 5, 36],
+      "GMb": [5, 6, 26],
+      "M1": [43, 17, 56],
+      "PGb": [29, 11, 27],
+      "CL": [30, 21, 27],
+      "HQ": [8, 8, 33],
+      "OT": [56, 31, 47],
+      "CO": [7, 1, 2],
+      "PGr": [25, 14, 27],
+      "HR": [9, 2, 6],
+      "DJ": [4, 2, 7],
+      "GMr": [21, 6, 15],
+      "HP": [1, 3, 16],
+      "HB": [2, 4, 11]
+    }], ["2024T2", 877, {
+      "GMb": [14, 11, 22],
+      "GM": [114, 60, 145],
+      "M2": [33, 8, 67],
+      "GMq": [23, 5, 12],
+      "PGr": [42, 16, 40],
+      "PG": [117, 47, 132],
+      "HN": [30, 7, 48],
+      "M5": [30, 34, 127],
+      "GMn": [13, 14, 50],
+      "GMp": [39, 24, 40],
+      "M1": [44, 17, 71],
+      "PGq": [22, 4, 24],
+      "DS": [21, 15, 24],
+      "PGn": [22, 10, 40],
+      "OT": [55, 25, 61],
+      "M3": [20, 10, 50],
+      "PGb": [31, 17, 28],
+      "M4": [13, 12, 38],
+      "GMr": [25, 6, 21],
+      "HP": [3, 1, 13],
+      "CL": [23, 19, 29],
+      "HQ": [12, 9, 25],
+      "DJ": [3, 1, 7],
+      "HB": [1, 3, 9],
+      "EN": [16, 6, 8],
+      "CO": [12, 1, 3],
+      "HR": [6, 7, 11],
+      "HK": [1, 0, 0]
+    }], ["2024T3", 436, {
+      "PGq": [13, 4, 14],
+      "PG": [54, 16, 62],
+      "M5": [12, 17, 50],
+      "GMp": [13, 9, 14],
+      "GM": [48, 25, 40],
+      "PGb": [13, 5, 20],
+      "PGn": [12, 4, 15],
+      "M4": [6, 10, 21],
+      "OT": [29, 18, 27],
+      "GMb": [4, 4, 7],
+      "CL": [14, 1, 13],
+      "HQ": [7, 5, 9],
+      "M3": [7, 2, 25],
+      "GMn": [4, 8, 8],
+      "M1": [21, 3, 36],
+      "M2": [11, 8, 23],
+      "HN": [10, 6, 12],
+      "GMr": [15, 1, 3],
+      "GMq": [12, 3, 8],
+      "DS": [9, 8, 17],
+      "PGr": [16, 3, 13],
+      "HB": [7, 0, 4],
+      "EN": [6, 3, 10],
+      "HR": [3, 1, 3],
+      "HP": [1, 1, 4],
+      "DJ": [2, 1, 1],
+      "CO": [1, 0, 0]
+    }], ["2024T4", 688, {
+      "GMp": [46, 11, 24],
+      "GM": [92, 35, 87],
+      "DJ": [5, 4, 3],
+      "M3": [16, 5, 37],
+      "HR": [2, 5, 3],
+      "GMb": [7, 10, 15],
+      "M1": [33, 12, 58],
+      "EN": [14, 5, 14],
+      "GMr": [12, 0, 6],
+      "PGn": [19, 4, 23],
+      "PG": [99, 30, 88],
+      "GMq": [13, 3, 15],
+      "M4": [14, 14, 23],
+      "PGb": [26, 9, 20],
+      "M2": [28, 10, 43],
+      "DS": [12, 7, 21],
+      "PGr": [27, 12, 29],
+      "CL": [23, 10, 21],
+      "PGq": [27, 5, 16],
+      "M5": [20, 18, 72],
+      "GMn": [14, 11, 27],
+      "CO": [4, 0, 2],
+      "OT": [25, 18, 35],
+      "HN": [7, 5, 32],
+      "HB": [3, 0, 10],
+      "HQ": [12, 2, 16],
+      "HP": [1, 3, 11]
+    }], ["2025T1", 881, {
+      "M1": [49, 13, 81],
+      "M2": [28, 20, 59],
+      "M3": [18, 9, 50],
+      "GMn": [24, 6, 33],
+      "GM": [119, 46, 122],
+      "GMq": [14, 8, 6],
+      "PGn": [14, 10, 30],
+      "PG": [126, 45, 124],
+      "PGr": [48, 16, 38],
+      "HN": [37, 6, 45],
+      "GMr": [28, 6, 16],
+      "GMp": [40, 21, 51],
+      "M4": [18, 12, 41],
+      "M5": [25, 18, 86],
+      "CO": [2, 1, 2],
+      "OT": [41, 27, 43],
+      "CL": [23, 22, 32],
+      "DS": [16, 15, 29],
+      "HQ": [17, 3, 26],
+      "PGb": [36, 13, 27],
+      "EN": [18, 11, 21],
+      "GMb": [13, 5, 16],
+      "DJ": [3, 4, 5],
+      "PGq": [28, 6, 29],
+      "HR": [8, 2, 9],
+      "HP": [4, 2, 3],
+      "HB": [5, 4, 8]
+    }], ["2025T2", 979, {
+      "M2": [38, 13, 67],
+      "OT": [61, 32, 61],
+      "M3": [14, 29, 60],
+      "M1": [52, 11, 62],
+      "HQ": [11, 6, 24],
+      "HN": [33, 12, 49],
+      "PGr": [49, 10, 38],
+      "PG": [123, 43, 137],
+      "GMp": [54, 33, 37],
+      "GM": [163, 64, 105],
+      "M5": [28, 30, 122],
+      "PGn": [18, 14, 41],
+      "EN": [19, 10, 33],
+      "PGb": [30, 13, 36],
+      "M4": [17, 14, 36],
+      "GMq": [28, 5, 11],
+      "GMb": [25, 9, 26],
+      "HP": [6, 4, 9],
+      "DS": [26, 10, 35],
+      "GMr": [33, 6, 11],
+      "CL": [29, 17, 23],
+      "GMn": [23, 11, 20],
+      "HR": [5, 2, 7],
+      "DJ": [8, 2, 3],
+      "PGq": [26, 6, 22],
+      "CO": [9, 2, 5],
+      "HB": [5, 4, 13],
+      "HK": [0, 0, 1]
+    }], ["2025T3", 1138, {
+      "PGq": [22, 7, 40],
+      "PG": [138, 39, 189],
+      "GMp": [59, 23, 52],
+      "GM": [157, 57, 163],
+      "GMr": [30, 3, 22],
+      "M5": [39, 24, 145],
+      "M1": [62, 21, 71],
+      "PGb": [37, 10, 42],
+      "CL": [36, 25, 31],
+      "EN": [27, 7, 23],
+      "DS": [18, 14, 36],
+      "OT": [64, 41, 76],
+      "HR": [9, 2, 13],
+      "HN": [24, 17, 52],
+      "HP": [8, 5, 13],
+      "M4": [17, 19, 56],
+      "CO": [11, 1, 3],
+      "M3": [28, 26, 75],
+      "GMn": [21, 15, 44],
+      "GMq": [29, 9, 25],
+      "M2": [45, 25, 76],
+      "HQ": [15, 7, 28],
+      "PGr": [51, 12, 51],
+      "HK": [0, 0, 1],
+      "GMb": [18, 7, 20],
+      "PGn": [28, 10, 56],
+      "HB": [10, 2, 8],
+      "DJ": [1, 3, 5]
+    }], ["2025T4", 1352, {
+      "PGq": [38, 6, 31],
+      "PG": [183, 49, 166],
+      "M1": [84, 15, 105],
+      "PGn": [27, 9, 49],
+      "HN": [34, 10, 69],
+      "PGr": [68, 14, 48],
+      "GMp": [75, 42, 66],
+      "GM": [184, 93, 192],
+      "GMr": [29, 7, 28],
+      "M3": [36, 16, 87],
+      "M2": [41, 18, 94],
+      "M5": [45, 51, 178],
+      "HB": [8, 9, 8],
+      "GMn": [28, 26, 49],
+      "PGb": [50, 20, 38],
+      "M4": [14, 23, 60],
+      "GMq": [33, 7, 23],
+      "HQ": [27, 14, 32],
+      "OT": [87, 50, 80],
+      "CO": [10, 2, 6],
+      "EN": [26, 16, 19],
+      "HR": [13, 6, 12],
+      "GMb": [19, 11, 26],
+      "CL": [38, 33, 41],
+      "DS": [26, 9, 55],
+      "HP": [9, 6, 18],
+      "DJ": [4, 2, 9]
+    }], ["2026T1", 411, {
+      "HN": [13, 3, 12],
+      "HQ": [5, 5, 13],
+      "M4": [9, 6, 13],
+      "OT": [21, 17, 16],
+      "PGb": [16, 6, 10],
+      "PG": [58, 20, 40],
+      "M5": [14, 16, 46],
+      "M1": [22, 7, 37],
+      "PGq": [13, 1, 10],
+      "GMp": [30, 12, 17],
+      "GM": [73, 29, 52],
+      "PGr": [23, 7, 11],
+      "HP": [1, 0, 3],
+      "GMq": [16, 1, 3],
+      "M3": [9, 7, 19],
+      "DS": [3, 9, 14],
+      "GMr": [13, 3, 5],
+      "M2": [11, 7, 23],
+      "HB": [5, 2, 2],
+      "EN": [10, 1, 9],
+      "PGn": [6, 6, 9],
+      "GMn": [9, 7, 11],
+      "CL": [12, 6, 16],
+      "HR": [2, 0, 2],
+      "DJ": [2, 0, 2],
+      "GMb": [5, 6, 16]
+    }], ["2026T2", 977, {
+      "OT": [44, 33, 44],
+      "GMr": [22, 8, 16],
+      "GM": [136, 55, 123],
+      "CL": [26, 35, 43],
+      "DS": [20, 15, 41],
+      "PGq": [27, 8, 22],
+      "PG": [126, 37, 148],
+      "M1": [61, 10, 64],
+      "M3": [28, 23, 40],
+      "PGn": [23, 8, 47],
+      "PGb": [26, 7, 42],
+      "GMq": [26, 8, 16],
+      "HR": [11, 4, 6],
+      "GMp": [39, 19, 44],
+      "GMb": [25, 6, 9],
+      "HB": [10, 3, 9],
+      "PGr": [50, 14, 37],
+      "HN": [32, 20, 43],
+      "GMn": [24, 14, 38],
+      "M4": [21, 19, 38],
+      "EN": [15, 10, 18],
+      "M5": [34, 49, 98],
+      "HQ": [20, 9, 15],
+      "M2": [27, 15, 71],
+      "DJ": [5, 1, 9],
+      "HP": [4, 3, 15],
+      "CO": [7, 1, 3],
+      "HK": [1, 0, 0]
+    }], ["2026T3", 1524, {
+      "PGr": [76, 13, 60],
+      "PG": [208, 61, 204],
+      "DS": [37, 29, 45],
+      "M2": [60, 30, 76],
+      "PGb": [46, 13, 52],
+      "GMn": [45, 21, 50],
+      "GM": [222, 98, 172],
+      "OT": [100, 47, 77],
+      "M4": [29, 30, 73],
+      "GMb": [25, 19, 33],
+      "GMq": [45, 6, 10],
+      "GMp": [72, 34, 59],
+      "EN": [29, 15, 29],
+      "HN": [30, 13, 70],
+      "DJ": [6, 2, 12],
+      "M5": [38, 47, 160],
+      "M1": [84, 10, 96],
+      "M3": [34, 29, 74],
+      "HB": [10, 4, 12],
+      "HQ": [23, 6, 43],
+      "CL": [43, 35, 54],
+      "PGn": [44, 25, 51],
+      "PGq": [42, 10, 41],
+      "GMr": [35, 18, 20],
+      "HR": [19, 5, 13],
+      "HP": [5, 7, 14],
+      "CO": [10, 1, 5]
+    }], ["2026T4", 261, {
+      "CL": [7, 4, 14],
+      "PGq": [6, 0, 8],
+      "PG": [39, 10, 31],
+      "HN": [7, 1, 11],
+      "M2": [5, 8, 23],
+      "OT": [11, 9, 13],
+      "DS": [11, 4, 2],
+      "M4": [5, 4, 10],
+      "EN": [7, 2, 3],
+      "M5": [10, 13, 32],
+      "PGb": [14, 2, 6],
+      "GMb": [6, 0, 5],
+      "GM": [36, 16, 30],
+      "GMn": [4, 7, 8],
+      "M3": [7, 1, 10],
+      "M1": [10, 8, 18],
+      "GMq": [7, 0, 2],
+      "GMp": [13, 6, 10],
+      "PGr": [10, 4, 7],
+      "DJ": [0, 1, 0],
+      "PGn": [9, 4, 10],
+      "HB": [2, 0, 2],
+      "HP": [1, 1, 4],
+      "GMr": [6, 3, 5],
+      "HQ": [2, 1, 6],
+      "CO": [2, 0, 2],
+      "HR": [2, 1, 0]
+    }]]
+  },
   "bookfam": {
     "2022T4": {
       "0": [55, 11, 56, 44, 192],
@@ -12926,7 +13803,7 @@ var LIVE_USER = '';
         oth: drawOth
       })[v]();
     }
-    try {
+    if (v !== 'sum') try {
       localStorage.setItem('taller.statsTab', v);
     } catch (e) {}
   }
@@ -12967,10 +13844,10 @@ var LIVE_USER = '';
     var a = by['2022'],
       z = by['2026'];
     var rushY = {};
-    SD.rush.forEach(function (_ref9) {
-      var _ref0 = _slicedToArray(_ref9, 2),
-        t = _ref0[0],
-        s = _ref0[1];
+    SD.rush.forEach(function (_ref15) {
+      var _ref16 = _slicedToArray(_ref15, 2),
+        t = _ref16[0],
+        s = _ref16[1];
       var k = new Date(t * 1000).getUTCFullYear();
       (rushY[k] = rushY[k] || []).push(s);
     });
@@ -12985,12 +13862,12 @@ var LIVE_USER = '';
     }, 0)), 'blitz desde oct 2022'], ['Precisión', nf(M.acc(z)) + ' %', "2022: ".concat(nf(M.acc(a)), " %"), M.acc(z) > M.acc(a)], ['Fallos graves / 100 jugadas', nf(M.per(z, 'bl', 'm'), 2), "2022: ".concat(nf(M.per(a, 'bl', 'm'), 2)), M.per(z, 'bl', 'm') < M.per(a, 'bl', 'm')], ['Derrotas por tiempo', nf(M.to(z)) + ' %', "2022: ".concat(nf(M.to(a)), " %"), M.to(z) < M.to(a)], ['Puntuación (últimas 100)', nf(M.score(last100)) + ' %', 'de los puntos posibles'], ['Puzzle Rush (media 2026)', nf(avg(rushY[2026])), "2022: ".concat(nf(avg(rushY[2022])), " \xB7 r\xE9cord ").concat(Math.max.apply(null, SD.rush.map(function (x) {
       return x[1];
     }))), true], ['Problemas puntuados', fInt(SD.puz[SD.puz.length - 1][2]), 'puntuación actual']];
-    $('kpis').innerHTML = k.map(function (_ref1) {
-      var _ref10 = _slicedToArray(_ref1, 4),
-        t = _ref10[0],
-        v = _ref10[1],
-        s = _ref10[2],
-        up = _ref10[3];
+    $('kpis').innerHTML = k.map(function (_ref17) {
+      var _ref18 = _slicedToArray(_ref17, 4),
+        t = _ref18[0],
+        v = _ref18[1],
+        s = _ref18[2],
+        up = _ref18[3];
       return "<div class=\"kpi\"><span>".concat(t, "</span><b>").concat(v, "</b><span>").concat(up == null ? s : "<em class=\"".concat(up ? 'up' : 'down', "\">").concat(up ? '▲' : '▼', "</em> ").concat(s), "</span></div>");
     }).join('');
     drawEloM();
@@ -13184,14 +14061,14 @@ var LIVE_USER = '';
     }, true, 1], ['Puzzle Rush (mejor serie)', r0.length ? Math.max.apply(null, r0) : null, r1.length ? Math.max.apply(null, r1) : null, fInt, true, 1], ['Problemas (puntuación)', pzAt(30), pzAt(0), fInt, true, 10]];
     var good = [],
       bad = [];
-    var tr = rows.map(function (_ref11) {
-      var _ref12 = _slicedToArray(_ref11, 6),
-        lab = _ref12[0],
-        a = _ref12[1],
-        b = _ref12[2],
-        f = _ref12[3],
-        up = _ref12[4],
-        min = _ref12[5];
+    var tr = rows.map(function (_ref19) {
+      var _ref20 = _slicedToArray(_ref19, 6),
+        lab = _ref20[0],
+        a = _ref20[1],
+        b = _ref20[2],
+        f = _ref20[3],
+        up = _ref20[4],
+        min = _ref20[5];
       var cls = '',
         arrow = '';
       if (a != null && b != null && up != null && Math.abs(b - a) >= min && min > 0) {
@@ -13500,11 +14377,11 @@ var LIVE_USER = '';
     var distinct = failRows(weeks[11]).filter(function (x) {
       return x.fails;
     }).length;
-    $('trnKpis').innerHTML = [['Jugadas practicadas', fInt(now[0]), 'esta semana'], ['Fallos', fInt(now[1]), now[0] ? nf(pct(now)) + ' % de las jugadas' : '–'], ['Posiciones con fallo', fInt(distinct), 'distintas, esta semana'], ['Semana pasada', prev[0] ? nf(pct(prev)) + ' %' : '–', prev[0] ? "".concat(prev[1], " fallos en ").concat(prev[0], " jugadas") : 'sin datos']].map(function (_ref13) {
-      var _ref14 = _slicedToArray(_ref13, 3),
-        a = _ref14[0],
-        b = _ref14[1],
-        c = _ref14[2];
+    $('trnKpis').innerHTML = [['Jugadas practicadas', fInt(now[0]), 'esta semana'], ['Fallos', fInt(now[1]), now[0] ? nf(pct(now)) + ' % de las jugadas' : '–'], ['Posiciones con fallo', fInt(distinct), 'distintas, esta semana'], ['Semana pasada', prev[0] ? nf(pct(prev)) + ' %' : '–', prev[0] ? "".concat(prev[1], " fallos en ").concat(prev[0], " jugadas") : 'sin datos']].map(function (_ref21) {
+      var _ref22 = _slicedToArray(_ref21, 3),
+        a = _ref22[0],
+        b = _ref22[1],
+        c = _ref22[2];
       return "<div class=\"kpi\"><span>".concat(a, "</span><b>").concat(b, "</b><span>").concat(c, "</span></div>");
     }).join('');
     var ch = $('trnCharts');
@@ -13656,10 +14533,10 @@ var LIVE_USER = '';
   function tacRows() {
     // row: [q, n, forks 6x(f,m), pins 6x, free 6x, mates 5x(f,m), material f,m, capturing 6, hanging 6]
     var types = [];
-    [['Horquilla de', 2], ['Clavada con', 14], ['Capturar gratis:', 26]].forEach(function (_ref15) {
-      var _ref16 = _slicedToArray(_ref15, 2),
-        nm = _ref16[0],
-        off = _ref16[1];
+    [['Horquilla de', 2], ['Clavada con', 14], ['Capturar gratis:', 26]].forEach(function (_ref23) {
+      var _ref24 = _slicedToArray(_ref23, 2),
+        nm = _ref24[0],
+        off = _ref24[1];
       return PIE.forEach(function (p, i) {
         if (p === 'rey' && nm !== 'Horquilla de') return;
         types.push({
@@ -13690,6 +14567,136 @@ var LIVE_USER = '';
     return types;
   }
   function drawTac() {
+    var go = function go(v) {
+      $('tacSrcNote').innerHTML = v === 'calc' ? 'Calculadas: cada oportunidad cuenta una vez (un ataque de mate, desde la jugada en que aparece, y solo vale si lo rematas). Incluye las veces que <b>se la diste al rival</b>. Puedes revisar cada caso en «Mis partidas».' : 'Según Chess.com: datos de Insights. Separan las clavadas por pieza y cuentan los peones gratis.';
+      (v === 'calc' && SD.tc ? drawTacCalc : drawTacChess)();
+    };
+    seg('tacSrc', 's', go);
+    go(SD.tc ? 'calc' : 'chess');
+  }
+  function drawTacCalc() {
+    var TC = SD.tc,
+      Q = TC.q,
+      years = ['2023', '2024', '2025', '2026'],
+      lastQ = Q.slice(-4);
+    var sum = function sum(rows, k) {
+      return rows.reduce(function (a, r) {
+        var v = r[2][k] || [0, 0, 0];
+        return [a[0] + v[0], a[1] + v[1], a[2] + v[2], a[3] + r[1]];
+      }, [0, 0, 0, 0]);
+    };
+    var pc = function pc(s) {
+      return s[0] + s[1] ? 100 * s[0] / (s[0] + s[1]) : null;
+    };
+    var list = TC.th.map(function (_ref25) {
+      var _ref26 = _slicedToArray(_ref25, 2),
+        k = _ref26[0],
+        name = _ref26[1];
+      var ly = sum(lastQ, k),
+        all = sum(Q, k);
+      return {
+        k: k,
+        name: name,
+        ly: ly,
+        all: all,
+        lyP: pc(ly),
+        allP: pc(all),
+        ys: years.map(function (y) {
+          var s = sum(Q.filter(function (r) {
+            return r[0].startsWith(y);
+          }), k);
+          return s[0] + s[1] >= 8 ? pc(s) : null;
+        })
+      };
+    }).filter(function (x) {
+      return x.ly[0] + x.ly[1] >= 15;
+    }).sort(function (a, b) {
+      return a.lyP - b.lyP;
+    });
+    var cls = function cls(p) {
+      return p < 60 ? 'cell-bad' : p < 75 ? 'cell-warn' : 'cell-good';
+    };
+    var spark = function spark(ys) {
+      var v = ys.filter(function (x) {
+        return x != null;
+      });
+      if (v.length < 2) return '';
+      var lo = Math.min.apply(null, v) - 2,
+        hi = Math.max.apply(null, v) + 2;
+      var pts = ys.map(function (x, i) {
+        return x == null ? null : 4 + i * 20 + ',' + (18 - (x - lo) / (hi - lo) * 16).toFixed(1);
+      }).filter(Boolean).join(' ');
+      return "<svg class=\"spark\" width=\"70\" height=\"20\" viewBox=\"0 0 70 20\" aria-hidden=\"true\"><polyline points=\"".concat(pts, "\" fill=\"none\" stroke=\"var(--s1)\" stroke-width=\"1.6\"/></svg>");
+    };
+    $('tacTable').innerHTML = "<table class=\"stbl\"><thead><tr><th>T\xE1ctica</th><th>\xDAltimo a\xF1o</th><th>Encontradas</th><th>Hist\xF3rico</th>".concat(years.map(function (y) {
+      return "<th>".concat(y, "</th>");
+    }).join(''), "<th>Tendencia</th><th>Se la diste al rival (por 100 partidas)</th></tr></thead><tbody>").concat(list.map(function (x, i) {
+      return "<tr class=\"click\" data-i=\"".concat(i, "\"><td>").concat(x.name, "</td><td class=\"").concat(cls(x.lyP), "\">").concat(fPct(x.lyP), "</td><td>").concat(x.ly[0], " de ").concat(x.ly[0] + x.ly[1], "</td><td>").concat(fPct(x.allP), "</td>").concat(x.ys.map(function (v) {
+        return "<td>".concat(v == null ? '–' : nf(v, 0), "</td>");
+      }).join(''), "<td>").concat(spark(x.ys), "</td><td>").concat(nf(100 * x.ly[2] / x.ly[3], 1), "</td></tr>");
+    }).join(''), "</tbody></table>");
+    var host = $('tacCharts'),
+      labels = Q.map(function (r) {
+        return r[0].replace(/^20(\d\d)T(\d)$/, 'T$2 $1');
+      });
+    var draw = function draw(i) {
+      host.innerHTML = '';
+      $('tacTable').querySelectorAll('tr.click').forEach(function (tr) {
+        return tr.classList.toggle('sel', +tr.dataset.i === i);
+      });
+      var x = list[i],
+        v = function v(r) {
+          return r[2][x.k] || [0, 0, 0];
+        };
+      chart(host, {
+        title: x.name,
+        sub: '% encontradas por trimestre (calculadas)',
+        labels: labels,
+        series: [{
+          name: '% encontradas',
+          color: C(1),
+          values: Q.map(function (r) {
+            var _v = v(r),
+              _v2 = _slicedToArray(_v, 2),
+              f = _v2[0],
+              m = _v2[1];
+            return f + m >= 5 ? 100 * f / (f + m) : null;
+          })
+        }],
+        bars: null,
+        fmt: fPct,
+        tipLabels: Q.map(function (r) {
+          var _v3 = v(r),
+            _v4 = _slicedToArray(_v3, 2),
+            f = _v4[0],
+            m = _v4[1];
+          return r[0] + " (".concat(f, " de ").concat(f + m, ")");
+        })
+      });
+      chart(host, {
+        title: x.name + ': se la diste al rival',
+        sub: 'por cada 100 partidas, por trimestre (calculadas)',
+        labels: labels,
+        series: [{
+          name: 'por 100 partidas',
+          color: C(3),
+          values: Q.map(function (r) {
+            return r[1] >= 20 ? 100 * v(r)[2] / r[1] : null;
+          })
+        }],
+        fmt: function fmt(v2) {
+          return nf(v2, 1);
+        }
+      });
+    };
+    $('tacTable').querySelectorAll('tr.click').forEach(function (tr) {
+      return tr.onclick = function () {
+        return draw(+tr.dataset.i);
+      };
+    });
+    draw(0);
+  }
+  function drawTacChess() {
     var TQ = SD.tq,
       types = tacRows();
     var lastQ = TQ.slice(-4),
@@ -13840,10 +14847,10 @@ var LIVE_USER = '';
     var g = segVal('puzGroup', 'g') || 'M';
     var host = $('puzCharts');
     host.innerHTML = '';
-    var R = SD.rush.map(function (_ref17) {
-      var _ref18 = _slicedToArray(_ref17, 2),
-        t = _ref18[0],
-        s = _ref18[1];
+    var R = SD.rush.map(function (_ref27) {
+      var _ref28 = _slicedToArray(_ref27, 2),
+        t = _ref28[0],
+        s = _ref28[1];
       return {
         date: new Date(t * 1000),
         s: s
@@ -13877,10 +14884,10 @@ var LIVE_USER = '';
         return x.s;
       }),
       last30 = all.slice(-30);
-    $('puzKpis').innerHTML = [['Series jugadas', fInt(all.length)], ['Récord', Math.max.apply(null, all)], ['Media últimas 30', nf(avg(last30))], ['Media primeras 100', nf(avg(all.slice(0, 100)))], ['Problemas puntuados', fInt(SD.puz[SD.puz.length - 1][2]) + ' pts'], ['Máximo puntuados', '2.070']].map(function (_ref19) {
-      var _ref20 = _slicedToArray(_ref19, 2),
-        a = _ref20[0],
-        b = _ref20[1];
+    $('puzKpis').innerHTML = [['Series jugadas', fInt(all.length)], ['Récord', Math.max.apply(null, all)], ['Media últimas 30', nf(avg(last30))], ['Media primeras 100', nf(avg(all.slice(0, 100)))], ['Problemas puntuados', fInt(SD.puz[SD.puz.length - 1][2]) + ' pts'], ['Máximo puntuados', '2.070']].map(function (_ref29) {
+      var _ref30 = _slicedToArray(_ref29, 2),
+        a = _ref30[0],
+        b = _ref30[1];
       return "<div class=\"kpi\"><span>".concat(a, "</span><b>").concat(b, "</b></div>");
     }).join('');
     chart(host, {
@@ -14235,11 +15242,11 @@ var LIVE_USER = '';
     var col = c === 'w' ? 'blancas' : 'negras';
     var yAll = sum(qs, idx),
       y1 = sum(last4, idx);
-    $('opeBookKpis').innerHTML = [['Te sales tú primero', fPct(pct(y1)), "todo: ".concat(fPct(pct(yAll)))], ['Jugada en que te sales tú', f2(me(y1)), "todo: ".concat(f2(me(yAll)))], ['Jugada en que se sale el rival', f2(op(y1)), "todo: ".concat(f2(op(yAll)))], ['Partidas', fInt(y1[0]), "\xFAltimos 4 trimestres con ".concat(col)]].map(function (_ref21) {
-      var _ref22 = _slicedToArray(_ref21, 3),
-        t = _ref22[0],
-        v = _ref22[1],
-        s = _ref22[2];
+    $('opeBookKpis').innerHTML = [['Te sales tú primero', fPct(pct(y1)), "todo: ".concat(fPct(pct(yAll)))], ['Jugada en que te sales tú', f2(me(y1)), "todo: ".concat(f2(me(yAll)))], ['Jugada en que se sale el rival', f2(op(y1)), "todo: ".concat(f2(op(yAll)))], ['Partidas', fInt(y1[0]), "\xFAltimos 4 trimestres con ".concat(col)]].map(function (_ref31) {
+      var _ref32 = _slicedToArray(_ref31, 3),
+        t = _ref32[0],
+        v = _ref32[1],
+        s = _ref32[2];
       return "<div class=\"kpi\"><span>".concat(t, "</span><b>").concat(v, "</b><span>").concat(s, "</span></div>");
     }).join('');
     var rows = idx.map(function (i) {
@@ -14354,18 +15361,18 @@ var LIVE_USER = '';
     return _fetchGames.apply(this, arguments);
   }
   function _fetchGames() {
-    _fetchGames = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee7() {
-      var user, st, cache, ar, months, nowKey, todo, i, _iterator3, _step4, _loop4, _t7, _t8;
-      return _regenerator().w(function (_context8) {
-        while (1) switch (_context8.p = _context8.n) {
+    _fetchGames = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee1() {
+      var user, st, cache, ar, months, nowKey, todo, i, _iterator3, _step4, _loop4, _t8, _t9;
+      return _regenerator().w(function (_context10) {
+        while (1) switch (_context10.p = _context10.n) {
           case 0:
             user = $('liveUser').value.trim().toLowerCase();
             if (user) {
-              _context8.n = 1;
+              _context10.n = 1;
               break;
             }
             $('liveUser').focus();
-            return _context8.a(2);
+            return _context10.a(2);
           case 1:
             try {
               localStorage.setItem('taller.user', user);
@@ -14379,14 +15386,14 @@ var LIVE_USER = '';
               g: [],
               done: []
             };
-            _context8.p = 2;
-            _context8.n = 3;
+            _context10.p = 2;
+            _context10.n = 3;
             return fetch("https://api.chess.com/pub/player/".concat(encodeURIComponent(user), "/games/archives")).then(function (r) {
               if (!r.ok) throw new Error(r.status === 404 ? 'Usuario no encontrado' : 'Error ' + r.status);
               return r.json();
             });
           case 3:
-            ar = _context8.v;
+            ar = _context10.v;
             months = ar.archives;
             nowKey = months[months.length - 1];
             todo = months.filter(function (m) {
@@ -14394,21 +15401,21 @@ var LIVE_USER = '';
             });
             i = 0;
             _iterator3 = _createForOfIteratorHelper(todo);
-            _context8.p = 4;
+            _context10.p = 4;
             _loop4 = /*#__PURE__*/_regenerator().m(function _loop4() {
               var m, j, key;
-              return _regenerator().w(function (_context7) {
-                while (1) switch (_context7.n) {
+              return _regenerator().w(function (_context1) {
+                while (1) switch (_context1.n) {
                   case 0:
                     m = _step4.value;
                     i++;
                     st.textContent = "Descargando ".concat(i, " de ").concat(todo.length, "\u2026");
-                    _context7.n = 1;
+                    _context1.n = 1;
                     return fetch(m).then(function (r) {
                       return r.json();
                     });
                   case 1:
-                    j = _context7.v;
+                    j = _context1.v;
                     key = m.slice(-7);
                     cache.g = cache.g.filter(function (x) {
                       return x.m !== key;
@@ -14438,31 +15445,31 @@ var LIVE_USER = '';
                     });
                     if (cache.done.indexOf(m) < 0) cache.done.push(m);
                   case 2:
-                    return _context7.a(2);
+                    return _context1.a(2);
                 }
               }, _loop4);
             });
             _iterator3.s();
           case 5:
             if ((_step4 = _iterator3.n()).done) {
-              _context8.n = 7;
+              _context10.n = 7;
               break;
             }
-            return _context8.d(_regeneratorValues(_loop4()), 6);
+            return _context10.d(_regeneratorValues(_loop4()), 6);
           case 6:
-            _context8.n = 5;
+            _context10.n = 5;
             break;
           case 7:
-            _context8.n = 9;
+            _context10.n = 9;
             break;
           case 8:
-            _context8.p = 8;
-            _t7 = _context8.v;
-            _iterator3.e(_t7);
+            _context10.p = 8;
+            _t8 = _context10.v;
+            _iterator3.e(_t8);
           case 9:
-            _context8.p = 9;
+            _context10.p = 9;
             _iterator3.f();
-            return _context8.f(9);
+            return _context10.f(9);
           case 10:
             cache.g.sort(function (a, b) {
               return a.t - b.t;
@@ -14471,16 +15478,16 @@ var LIVE_USER = '';
             GAMES = cache.g;
             st.textContent = "".concat(GAMES.length, " partidas blitz \xB7 actualizado");
             renderGames();
-            _context8.n = 12;
+            _context10.n = 12;
             break;
           case 11:
-            _context8.p = 11;
-            _t8 = _context8.v;
-            st.textContent = 'No he podido descargar: ' + (_t8 && _t8.message ? _t8.message : _t8) + '. Si estás dentro de Claude, prueba la versión del iPad.';
+            _context10.p = 11;
+            _t9 = _context10.v;
+            st.textContent = 'No he podido descargar: ' + (_t9 && _t9.message ? _t9.message : _t9) + '. Si estás dentro de Claude, prueba la versión del iPad.';
           case 12:
-            return _context8.a(2);
+            return _context10.a(2);
         }
-      }, _callee7, null, [[4, 8, 9, 10], [2, 11]]);
+      }, _callee1, null, [[4, 8, 9, 10], [2, 11]]);
     }));
     return _fetchGames.apply(this, arguments);
   }
@@ -14780,7 +15787,8 @@ var LIVE_USER = '';
       return b.setAttribute('aria-selected', b.dataset.main === m);
     });
     $('viewTrain').hidden = m !== 'train';
-    $('viewStats').hidden = m !== 'stats';
+    $('viewStats').hidden = m !== 'stats' && m !== 'report';
+    document.querySelector('#viewStats .subnav').hidden = m === 'report';
     if ($('viewGames')) {
       $('viewGames').hidden = m !== 'games';
       if (m === 'games' && window.gamesOpen) window.gamesOpen();
@@ -14789,11 +15797,20 @@ var LIVE_USER = '';
       $('viewErrors').hidden = m !== 'errors';
       if (m === 'errors' && window.errorsOpen) window.errorsOpen();
     }
+    ['tac', 'end'].forEach(function (k) {
+      var el = $(k === 'tac' ? 'viewTac' : 'viewEnd');
+      if (el) {
+        el.hidden = m !== k;
+        if (m === k && window[k + 'Open']) window[k + 'Open']();
+      }
+    });
+    if (m === 'report') showSub('sum');
     if (m === 'stats') {
-      var t = 'sum';
+      var t = 'evo';
       try {
-        t = localStorage.getItem('taller.statsTab') || 'sum';
+        t = localStorage.getItem('taller.statsTab') || 'evo';
       } catch (e) {}
+      if (t === 'sum') t = 'evo';
       showSub(t);
     }
     try {
