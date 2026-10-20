@@ -2178,7 +2178,10 @@ if (typeof define !== 'undefined')
     <button type="button" role="tab" data-main="games" aria-selected="false">Mis partidas</button>
     <button type="button" role="tab" data-main="errors" aria-selected="false">Errores</button>
     <span class="navsep" aria-hidden="true"></span>
-    <button type="button" role="tab" data-main="erw" aria-selected="false">100 patrones</button>
+    <button type="button" role="tab" data-main="bk-erwich" aria-selected="false">Erwich</button>
+    <button type="button" role="tab" data-main="bk-villa" aria-selected="false">De la Villa</button>
+    <button type="button" role="tab" data-main="bk-silman" aria-selected="false">Silman</button>
+    <button type="button" role="tab" data-main="bk-flores" aria-selected="false">Flores Rios</button>
   </nav>
 
   <div id="viewTrain" style="display:grid;gap:20px">
@@ -2480,8 +2483,8 @@ if (typeof define !== 'undefined')
     <div class="sbar"><select id="tCol" aria-label="Color"><option value="">Blancas y negras</option><option value="w">Con blancas</option><option value="b">Con negras</option></select><label for="tYear">Año</label><select id="tYear"></select></div>
     <div class="tblwrap" id="tSum"></div>
   </section>
-  <section class="games" id="viewErw" hidden aria-label="100 patrones">
-      <p class="note" style="font-size:13px;color:var(--muted);margin:0">Los 100 patrones del libro <i>100 Tactical Patterns You Must Know</i> (Frank Erwich, New in Chess), con la numeración del libro. Elige un capítulo para ver sus patrones y tus estadísticas en cada uno; pulsa un patrón para ver su historial.</p>
+  <section class="games" id="viewBook" hidden aria-label="Libro">
+      <div id="bHead"></div>
       <div class="erwch" id="eChap"></div>
       <div class="tblwrap" id="ePat"></div>
       <div id="eHist"></div>
@@ -9673,9 +9676,43 @@ ENGINE.on(function () {
 });
 var GAMES_BASE = 'partidas/',
   GAMES_LINKS = false;
-// The 12 chapters / 100 patterns of F. Erwich, "100 Tactical Patterns You Must Know" (New in Chess, 2024).
-// Short Spanish labels of our own, numbered as in the book so the reader can follow along. Detectors come later.
+// Books of the Taller: chapters and items numbered as in each book, with short Spanish labels of our own.
+// kind: 'tactic' (stats: yours / the rival's, from tagged tactics) or 'position' (stats: games that reached it and how they went).
 var ERWICH = [['Ataque doble', [[1, 'Horquilla de peón tras aumentar la tensión'], [2, 'Horquilla de peón tras liberar la tensión'], [3, 'Captura «antiposicional» para hacer horquilla o atrapar'], [4, 'Sacrificar torre por una horquilla de alfil'], [5, 'Sacrificio de dama en la esquina y horquilla de caballo'], [6, 'Dama contra rey en el centro y pieza suelta'], [7, 'Enroque largo con doble amenaza']]], ['Descubiertas y despeje de líneas', [[8, 'Descubierta alfil + peón contra alfil'], [9, 'Descubierta «india de dama»'], [10, 'El carrusel'], [11, 'Colaboración de caballo y alfil'], [12, 'Secuencia de capturas desesperadas'], [13, 'Descubierta dama + caballo contra dama'], [14, 'Doble amenaza de dama y caballo'], [15, 'El truco del gambito Milner-Barry'], [16, 'El molino al revés'], [17, 'Doble jaque de torre y alfil'], [18, 'El molino'], [19, 'La contradescubierta'], [20, 'Despeje de la última fila'], [21, 'Despeje con dama y alfil']]], ['Ensartadas y clavadas', [[22, 'Ensartada de alfil en la diagonal a3–f8'], [23, 'Sacrificar torre para una ensartada absoluta'], [24, 'Desviar para clavar en la diagonal a2–g8'], [25, 'Explotar la clavada del caballo en a4–e8'], [26, 'Clavada en la última fila'], [27, 'Atacar el peón de g clavado'], [28, 'El peón de f clavado defiende mal'], [29, 'La clavada eterna'], [30, 'La cruz de San Andrés'], [31, 'La cruz de Malta'], [32, 'La cruz oblicua'], [33, 'Dama y torre en la apertura']]], ['Alfil que clava contra batería dama + caballo', [[34, 'Mover el caballo clavado dando jaque'], [35, 'Mover el caballo clavado para atacar f7'], [36, 'Mover el caballo clavado y usar la diagonal a4–e8'], [37, 'Mover el caballo clavado para abrir la columna e'], [38, 'Mover el caballo clavado con un ataque']]], ['Eliminación de la defensa', [[39, 'Desviar con el alfil la dama que protege'], [40, 'Desviar con el alfil la torre que protege'], [41, 'El truco del gancho y la escalera'], [42, 'Gancho y escalera ampliado'], [43, 'Doble sacrificio de torre en la última fila'], [44, 'Desviar con la torre la dama que protege'], [45, 'Desviar el alfil de dama'], [46, 'Desviar el alfil de rey'], [47, 'Aprovechar la casilla f3/f6'], [48, 'El truco del gambito Smith-Morra'], [49, 'Cambiar damas para una doble amenaza']]], ['Atrapar piezas', [[50, 'La trampa al paso'], [51, 'El avance de peón ingenioso'], [52, 'La trampa del Arca de Noé'], [53, 'Cortar la diagonal al alfil'], [54, 'Encerrar el alfil «de Fischer»'], [55, 'Atrapar el caballo en la banda'], [56, 'La retirada del caballo'], [57, 'Atrapar la torre en la esquina'], [58, 'Atrapar la dama en la esquina'], [59, 'Atrapar la dama en b2/b7'], [60, 'Obstruir a la dama'], [61, 'Atrapar la dama con un giro'], [62, 'Atrapar la dama en la banda'], [63, 'La trampa Rubinstein']]], ['Coronación', [[64, 'Sacrificar la dama por una doble amenaza de coronar'], [65, 'La táctica Lasker-Loman'], [66, 'Atraer la torre de la última fila con un peón'], [67, 'Coronar ignorando la captura'], [68, 'Jaque intermedio en la última fila'], [69, 'Construir el puente'], [70, 'Obstrucción para coronar'], [71, 'Ensartada para coronar'], [72, 'Dos peones en sexta contra torre'], [73, 'El peón de torre contra el caballo'], [74, 'Subpromoción a caballo con horquilla']]], ['Recursos para hacer tablas', [[75, 'Jaque perpetuo de caballo'], [76, 'El «perpetuum mobile» de Nimzowitsch'], [77, 'Jaque perpetuo de torre'], [78, 'Perpetuo bloqueando'], [79, 'La torre loca'], [80, 'Ahogado con rey contra dama']]], ['Recursos defensivos', [[81, 'Subpromoción para evitar el ahogado'], [82, 'Defenderse de la clavada en la columna e'], [83, 'Contraclavada (atacar y defenderse)'], [84, 'Desclavar el caballo atacando al alfil'], [85, 'Avanzar el peón de b'], [86, 'Defenderse de un ataque doble'], [87, 'La interposición «de principiante»'], [88, 'Despeje defensivo de la séptima']]], ['Maniobras de dama y el punto f2/f7', [[89, 'La maniobra en escalera'], [90, 'Maniobra Dh5–e5 (…Dh4–e4)'], [91, 'Maniobra Dh5–d5 (…Dh4–d4)'], [92, 'Dd5 directa'], [93, 'Sacrificio en f2/f7 para el salto de caballo'], [94, 'Sacrificio de caballo en f2/f7']]], ['Recursos de ataque', [[95, 'Dos torres en séptima'], [96, 'El sacrificio griego'], [97, 'El doble sacrificio de alfiles de Lasker'], [98, 'Bloquear el peón de f'], [99, 'El doble sacrificio de torres'], [100, 'El sacrificio imán']]], ['Combinaciones de patrones', []]];
+var BOOKS = {
+  erwich: {
+    title: '100 Tactical Patterns You Must Know',
+    author: 'Frank Erwich (New in Chess, 2024)',
+    kind: 'tactic',
+    note: 'Los 100 patrones tácticos del libro, con su numeración.',
+    ch: ERWICH.map(function (c) {
+      return [c[0], c[1].map(function (p) {
+        return [String(p[0]), p[1]];
+      })];
+    })
+  },
+  villa: {
+    title: '100 finales que hay que saber',
+    author: 'Jesús de la Villa (New in Chess)',
+    kind: 'position',
+    note: 'Las 100 posiciones teóricas del libro, con su numeración. Para cada una: tus partidas que llegaron a ese tipo de final y cómo terminaron.',
+    ch: [["Finales básicos", [["1", "La regla del cuadrado"], ["2", "Peón en sexta"], ["3", "Casillas clave"], ["4", "Peón de torre con el rey defensor delante"], ["5", "Atrapar al rey fuerte"], ["6", "Torre contra alfil: esquina equivocada"], ["7", "Torre contra alfil: esquina buena"], ["8", "Torre contra caballo en la banda"], ["9", "Torre contra caballo en la esquina"]]], ["Caballo contra peón", [["10", "Caballo contra peón en séptima"], ["11", "Peón de caballo"], ["12", "Peón de torre en sexta"], ["13", "Peón de torre en séptima"], ["14", "Mate con rey y caballo"], ["15", "La casilla mala del caballo"]]], ["Dama contra peón", [["16", "Dama contra peón en séptima"], ["17", "Dama contra peón de torre en séptima"], ["18", "Dama contra peón de alfil en séptima"], ["19", "Un truco habitual"], ["20", "Dama contra dama"]]], ["Torre contra peón", [["21", "Contar tiempos"], ["22", "Rey defensor cortado en tercera"], ["23", "Rey fuerte detrás del peón"], ["24", "Rey fuerte a un lado"], ["25", "Torre delante del peón"], ["26", "Temas especiales del peón de caballo"], ["27", "Peón de torre: empujar desde atrás"], ["28", "Peón de torre: empuje lateral"], ["29", "El peón gana a la torre"]]], ["Torre contra dos peones", [["30", "Los reyes no intervienen"], ["31", "Intervienen los dos reyes"], ["32", "Solo interviene el rey defensor"]]], ["Alfiles del mismo color: alfil y peón contra alfil", [["33", "Desalojar al alfil defensor"], ["34", "Detrás del peón"], ["35", "Diagonales cortas"], ["36", "Defensa frontal"]]], ["Alfil contra caballo con un peón", [["37", "Peón central"], ["38", "Peón de torre"], ["39", "Peón en séptima"], ["40", "Caballo que controla de forma inestable"]]], ["Alfiles de distinto color: alfil y dos peones contra alfil", [["41", "Peones en sexta"], ["42", "Peones en quinta o más atrás"], ["43", "La jaula"], ["44", "Peones separados por una columna"], ["45", "Controlar los dos peones desde una diagonal"], ["46", "Procedimiento para ganar"], ["47", "Peón de caballo y peón central"], ["48", "Peón central y peón de torre"], ["49", "Peón de alfil y peón de caballo"], ["50", "El alfil atacante controla la casilla de coronación"], ["51", "Peón central y peón de torre (II)"]]], ["Torre y peón contra torre", [["52", "Posición de Philidor"], ["53", "Posición de Lucena"], ["54", "El lado largo"], ["55", "Peón de caballo: defensa desde la primera fila"], ["56", "La técnica de Kling y Horwitz"], ["57", "Peón central en sexta, torre que actúa de lejos"], ["58", "Peón central en sexta, torre sin acción a distancia"], ["59", "Rey cortado por una columna"], ["60", "El método de Grigoriev"], ["61", "Rey cortado por dos columnas: temas de mate"], ["62", "Corte perfecto por una fila"], ["63", "Corte imperfecto"], ["64", "Corte aparente"], ["65", "Peón en séptima con la torre atacante delante"], ["66", "Peón en sexta: defensa Vancura"], ["67", "Rey delante del peón en séptima"], ["68", "Torre y rey apoyan al peón"]]], ["Torre y dos peones contra torre", [["69", "Peones centrales"], ["70", "Peones de caballo"], ["71", "Rey defensor cortado en la última fila"], ["72", "Peón de alfil en quinta"], ["73", "Procedimiento defensivo"], ["74", "Peones ligados bloqueados"], ["75", "Torre atacante atascada delante del peón en séptima"], ["76", "Defensa Vancura contra dos peones"]]], ["Finales de peones", [["77", "Peones doblados"], ["78", "Peones aislados"], ["79", "Peones bloqueados y casillas clave"], ["80", "Peones bloqueados menos avanzados"], ["81", "Peones en columnas contiguas"], ["82", "Peones pasados y jugadas de rey con doble objetivo"], ["83", "Peones de torre y un pasado lejano"], ["84", "Peón pasado central"], ["85", "Peón de alfil pasado en el mismo flanco"], ["86", "Triangulación"], ["87", "Peones de caballo y torre contra peón de torre"], ["88", "Rey contra dos peones pasados"], ["89", "Peones pasados protegidos"], ["90", "Peones pasados lejanos"], ["91", "Peones doblados (II)"], ["92", "Rupturas con el rey lejos"]]], ["Otros equilibrios de material", [["93", "Mate de alfil y caballo"], ["94", "Rey en la banda"], ["95", "Rey lejos de la banda: defensa Cochrane"], ["96", "Defensa desde la segunda fila"], ["97", "Torre y peón de alfil en sexta"], ["98", "Torre y peón de torre contra alfil"], ["99", "Dama contra torre y peón"], ["100", "Dama contra torre y peón de torre"]]]]
+  },
+  silman: {
+    title: 'Complete Endgame Course',
+    author: 'Jeremy Silman (Siles Press)',
+    kind: 'position',
+    note: 'Los finales que hay que saber en cada nivel de Elo, según Silman. Tu nivel es la clase B (1600–1799): conviene dominar todo lo anterior.',
+    ch: [["Principiantes (hasta 1000)", [["1.1", "Mates con exceso de material: la escalera (dos damas, dama y torre, dos torres)"], ["1.2", "La caja: mate de rey y dama"], ["1.3", "La caja: mate de rey y torre"], ["1.4", "Cuidado con el ahogado"]]], ["Clase E (1000–1199)", [["2.1", "Qué piezas dan mate y cuáles no"], ["2.2", "Pieza menor contra dama"], ["2.3", "Usa tu rey"], ["2.4", "La oposición"], ["2.5", "Peones de torre"]]], ["Clase D (1200–1399)", [["3.1", "Oposición avanzada"], ["3.2", "Rey y peón contra rey: peón de torre, tablas"], ["3.3", "Rey y peón: rey una casilla delante del peón"], ["3.4", "Rey y peón: rey dos casillas delante, siempre gana"], ["3.5", "El zorro en el gallinero"], ["3.6", "La congelación: un peón frena a dos"], ["3.7", "Alfil contra peón solo"], ["3.8", "Caballo contra peón solo"], ["3.9", "Torre contra peón solo"]]], ["Clase C (1400–1599)", [["4.1", "Rey y peón contra rey: lucha por la oposición"], ["4.2", "Colarse en una posición ganadora de rey y peón"], ["4.3", "Dos peones doblados contra rey"], ["4.4", "Peón de torre: ahogar al bando fuerte"], ["4.5", "Entrar en el cuadrado del peón"], ["4.6", "Peones pasados alejados"], ["4.7", "Alfil y peón de torre del color equivocado"], ["4.8", "Rey contra caballo y peón de torre en sexta o séptima"], ["4.9", "Alfiles de distinto color"], ["4.10", "La posición de Lucena"], ["4.11", "La posición de Philidor (torre pasiva y Philidor puro)"], ["4.12", "Cortar al rey lejos de la acción"], ["4.13", "Dama contra peón en sexta"], ["4.14", "Dama contra peón en séptima"]]], ["Clase B (1600–1799)", [["5.1", "Rey y dos peones sanos contra rey"], ["5.2", "Bombas tácticas en finales de peones"], ["5.3", "Triangulación"], ["5.4", "Desbordar al rey (outflanking)"], ["5.5", "Torre y dos peones ligados contra torre"], ["5.6", "¡La séptima fila!"], ["5.7", "Pareja de alfiles contra rey solo"], ["5.8", "Alfiles de distinto color con dos peones de menos"]]], ["Clase A (1800–1999)", [["6.1", "Carreras extrañas"], ["6.2", "Rey y peón contra rey y peón"], ["6.3", "Lucena con peón de torre"], ["6.4", "Torre delante de su peón en séptima"], ["6.5", "Torre y peón en cuarta o quinta contra torre"], ["6.6", "Alfiles de distinto color: dos pasados ligados contra alfil"], ["6.7", "Fortalezas con un alfil de más"], ["6.8", "Dama contra peón de torre o de alfil en séptima: el truco"]]], ["Expertos (2000–2199)", [["7.1", "El diagrama de flujo: complicar una posición sencilla"], ["7.2", "Torre y dos pasados ligados contra torre y peón"], ["7.3", "Cuando el Philidor sale mal"], ["7.4", "Peones en un flanco: torre y 2 contra 1, 3 contra 2, 4 contra 3"], ["7.5", "Alfil y peones contra alfil del mismo color"], ["7.6", "Bloqueo: dama contra torre y peón"], ["7.7", "Bloqueo: dama y peón contra torre y dos peones"]]], ["Maestros (2200–2399)", [["8.1", "El gato y el ratón"], ["8.2", "El principio de las dos debilidades"], ["8.3", "Todos los finales de peones son confusos"], ["8.4", "Los placeres del caballo"], ["8.5", "El rey es una pieza de lucha"], ["8.6", "Finales de dama y peones: mandan los pasados"]]], ["Por puro placer", [["9.1", "Piezas menores enterradas y dominadas"], ["9.2", "Táctica en el final"], ["9.3", "Los grandes finalistas: Lasker, Rubinstein, Capablanca, Smyslov y Fischer"]]]]
+  },
+  flores: {
+    title: 'Chess Structures: A Grandmaster Guide',
+    author: 'Mauricio Flores Rios (Quality Chess)',
+    kind: 'position',
+    note: 'Las estructuras de peones del libro, con su numeración. Para cada una: tus partidas con esa estructura y cómo te fue.',
+    ch: [["Familia 1: d4 y …d5", [["1", "El peón aislado"], ["2", "Peones colgantes"], ["3", "Formación Caro-Kann"], ["4", "Formación eslava"], ["5", "Formación Carlsbad"], ["6", "Stonewall"], ["7", "Centro Grünfeld"]]], ["Familia 2: Siciliana abierta", [["8", "Najdorf tipo I"], ["9", "Najdorf tipo II"], ["10", "El erizo"], ["11", "El Maroczy"]]], ["Familia 3: Benoni", [["12", "Benoni asimétrica"], ["13", "Benoni simétrica"]]], ["Familia 4: India de rey", [["14", "India de rey tipo I"], ["15", "India de rey tipo II"], ["16", "India de rey tipo III"], ["17", "India de rey abierta"], ["18", "Complejo de la India de rey"]]], ["Familia 5: Francesa", [["19", "Francesa tipo I"], ["20", "Francesa tipo II"], ["21", "Francesa tipo III"]]], ["Otras estructuras", [["22a", "3 contra 3 frente a 4 contra 2"], ["22b", "Estructura Panov"], ["22c", "Formación dragón"], ["22d", "Estructura Scheveningen"], ["22e", "Estructura Benko"], ["22f", "Ruy López cerrada"], ["22g", "Formación de la Ruy López"]]]]
+  }
+};
 
 // ---------- Mis partidas: catalogue of analysed games with tactic tags, viewer and "solve it" ----------
 (function () {
@@ -10923,7 +10960,7 @@ var ERWICH = [['Ataque doble', [[1, 'Horquilla de peón tras aumentar la tensió
   }
   function endOpen() {
     return _endOpen.apply(this, arguments);
-  } // ---------- 100 patrones (Erwich): chapters → patterns → history. ERW = {n: [[id, ply, outcome], ...]} once detectors exist ----------
+  } // ---------- Libros: one tab per book → chapters → items with your stats → history. DET[book] = {item: [[id, ply, outcome?], ...]} ----------
   function _endOpen() {
     _endOpen = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee9() {
       var R, S;
@@ -10961,17 +10998,19 @@ var ERWICH = [['Ataque doble', [[1, 'Horquilla de peón tras aumentar la tensió
     }));
     return _endOpen.apply(this, arguments);
   }
-  var ERW = null,
-    eChap = 0;
-  function erwOpen() {
-    return _erwOpen.apply(this, arguments);
+  var DETB = {},
+    bChap = {};
+  var bCur = null;
+  function bookOpen(_x7) {
+    return _bookOpen.apply(this, arguments);
   }
-  function _erwOpen() {
-    _erwOpen = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee0() {
-      var _ERWICH$eChap, name, pats, byId, st, _t7;
+  function _bookOpen() {
+    _bookOpen = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee0(id) {
+      var B, DT, ci, _B$ch$ci, name, items, byId, none, head, row, _t7;
       return _regenerator().w(function (_context0) {
         while (1) switch (_context0.p = _context0.n) {
           case 0:
+            bCur = id;
             _context0.n = 1;
             return load();
           case 1:
@@ -10981,71 +11020,93 @@ var ERWICH = [['Ataque doble', [[1, 'Horquilla de peón tras aumentar la tensió
             }
             return _context0.a(2);
           case 2:
-            if (!(ERW === null)) {
+            if (id in DETB) {
               _context0.n = 6;
               break;
             }
             _context0.p = 3;
             _context0.n = 4;
-            return fetch(GAMES_BASE + 'erwich.json').then(function (r) {
+            return fetch(GAMES_BASE + 'books/' + id + '.json').then(function (r) {
               if (!r.ok) throw 0;
               return r.json();
             });
           case 4:
-            ERW = _context0.v;
+            DETB[id] = _context0.v;
             _context0.n = 6;
             break;
           case 5:
             _context0.p = 5;
             _t7 = _context0.v;
-            ERW = {};
+            DETB[id] = {};
           case 6:
-            $g('eChap').innerHTML = ERWICH.map(function (c, i) {
-              return "<button type=\"button\" data-i=\"".concat(i, "\" aria-pressed=\"").concat(i === eChap, "\">").concat(i + 1, ". ").concat(c[0], "</button>");
+            B = BOOKS[id], DT = DETB[id], ci = bChap[id] || 0;
+            $g('bHead').innerHTML = "<h3 style=\"margin:0\">".concat(B.title, "</h3><p class=\"sumline\" style=\"margin:2px 0 0\">").concat(B.author, "</p><p class=\"note\" style=\"font-size:13px;color:var(--muted);margin:6px 0 0\">").concat(B.note, " Pulsa un apartado para ver su historial.</p>");
+            $g('eChap').innerHTML = B.ch.map(function (c, i) {
+              return "<button type=\"button\" data-i=\"".concat(i, "\" aria-pressed=\"").concat(i === ci, "\">").concat(i + 1, ". ").concat(c[0], "</button>");
             }).join('');
             $g('eChap').querySelectorAll('button').forEach(function (b) {
               return b.onclick = function () {
-                eChap = +b.dataset.i;
+                bChap[id] = +b.dataset.i;
                 $g('eHist').innerHTML = '';
-                erwOpen();
+                bookOpen(id);
               };
             });
-            _ERWICH$eChap = _slicedToArray(ERWICH[eChap], 2), name = _ERWICH$eChap[0], pats = _ERWICH$eChap[1], byId = {};
+            _B$ch$ci = _slicedToArray(B.ch[ci], 2), name = _B$ch$ci[0], items = _B$ch$ci[1], byId = {};
             CAT.forEach(function (r) {
               byId[r[0]] = r;
             });
-            if (pats.length) {
+            if (items.length) {
               _context0.n = 7;
               break;
             }
-            $g('ePat').innerHTML = '<p class="empty">Este capítulo combina patrones de los anteriores: no tiene patrones propios.</p>';
+            $g('ePat').innerHTML = '<p class="empty">Este capítulo combina los anteriores: no tiene apartados propios.</p>';
             return _context0.a(2);
           case 7:
-            st = function st(n) {
-              var s = {
-                f: 0,
-                m: 0,
-                c: 0,
-                x: 0
+            none = '<br><span class="erwnone">sin detector todavía</span>';
+            if (B.kind === 'tactic') {
+              head = '<tr><th rowspan="2">Patrón</th><th colspan="4" class="grp">Tuyos</th><th colspan="3" class="grp">Del rival, por un error tuyo</th></tr><tr><th>Total</th><th>Aprovechados</th><th>Perdidos</th><th>% visto</th><th>Total</th><th>Lo aprovechó</th><th>No lo vio</th></tr>';
+              row = function row(n, lb) {
+                var has = n in DT;
+                if (!has) return "<td><b>".concat(n, ".</b> ").concat(lb).concat(none, "</td><td colspan=\"7\" class=\"erwnone\">\u2013</td>");
+                var s = {
+                  f: 0,
+                  m: 0,
+                  c: 0,
+                  x: 0
+                };
+                DT[n].forEach(function (o) {
+                  s[o[2]]++;
+                });
+                var tot = s.f + s.m;
+                return "<td><b>".concat(n, ".</b> ").concat(lb, "</td><td><b>").concat(tot, "</b></td><td>").concat(s.f, "</td><td>").concat(s.m, "</td><td>").concat(tot ? Math.round(100 * s.f / tot) + ' %' : '–', "</td><td><b>").concat(s.c + s.x, "</b></td><td>").concat(s.c, "</td><td>").concat(s.x, "</td>");
               };
-              (ERW[n] || []).forEach(function (o) {
-                s[o[2]]++;
-              });
-              return s;
-            };
-            $g('ePat').innerHTML = "<h4 class=\"gsubh\">Cap\xEDtulo ".concat(eChap + 1, ": ").concat(name, "</h4><table class=\"stbl gsum\"><thead><tr><th rowspan=\"2\">Patr\xF3n</th><th colspan=\"4\" class=\"grp\">Tuyos</th><th colspan=\"3\" class=\"grp\">Del rival, por un error tuyo</th></tr><tr><th>Total</th><th>Aprovechados</th><th>Perdidos</th><th>% visto</th><th>Total</th><th>Lo aprovech\xF3</th><th>No lo vio</th></tr></thead><tbody>").concat(pats.map(function (_ref13) {
+            } else {
+              head = '<tr><th>Apartado</th><th>Partidas</th><th>Ganadas</th><th>Tablas</th><th>Perdidas</th><th>% de puntos</th></tr>';
+              row = function row(n, lb) {
+                var has = n in DT;
+                if (!has) return "<td><b>".concat(n, ".</b> ").concat(lb).concat(none, "</td><td colspan=\"5\" class=\"erwnone\">\u2013</td>");
+                var s = {
+                  W: 0,
+                  D: 0,
+                  L: 0
+                };
+                DT[n].forEach(function (o) {
+                  var r = byId[o[0]];
+                  if (r) s[r[5]]++;
+                });
+                var tot = s.W + s.D + s.L;
+                return "<td><b>".concat(n, ".</b> ").concat(lb, "</td><td><b>").concat(tot, "</b></td><td>").concat(s.W, "</td><td>").concat(s.D, "</td><td>").concat(s.L, "</td><td>").concat(tot ? Math.round(100 * (s.W + s.D / 2) / tot) + ' %' : '–', "</td>");
+              };
+            }
+            $g('ePat').innerHTML = "<h4 class=\"gsubh\">Cap\xEDtulo ".concat(ci + 1, ": ").concat(name, "</h4><table class=\"stbl gsum\"><thead>").concat(head, "</thead><tbody>").concat(items.map(function (_ref13) {
               var _ref14 = _slicedToArray(_ref13, 2),
                 n = _ref14[0],
                 lb = _ref14[1];
-              var has = n in ERW,
-                s = st(n),
-                tot = s.f + s.m,
-                pc = tot ? Math.round(100 * s.f / tot) + ' %' : '–';
-              return "<tr class=\"click\" data-n=\"".concat(n, "\"><td><b>").concat(n, ".</b> ").concat(lb).concat(has ? '' : '<br><span class="erwnone">sin detector todavía</span>', "</td>").concat(has ? "<td><b>".concat(tot, "</b></td><td>").concat(s.f, "</td><td>").concat(s.m, "</td><td>").concat(pc, "</td><td><b>").concat(s.c + s.x, "</b></td><td>").concat(s.c, "</td><td>").concat(s.x, "</td>") : '<td colspan="7" class="erwnone">–</td>', "</tr>");
+              return "<tr class=\"click\" data-n=\"".concat(n, "\">").concat(row(n, lb), "</tr>");
             }).join(''), "</tbody></table>");
             $g('ePat').querySelectorAll('tr.click').forEach(function (tr) {
               return tr.onclick = function () {
-                return erwHist(+tr.dataset.n, byId);
+                return bookHist(id, tr.dataset.n, byId);
               };
             });
           case 8:
@@ -11053,26 +11114,28 @@ var ERWICH = [['Ataque doble', [[1, 'Horquilla de peón tras aumentar la tensió
         }
       }, _callee0, null, [[3, 5]]);
     }));
-    return _erwOpen.apply(this, arguments);
+    return _bookOpen.apply(this, arguments);
   }
-  function erwHist(n, byId) {
-    var lb = ERWICH.reduce(function (a, c) {
+  function bookHist(id, n, byId) {
+    var B = BOOKS[id],
+      lb = B.ch.reduce(function (a, c) {
         return a.concat(c[1]);
       }, []).find(function (p) {
         return p[0] === n;
       })[1],
-      occ = ERW[n];
+      occ = DETB[id][n];
     if (!occ) {
-      $g('eHist').innerHTML = "<div class=\"card\"><h4 class=\"gsubh\" style=\"margin-top:0\">".concat(n, ". ").concat(lb, "</h4><p class=\"erwnone\">Todav\xEDa no hay detector para este patr\xF3n, as\xED que no hay historial. Los detectores se ir\xE1n a\xF1adiendo cap\xEDtulo a cap\xEDtulo.</p></div>");
+      $g('eHist').innerHTML = "<div class=\"card\"><h4 class=\"gsubh\" style=\"margin-top:0\">".concat(n, ". ").concat(lb, "</h4><p class=\"erwnone\">Todav\xEDa no hay detector para este apartado, as\xED que no hay historial. Los detectores se ir\xE1n a\xF1adiendo cap\xEDtulo a cap\xEDtulo.</p></div>");
       return;
     }
     var rows = occ.map(function (o) {
-      return [byId[o[0]], o];
-    }).filter(function (x) {
-      return x[0];
-    }).sort(function (a, b) {
-      return a[0][1] < b[0][1] ? 1 : -1;
-    });
+        return [byId[o[0]], o];
+      }).filter(function (x) {
+        return x[0];
+      }).sort(function (a, b) {
+        return a[0][1] < b[0][1] ? 1 : -1;
+      }),
+      tac = B.kind === 'tactic';
     var Q = {};
     rows.forEach(function (_ref0) {
       var _ref1 = _slicedToArray(_ref0, 2),
@@ -11080,19 +11143,23 @@ var ERWICH = [['Ataque doble', [[1, 'Horquilla de peón tras aumentar la tensió
         o = _ref1[1];
       var q = r[1].slice(0, 4) + 'T' + (Math.floor((+r[1].slice(5, 7) - 1) / 3) + 1),
         x = Q[q] = Q[q] || {
-          f: 0,
-          m: 0,
+          a: 0,
+          b: 0,
           c: 0
         };
-      if (o[2] === 'f') x.f++;else if (o[2] === 'm') x.m++;else x.c++;
+      var k = tac ? o[2] === 'f' ? 'a' : o[2] === 'm' ? 'b' : 'c' : r[5] === 'W' ? 'a' : r[5] === 'D' ? 'b' : 'c';
+      x[k]++;
     });
-    $g('eHist').innerHTML = "<div class=\"card\"><h4 class=\"gsubh\" style=\"margin-top:0\">".concat(n, ". ").concat(lb, ": historial</h4><table class=\"stbl\"><thead><tr><th>Trimestre</th><th>Aprovechados</th><th>Perdidos</th><th>Se lo diste al rival</th></tr></thead><tbody>").concat(Object.keys(Q).sort().reverse().map(function (q) {
-      return "<tr><td>".concat(q, "</td><td>").concat(Q[q].f, "</td><td>").concat(Q[q].m, "</td><td>").concat(Q[q].c, "</td></tr>");
-    }).join(''), "</tbody></table>\n      <div class=\"elist\" style=\"margin-top:10px\">").concat(rows.slice(0, 100).map(function (_ref10, i) {
+    var H = tac ? ['Aprovechados', 'Perdidos', 'Se lo diste al rival'] : ['Ganadas', 'Tablas', 'Perdidas'];
+    $g('eHist').innerHTML = "<div class=\"card\"><h4 class=\"gsubh\" style=\"margin-top:0\">".concat(n, ". ").concat(lb, ": historial</h4><div class=\"tscroll\"><table class=\"stbl\"><thead><tr><th>Trimestre</th>").concat(H.map(function (h) {
+      return "<th>".concat(h, "</th>");
+    }).join(''), "</tr></thead><tbody>").concat(Object.keys(Q).sort().reverse().map(function (q) {
+      return "<tr><td>".concat(q, "</td><td>").concat(Q[q].a, "</td><td>").concat(Q[q].b, "</td><td>").concat(Q[q].c, "</td></tr>");
+    }).join(''), "</tbody></table></div>\n      <div class=\"elist\" style=\"margin-top:10px\">").concat(rows.slice(0, 100).map(function (_ref10, i) {
       var _ref11 = _slicedToArray(_ref10, 2),
         r = _ref11[0],
         o = _ref11[1];
-      return "<button type=\"button\" class=\"erow\" data-i=\"".concat(i, "\"><span><b>").concat(fmtDate(r[1]), "</b><br><small>").concat(r[2] === 'w' ? 'blancas' : 'negras', " \xB7 ").concat(RES[r[5]].toLowerCase(), "</small></span><span><b>").concat(Math.floor(o[1] / 2) + 1).concat(o[1] % 2 ? '…' : '.', "</b> ").concat(OUT[o[2]], "</span><span></span></button>");
+      return "<button type=\"button\" class=\"erow\" data-i=\"".concat(i, "\"><span><b>").concat(fmtDate(r[1]), "</b><br><small>").concat(r[2] === 'w' ? 'blancas' : 'negras', " \xB7 ").concat(RES[r[5]].toLowerCase(), "</small></span><span><b>").concat(Math.floor(o[1] / 2) + 1).concat(o[1] % 2 ? '…' : '.', "</b>").concat(tac ? ' ' + OUT[o[2]] : '', "</span><span></span></button>");
     }).join(''), "</div></div>");
     $g('eHist').querySelectorAll('.erow').forEach(function (b) {
       return b.onclick = /*#__PURE__*/_asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee4() {
@@ -11118,7 +11185,7 @@ var ERWICH = [['Ataque doble', [[1, 'Horquilla de peón tras aumentar la tensió
   }
   window.tacOpen = tacOpen;
   window.endOpen = endOpen;
-  window.erwOpen = erwOpen;
+  window.bookOpen = bookOpen;
   window.gamesOpen = load;
   if (!$g('viewGames').hidden) load();
 })();
@@ -15787,17 +15854,20 @@ var LIVE_USER = '';
       $('viewErrors').hidden = m !== 'errors';
       if (m === 'errors' && window.errorsOpen) window.errorsOpen();
     }
-    ['tac', 'end', 'erw'].forEach(function (k) {
+    ['tac', 'end'].forEach(function (k) {
       var el = $({
         tac: 'viewTac',
-        end: 'viewEnd',
-        erw: 'viewErw'
+        end: 'viewEnd'
       }[k]);
       if (el) {
         el.hidden = m !== k;
         if (m === k && window[k + 'Open']) window[k + 'Open']();
       }
     });
+    if ($('viewBook')) {
+      $('viewBook').hidden = !m.startsWith('bk-');
+      if (m.startsWith('bk-') && window.bookOpen) window.bookOpen(m.slice(3));
+    }
     if (m === 'report') showSub('sum');
     if (m === 'stats') {
       var t = 'evo';
