@@ -344,7 +344,13 @@ footer { font-size: 12px; color: var(--muted); max-width: 90ch; }
 .op.tnode .sb { grid-column: 1; }
 
 .games { display: grid; gap: 14px; }
-.ggrid { display: grid; grid-template-columns: minmax(280px, 380px) minmax(0, 1fr); gap: 16px; align-items: start; }
+.ggrid { display: grid; grid-template-columns: minmax(260px, 300px) minmax(0, 1fr); gap: 16px; align-items: start; }
+.gplay { display: grid; grid-template-columns: minmax(0, 520px) minmax(220px, 280px); gap: 14px; align-items: start; }
+.gplay .gboardwrap { grid-template-columns: minmax(0, 520px); justify-content: start; }
+.gside { display: grid; gap: 8px; min-width: 0; align-content: start; }
+.gside .controls { flex-wrap: wrap; }
+.gside .mtable2 { max-height: 380px; overflow-y: auto; }
+@media (max-width: 720px) { .gplay { grid-template-columns: minmax(0, 1fr); } .gplay .gboardwrap { justify-content: center; } }
 @media (max-width: 1100px) { .ggrid { grid-template-columns: minmax(0, 1fr); } .gview { order: -1; } }
 .glist2 { display: grid; gap: 6px; max-height: 1100px; overflow-y: auto; }
 .grow2 { all: unset; cursor: pointer; display: grid; grid-template-columns: 26px minmax(0, 1fr); gap: 4px 8px; padding: 8px 10px; border-radius: 9px; background: var(--panel); border: 1px solid var(--line); font-size: 13px; }
@@ -376,6 +382,7 @@ footer { font-size: 12px; color: var(--muted); max-width: 90ch; }
 .wptrain { display: grid; gap: 12px; margin-top: 12px; }
 @media (min-width: 900px) { .wptrain { grid-template-columns: minmax(0, 480px) 1fr; align-items: start; } }
 .wpclock { font-family: var(--font-mono); font-size: 22px; margin-bottom: 6px; }
+.bdesc { margin: 8px 0 0; font-size: 14px; line-height: 1.5; max-width: 820px; }
 .erwch { display: flex; flex-wrap: wrap; gap: 6px; margin: 10px 0; }
 .erwch button { all: unset; cursor: pointer; font-size: 13px; padding: 6px 10px; border: 1px solid var(--line); border-radius: 999px; background: var(--panel); }
 .erwch button[aria-pressed="true"] { background: var(--walnut); color: #fff; border-color: var(--walnut); }
@@ -2460,12 +2467,16 @@ if (typeof define !== 'undefined')
       <div class="gview card" id="gView" hidden>
         <div id="gHead"></div>
         <div class="gtags" id="gTags"></div>
-        <div class="gboardwrap"><div class="board" id="gBoard" aria-label="Tablero de la partida"></div></div>
-        <div class="msg info" id="gInfo"></div>
-        <div class="msg geng" id="gEng" hidden></div>
-        <div class="controls"><button class="btn small" id="gFirst" type="button" aria-label="Al inicio">⏮</button><button class="btn small" id="gPrev" type="button" aria-label="Anterior">◀</button><button class="btn small" id="gNext" type="button" aria-label="Siguiente">▶</button><button class="btn small" id="gLast" type="button" aria-label="Al final">⏭</button><button class="btn small primary" id="gSolve" type="button" hidden>Resuélvelo tú</button><button class="btn small" id="gShow" type="button">Ver la solución</button><button class="btn small" id="gEngBtn" type="button" title="Muestra la jugada que recomienda el motor (flecha azul)">Motor: sí</button></div>
+        <div class="gplay">
+          <div class="gboardwrap"><div class="board" id="gBoard" aria-label="Tablero de la partida"></div></div>
+          <div class="gside">
+            <div class="msg info" id="gInfo"></div>
+            <div class="msg geng" id="gEng" hidden></div>
+            <div class="controls"><button class="btn small" id="gFirst" type="button" aria-label="Al inicio">⏮</button><button class="btn small" id="gPrev" type="button" aria-label="Anterior">◀</button><button class="btn small" id="gNext" type="button" aria-label="Siguiente">▶</button><button class="btn small" id="gLast" type="button" aria-label="Al final">⏭</button><button class="btn small primary" id="gSolve" type="button" hidden>Resuélvelo tú</button><button class="btn small" id="gShow" type="button">Ver la solución</button><button class="btn small" id="gEngBtn" type="button" title="Muestra la jugada que recomienda el motor (flecha azul)">Motor: sí</button></div>
+            <div class="mtable2" id="gMoves"></div>
+          </div>
+        </div>
         <div class="ggraph" id="gGraph" title="Valoración de la partida desde tu lado (arriba, mejor para ti). Pulsa para ir a esa jugada."></div>
-        <div class="mtable2" id="gMoves"></div>
       </div>
     </div>
   </section>
@@ -2483,6 +2494,7 @@ if (typeof define !== 'undefined')
       <span class="sumline" id="eCount"></span>
     </div>
     <div class="elist" id="eList"></div>
+    <div id="eViewHost" style="margin-top:12px"></div>
   </section>
   <section class="games" id="viewTac" hidden aria-label="Tácticas">
     <p class="note" style="font-size:13px;color:var(--muted);margin:0">Las tácticas de tus partidas, calculadas con Stockfish. <b>Tuyas</b>: las tenías tú (aprovechadas o perdidas). <b>Del rival</b>: se las dejaste tú con un error. Pulsa una fila para ver esas partidas en «Mis partidas».</p>
@@ -2496,10 +2508,14 @@ if (typeof define !== 'undefined')
       <div class="glist2" id="lcList"></div>
       <div class="gview card" id="lcView" hidden>
         <div id="lcHead"></div>
-        <div class="gboardwrap"><div class="board" id="lcBoard" aria-label="Tablero"></div></div>
-        <div class="msg info" id="lcInfo"></div>
-        <div class="controls"><button class="btn small" id="lcFirst" type="button" aria-label="Al inicio">⏮</button><button class="btn small" id="lcPrev" type="button" aria-label="Anterior">◀</button><button class="btn small" id="lcNext" type="button" aria-label="Siguiente">▶</button><button class="btn small" id="lcLast" type="button" aria-label="Al final">⏭</button><button class="btn small primary" id="lcGuess" type="button">Adivina la jugada</button><button class="btn small" id="lcWhy" type="button" hidden>¿Por qué esta jugada?</button></div>
-        <div class="mtable2" id="lcMoves"></div>
+        <div class="gplay">
+          <div class="gboardwrap"><div class="board" id="lcBoard" aria-label="Tablero"></div></div>
+          <div class="gside">
+            <div class="msg info" id="lcInfo"></div>
+            <div class="controls"><button class="btn small" id="lcFirst" type="button" aria-label="Al inicio">⏮</button><button class="btn small" id="lcPrev" type="button" aria-label="Anterior">◀</button><button class="btn small" id="lcNext" type="button" aria-label="Siguiente">▶</button><button class="btn small" id="lcLast" type="button" aria-label="Al final">⏭</button><button class="btn small primary" id="lcGuess" type="button">Adivina la jugada</button><button class="btn small" id="lcWhy" type="button" hidden>¿Por qué esta jugada?</button></div>
+            <div class="mtable2" id="lcMoves"></div>
+          </div>
+        </div>
       </div>
     </div>
   </section>
@@ -2520,6 +2536,7 @@ if (typeof define !== 'undefined')
       <div class="erwch" id="eChap"></div>
       <div class="tblwrap" id="ePat"></div>
       <div id="eHist"></div>
+      <div id="bViewHost"></div>
   </section>
   <section class="games" id="viewEnd" hidden aria-label="Finales">
     <p class="note" style="font-size:13px;color:var(--muted);margin:0">Los mates de tus partidas, calculados con Stockfish: por número de jugadas y por tipo de mate (según la posición final). Un ataque de mate cuenta una vez y solo es aprovechado si lo rematas. Pulsa una fila para ver esas partidas en «Mis partidas».</p>
@@ -9531,16 +9548,16 @@ function engJudge(_x2, _x3, _x4) {
   return _engJudge.apply(this, arguments);
 } // free exploration from the current position: any legal move for either side
 function _engJudge() {
-  _engJudge = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee17(seq, played, want) {
+  _engJudge = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee18(seq, played, want) {
     var tok, msgEl, before, g1, g2, white, a, b, s, pa, pb, f, diff, txt;
-    return _regenerator().w(function (_context18) {
-      while (1) switch (_context18.n) {
+    return _regenerator().w(function (_context19) {
+      while (1) switch (_context19.n) {
         case 0:
           if (!(!ENG_ON || ENGINE.status() === 'broken' || !want)) {
-            _context18.n = 1;
+            _context19.n = 1;
             break;
           }
-          return _context18.a(2);
+          return _context19.a(2);
         case 1:
           tok = ++engJudgeTok, msgEl = engEl('msg'), before = msgEl.innerHTML;
           g1 = new Chess(), g2 = new Chess();
@@ -9567,33 +9584,33 @@ function _engJudge() {
             to: want.slice(2, 4),
             promotion: 'q'
           });
-          _context18.n = 2;
+          _context19.n = 2;
           return ENGINE.evaluate(g1.fen(), 13);
         case 2:
-          a = _context18.v;
+          a = _context19.v;
           if (!(tok !== engJudgeTok || !a)) {
-            _context18.n = 3;
+            _context19.n = 3;
             break;
           }
-          return _context18.a(2);
+          return _context19.a(2);
         case 3:
-          _context18.n = 4;
+          _context19.n = 4;
           return ENGINE.evaluate(g2.fen(), 13);
         case 4:
-          b = _context18.v;
+          b = _context19.v;
           if (!(tok !== engJudgeTok || !b)) {
-            _context18.n = 5;
+            _context19.n = 5;
             break;
           }
-          return _context18.a(2);
+          return _context19.a(2);
         case 5:
           engKey = null;
           engUpdate(); // resume the panel's analysis
           if (!(msgEl.innerHTML !== before)) {
-            _context18.n = 6;
+            _context19.n = 6;
             break;
           }
-          return _context18.a(2);
+          return _context19.a(2);
         case 6:
           s = function s(x) {
             return (white ? 1 : -1) * engCp(x.lines[0]);
@@ -9608,9 +9625,9 @@ function _engJudge() {
           diff = pb - pa, txt = diff < 40 ? 'para el motor es igual de buena; aun así, apréndete la del plan' : diff < 120 ? 'un poco peor que la del plan' : diff < 300 ? 'claramente peor que la del plan' : 'un error grave';
           msgEl.insertAdjacentHTML('beforeend', "<div class=\"engjudge\">Motor: tu jugada ".concat(f(pa), " \xB7 la del plan ").concat(f(pb), " (desde tu lado): ").concat(txt, ".</div>"));
         case 7:
-          return _context18.a(2);
+          return _context19.a(2);
       }
-    }, _callee17);
+    }, _callee18);
   }));
   return _engJudge.apply(this, arguments);
 }
@@ -9744,6 +9761,13 @@ var BOOKS = {
     note: 'Las estructuras de peones del libro, con su numeración. Para cada una: tus partidas con esa estructura y cómo te fue.',
     ch: [["Familia 1: d4 y …d5", [["1", "El peón aislado"], ["2", "Peones colgantes"], ["3", "Formación Caro-Kann"], ["4", "Formación eslava"], ["5", "Formación Carlsbad"], ["6", "Stonewall"], ["7", "Centro Grünfeld"]]], ["Familia 2: Siciliana abierta", [["8", "Najdorf tipo I"], ["9", "Najdorf tipo II"], ["10", "El erizo"], ["11", "El Maroczy"]]], ["Familia 3: Benoni", [["12", "Benoni asimétrica"], ["13", "Benoni simétrica"]]], ["Familia 4: India de rey", [["14", "India de rey tipo I"], ["15", "India de rey tipo II"], ["16", "India de rey tipo III"], ["17", "India de rey abierta"], ["18", "Complejo de la India de rey"]]], ["Familia 5: Francesa", [["19", "Francesa tipo I"], ["20", "Francesa tipo II"], ["21", "Francesa tipo III"]]], ["Otras estructuras", [["22a", "3 contra 3 frente a 4 contra 2"], ["22b", "Estructura Panov"], ["22c", "Formación dragón"], ["22d", "Estructura Scheveningen"], ["22e", "Estructura Benko"], ["22f", "Ruy López cerrada"], ["22g", "Formación de la Ruy López"]]]]
   }
+};
+// One short explanation per chapter (our own words), shown under the book title.
+var BOOK_DESC = {
+  erwich: ['Un movimiento que crea dos amenazas a la vez: el rival solo puede parar una. Aquí, las horquillas menos evidentes, preparadas con un cambio o un sacrificio previo.', 'Al mover una pieza se destapa la línea de otra que estaba detrás: ataque a la descubierta, jaque doble y el molino. También despejar una línea para que entre una pieza.', 'La clavada impide mover una pieza sin perder otra mayor; la ensartada ataca la pieza grande para ganar la que está detrás. Diagonales y filas típicas donde aparecen.', 'Una situación muy concreta de apertura: un alfil clava un caballo contra la dama, y el caballo se mueve igualmente porque consigue algo mayor (jaque, ataque a f7, abrir una columna).', 'Quitar o distraer la pieza que defiende algo importante: desviaciones con alfil o torre, sacrificios en la última fila y la casilla f3/f6 debilitada.', 'Piezas que se quedan sin casillas: el alfil que come un peón de torre, el caballo en la banda, la dama que se adentra en b2/b7 y otras trampas clásicas.', 'Temas para coronar un peón: sacrificios, jaques intermedios, el puente, desviar al defensor y subpromocionar cuando conviene.', 'Recursos para salvar posiciones perdidas: jaque perpetuo con caballo o torre, la torre loca y el ahogado.', 'Cómo defenderse de las tácticas del rival: contraclavadas, interposiciones, subpromoción para evitar el ahogado y defensas frente a ataques dobles.', 'Maniobras rápidas de dama en la apertura y el punto débil f2/f7, que solo defiende el rey.', 'Armas de ataque contra el rey: el sacrificio griego, el doble sacrificio de alfiles, las torres en séptima y el sacrificio que atrae al rey.', 'Partidas donde se combinan varios patrones de los capítulos anteriores.'],
+  villa: ['Lo mínimo que hay que saber: la regla del cuadrado, las casillas clave del peón y torre contra pieza menor sin peones.', 'Cuándo un caballo puede frenar a un peón avanzado y cuándo no. Los peones de torre son los más difíciles para el caballo.', 'Dama contra peón en séptima: casi siempre gana la dama, salvo con peón de alfil o de torre, donde aparecen recursos de ahogado.', 'El final más práctico de todos: contar tiempos, cortar al rey y saber si la torre llega a tiempo de parar el peón.', 'Torre contra dos peones: depende de lo avanzados que estén y de dónde estén los reyes.', 'Alfil y peón contra alfil del mismo color: el defensor busca bloquear la casilla delante del peón o controlar su diagonal.', 'Alfil contra caballo con un solo peón: cuándo gana la pieza con peón y cómo se defiende la otra.', 'Alfiles de distinto color: con dos peones de más a veces aún son tablas. La clave es si el alfil defensor puede parar los dos peones.', 'Torre y peón contra torre: Philidor para defender, Lucena para ganar, y las demás técnicas de corte del rey. Es el final que más aparece en la práctica.', 'Torre y dos peones contra torre: casi siempre ganan, salvo algunas posiciones con peones bloqueados o mal colocados.', 'Finales de peones: oposición, triangulación, peón pasado lejano y rupturas. Un tiempo de más o de menos decide la partida.', 'Otros equilibrios: mate de alfil y caballo, torre y alfil contra torre, y dama contra torre y peón.'],
+  silman: ['Los mates básicos con mucho material: la escalera con dos piezas pesadas y «la caja» para dar mate con dama o con torre. Y cuidado con el ahogado.', 'Qué piezas pueden dar mate solas, pieza menor contra dama, y la oposición: cómo usar el rey en los finales.', 'Rey y peón contra rey en detalle, y cómo frenar un peón solitario con alfil, caballo o torre.', 'La primera lista seria: Lucena y Philidor en torres, peón pasado alejado, el cuadrado del peón, alfiles de distinto color y dama contra peón.', 'Tu nivel. Dos peones contra rey, triangulación y desbordamiento en finales de peones, la séptima fila en torres y mate con dos alfiles.', 'Carreras de peones, Lucena con peón de torre, torre delante de su peón y fortalezas con pieza de más.', 'Finales de torres más complejos (dos contra uno, tres contra dos y cuatro contra tres en un flanco), alfiles del mismo color y bloqueos con dama.', 'Ideas de maestro: el principio de las dos debilidades, el rey como pieza de ataque y los finales de damas.', 'Finales por el placer de verlos: piezas dominadas, táctica en el final y los grandes finalistas de la historia.'],
+  flores: ['Estructuras con peones en d4 y d5: peón aislado, peones colgantes, Carlsbad, Stonewall… Cada una tiene planes típicos para los dos bandos.', 'La siciliana abierta: el bando negro sin peón de c, el blanco sin peón de d. Najdorf, erizo y Maroczy.', 'Benoni: blancas con peón en d5 y más espacio; negras con mayoría en el flanco de dama y juego en la columna e.', 'India de rey: centro cerrado con ataques en flancos opuestos, o centro abierto con juego de piezas.', 'Francesa: la cadena de peones d4-e5 contra d5-e6. Negras atacan la base de la cadena y blancas juegan en el flanco de rey.', 'Otras estructuras frecuentes: Panov, dragón, Scheveningen, Benko y la Ruy López cerrada.']
 };
 
 // ---------- Mis partidas: catalogue of analysed games with tactic tags, viewer and "solve it" ----------
@@ -9885,37 +9909,77 @@ var BOOKS = {
   var thOk = function thOk(th, k, t) {
     return !th || k === th || (th === 'PG' || th === 'GM') && k.slice(0, 2) === th || th.startsWith('P:') && t && t[8] === th.slice(2);
   };
+  var gvHome = null;
+  function viewerIn(host) {
+    var v = $g('gView');
+    if (!gvHome) gvHome = {
+      parent: v.parentNode,
+      next: v.nextSibling
+    };
+    host.appendChild(v);
+  }
+  function viewerHome() {
+    var v = $g('gView');
+    if (gvHome && v.parentNode !== gvHome.parent) gvHome.parent.insertBefore(v, gvHome.next);
+  }
+  function openHere(_x5, _x6, _x7, _x8) {
+    return _openHere.apply(this, arguments);
+  }
+  function _openHere() {
+    _openHere = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee5(host, r, t, ply) {
+      return _regenerator().w(function (_context5) {
+        while (1) switch (_context5.n) {
+          case 0:
+            viewerIn(host);
+            _context5.n = 1;
+            return openGame(r, false);
+          case 1:
+            view.tag = t || null;
+            view.solve = null;
+            go(ply);
+            $g('gView').scrollIntoView({
+              block: 'start',
+              behavior: 'smooth'
+            });
+          case 2:
+            return _context5.a(2);
+        }
+      }, _callee5);
+    }));
+    return _openHere.apply(this, arguments);
+  }
   function load() {
     return _load.apply(this, arguments);
   }
   function _load() {
-    _load = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee5() {
+    _load = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee6() {
       var years, _t4;
-      return _regenerator().w(function (_context5) {
-        while (1) switch (_context5.p = _context5.n) {
+      return _regenerator().w(function (_context6) {
+        while (1) switch (_context6.p = _context6.n) {
           case 0:
+            viewerHome();
             if (!CAT) {
-              _context5.n = 1;
+              _context6.n = 1;
               break;
             }
-            return _context5.a(2);
+            return _context6.a(2);
           case 1:
             $g('gList').innerHTML = '<p class="empty">Cargando partidas…</p>';
-            _context5.p = 2;
-            _context5.n = 3;
+            _context6.p = 2;
+            _context6.n = 3;
             return fetch(GAMES_BASE + 'catalog.json').then(function (r) {
               if (!r.ok) throw new Error(r.status);
               return r.json();
             });
           case 3:
-            CAT = _context5.v;
-            _context5.n = 5;
+            CAT = _context6.v;
+            _context6.n = 5;
             break;
           case 4:
-            _context5.p = 4;
-            _t4 = _context5.v;
+            _context6.p = 4;
+            _t4 = _context6.v;
             $g('gList').innerHTML = '<p class="empty">No se han podido cargar las partidas.</p>';
-            return _context5.a(2);
+            return _context6.a(2);
           case 5:
             years = _toConsumableArray(new Set(CAT.map(function (r) {
               return r[1].slice(0, 4);
@@ -9952,9 +10016,9 @@ var BOOKS = {
             };
             render();
           case 6:
-            return _context5.a(2);
+            return _context6.a(2);
         }
-      }, _callee5, null, [[2, 4]]);
+      }, _callee6, null, [[2, 4]]);
     }));
     return _load.apply(this, arguments);
   }
@@ -10061,40 +10125,40 @@ var BOOKS = {
       render();
     };
   }
-  function openGame(_x5, _x6) {
+  function openGame(_x9, _x0) {
     return _openGame.apply(this, arguments);
   }
   function _openGame() {
-    _openGame = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee6(r, scroll) {
+    _openGame = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee7(r, scroll) {
       var mon, d, sans, g, fens, ucis, th, out, first, link, _t5;
-      return _regenerator().w(function (_context6) {
-        while (1) switch (_context6.p = _context6.n) {
+      return _regenerator().w(function (_context7) {
+        while (1) switch (_context7.p = _context7.n) {
           case 0:
             mon = r[1].slice(0, 7);
             if (DET[mon]) {
-              _context6.n = 4;
+              _context7.n = 4;
               break;
             }
-            _context6.p = 1;
-            _context6.n = 2;
+            _context7.p = 1;
+            _context7.n = 2;
             return fetch(GAMES_BASE + mon + '.json').then(function (x) {
               return x.json();
             });
           case 2:
-            DET[mon] = _context6.v;
-            _context6.n = 4;
+            DET[mon] = _context7.v;
+            _context7.n = 4;
             break;
           case 3:
-            _context6.p = 3;
-            _t5 = _context6.v;
+            _context7.p = 3;
+            _t5 = _context7.v;
             DET[mon] = {};
           case 4:
             d = DET[mon][r[0]];
             if (d) {
-              _context6.n = 5;
+              _context7.n = 5;
               break;
             }
-            return _context6.a(2);
+            return _context7.a(2);
           case 5:
             sans = d.s ? d.s.split(' ') : [];
             g = new Chess(), fens = [g.fen()], ucis = [];
@@ -10147,9 +10211,9 @@ var BOOKS = {
               behavior: 'smooth'
             });
           case 6:
-            return _context6.a(2);
+            return _context7.a(2);
         }
-      }, _callee6, null, [[1, 3]]);
+      }, _callee7, null, [[1, 3]]);
     }));
     return _openGame.apply(this, arguments);
   }
@@ -10679,36 +10743,36 @@ var BOOKS = {
     return _errorsOpen.apply(this, arguments);
   }
   function _errorsOpen() {
-    _errorsOpen = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee7() {
+    _errorsOpen = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee8() {
       var mons, years, qs, MN, _t6;
-      return _regenerator().w(function (_context7) {
-        while (1) switch (_context7.p = _context7.n) {
+      return _regenerator().w(function (_context8) {
+        while (1) switch (_context8.p = _context8.n) {
           case 0:
-            _context7.n = 1;
+            _context8.n = 1;
             return load();
           case 1:
             if (CAT) {
-              _context7.n = 2;
+              _context8.n = 2;
               break;
             }
-            return _context7.a(2);
+            return _context8.a(2);
           case 2:
             if (ERR) {
-              _context7.n = 6;
+              _context8.n = 6;
               break;
             }
-            _context7.p = 3;
-            _context7.n = 4;
+            _context8.p = 3;
+            _context8.n = 4;
             return fetch(GAMES_BASE + 'errors.json').then(function (r) {
               return r.json();
             });
           case 4:
-            ERR = _context7.v;
-            _context7.n = 6;
+            ERR = _context8.v;
+            _context8.n = 6;
             break;
           case 5:
-            _context7.p = 5;
-            _t6 = _context7.v;
+            _context8.p = 5;
+            _t6 = _context8.v;
             ERR = {};
           case 6:
             mons = _toConsumableArray(new Set(CAT.map(function (r) {
@@ -10740,9 +10804,9 @@ var BOOKS = {
             renderErrStats();
             renderErrList();
           case 7:
-            return _context7.a(2);
+            return _context8.a(2);
         }
-      }, _callee7, null, [[3, 5]]);
+      }, _callee8, null, [[3, 5]]);
     }));
     return _errorsOpen.apply(this, arguments);
   }
@@ -10876,14 +10940,9 @@ var BOOKS = {
           while (1) switch (_context3.n) {
             case 0:
               _it$b$dataset$i = _slicedToArray(it[+b.dataset.i], 2), r = _it$b$dataset$i[0], t = _it$b$dataset$i[1];
-              document.querySelector('[data-main="games"]').click();
               _context3.n = 1;
-              return openGame(r, true);
+              return openHere($g('eViewHost'), r, t, t[0]);
             case 1:
-              view.tag = t;
-              view.solve = null;
-              go(t[0]);
-            case 2:
               return _context3.a(2);
           }
         }, _callee3);
@@ -10960,42 +11019,8 @@ var BOOKS = {
     return _tacOpen.apply(this, arguments);
   }
   function _tacOpen() {
-    _tacOpen = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee8() {
+    _tacOpen = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee9() {
       var R;
-      return _regenerator().w(function (_context8) {
-        while (1) switch (_context8.n) {
-          case 0:
-            _context8.n = 1;
-            return load();
-          case 1:
-            if (CAT) {
-              _context8.n = 2;
-              break;
-            }
-            return _context8.a(2);
-          case 2:
-            secInit('tCol', 'tYear', tacOpen);
-            R = secRows('tCol', 'tYear');
-            sumTable.S = themeStats(R);
-            $g('tSum').innerHTML = "<p class=\"sumline\">".concat(R.length.toLocaleString('es-ES'), " partidas.</p>") + sumTable('Táctica', TH_ORDER.filter(function (k) {
-              return !/^M/.test(k) && sumTable.S[k];
-            }).map(function (k) {
-              return [k, k.length === 3 ? '&nbsp;&nbsp;↳ ' + TH[k].split(': ')[1] : TH[k] + (k === 'PG' || k === 'GM' ? ' (total)' : ''), k.length === 3];
-            }));
-            bindRows('tSum', 'tCol', 'tYear');
-          case 3:
-            return _context8.a(2);
-        }
-      }, _callee8);
-    }));
-    return _tacOpen.apply(this, arguments);
-  }
-  function endOpen() {
-    return _endOpen.apply(this, arguments);
-  } // ---------- Libros: one tab per book → chapters → items with your stats → history. DET[book] = {item: [[id, ply, outcome?], ...]} ----------
-  function _endOpen() {
-    _endOpen = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee9() {
-      var R, S;
       return _regenerator().w(function (_context9) {
         while (1) switch (_context9.n) {
           case 0:
@@ -11007,6 +11032,40 @@ var BOOKS = {
               break;
             }
             return _context9.a(2);
+          case 2:
+            secInit('tCol', 'tYear', tacOpen);
+            R = secRows('tCol', 'tYear');
+            sumTable.S = themeStats(R);
+            $g('tSum').innerHTML = "<p class=\"sumline\">".concat(R.length.toLocaleString('es-ES'), " partidas.</p>") + sumTable('Táctica', TH_ORDER.filter(function (k) {
+              return !/^M/.test(k) && sumTable.S[k];
+            }).map(function (k) {
+              return [k, k.length === 3 ? '&nbsp;&nbsp;↳ ' + TH[k].split(': ')[1] : TH[k] + (k === 'PG' || k === 'GM' ? ' (total)' : ''), k.length === 3];
+            }));
+            bindRows('tSum', 'tCol', 'tYear');
+          case 3:
+            return _context9.a(2);
+        }
+      }, _callee9);
+    }));
+    return _tacOpen.apply(this, arguments);
+  }
+  function endOpen() {
+    return _endOpen.apply(this, arguments);
+  } // ---------- Libros: one tab per book → chapters → items with your stats → history. DET[book] = {item: [[id, ply, outcome?], ...]} ----------
+  function _endOpen() {
+    _endOpen = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee0() {
+      var R, S;
+      return _regenerator().w(function (_context0) {
+        while (1) switch (_context0.n) {
+          case 0:
+            _context0.n = 1;
+            return load();
+          case 1:
+            if (CAT) {
+              _context0.n = 2;
+              break;
+            }
+            return _context0.a(2);
           case 2:
             secInit('fCol', 'fYear', endOpen);
             R = secRows('fCol', 'fYear');
@@ -11024,75 +11083,92 @@ var BOOKS = {
             })) : '');
             bindRows('fSum', 'fCol', 'fYear');
           case 3:
-            return _context9.a(2);
+            return _context0.a(2);
         }
-      }, _callee9);
+      }, _callee0);
     }));
     return _endOpen.apply(this, arguments);
   }
   var DETB = {},
     bChap = {};
   var bCur = null;
-  function bookOpen(_x7) {
+  function bookOpen(_x1) {
     return _bookOpen.apply(this, arguments);
-  }
+  } // Flores Rios: two rows per structure — attacking/defending (isolani, hanging pawns, Carlsbad, Stonewall) or with the colour whose structure it is / against it
   function _bookOpen() {
-    _bookOpen = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee0(id) {
-      var B, DT, ci, _B$ch$ci, name, items, byId, none, head, row, sideCols, _t7;
-      return _regenerator().w(function (_context0) {
-        while (1) switch (_context0.p = _context0.n) {
+    _bookOpen = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee1(id) {
+      var B, DT, ci, desc, _B$ch$ci, name, items, byId, none, head, row, sideCols, _t7;
+      return _regenerator().w(function (_context1) {
+        while (1) switch (_context1.p = _context1.n) {
           case 0:
+            if (bCur !== id) {
+              $g('eHist').innerHTML = '';
+              if ($g('gView').closest('#viewBook')) $g('gView').hidden = true;
+            }
             bCur = id;
-            _context0.n = 1;
+            _context1.n = 1;
             return load();
           case 1:
             if (CAT) {
-              _context0.n = 2;
+              _context1.n = 2;
               break;
             }
-            return _context0.a(2);
+            return _context1.a(2);
           case 2:
             if (id in DETB) {
-              _context0.n = 6;
+              _context1.n = 6;
               break;
             }
-            _context0.p = 3;
-            _context0.n = 4;
+            _context1.p = 3;
+            _context1.n = 4;
             return fetch(GAMES_BASE + 'books/' + id + '.json').then(function (r) {
               if (!r.ok) throw 0;
               return r.json();
             });
           case 4:
-            DETB[id] = _context0.v;
-            _context0.n = 6;
+            DETB[id] = _context1.v;
+            _context1.n = 6;
             break;
           case 5:
-            _context0.p = 5;
-            _t7 = _context0.v;
+            _context1.p = 5;
+            _t7 = _context1.v;
             DETB[id] = {};
           case 6:
-            B = BOOKS[id], DT = DETB[id], ci = bChap[id] || 0;
-            $g('bHead').innerHTML = "<h3 style=\"margin:0\">".concat(B.title, "</h3><p class=\"sumline\" style=\"margin:2px 0 0\">").concat(B.author, "</p><p class=\"note\" style=\"font-size:13px;color:var(--muted);margin:6px 0 0\">").concat(B.note, " Pulsa un apartado para ver su historial.</p>");
-            $g('eChap').innerHTML = B.ch.map(function (c, i) {
-              return "<button type=\"button\" data-i=\"".concat(i, "\" aria-pressed=\"").concat(i === ci, "\">").concat(i + 1, ". ").concat(c[0], "</button>");
-            }).join('');
-            $g('eChap').querySelectorAll('button').forEach(function (b) {
-              return b.onclick = function () {
-                bChap[id] = +b.dataset.i;
-                $g('eHist').innerHTML = '';
-                bookOpen(id);
-              };
-            });
+            B = BOOKS[id], DT = DETB[id];
+            ci = bChap[id];
+            if (ci == null) {
+              try {
+                ci = +(localStorage.getItem('taller.bk.' + id) || 0);
+              } catch (e) {
+                ci = 0;
+              }
+            }
+            if (!(ci >= 0 && ci < B.ch.length)) ci = 0;
+            desc = typeof BOOK_DESC !== 'undefined' && BOOK_DESC[id] && BOOK_DESC[id][ci] || '';
+            $g('bHead').innerHTML = "<h3 style=\"margin:0\">".concat(B.title, "</h3><p class=\"sumline\" style=\"margin:2px 0 0\">").concat(B.author, " \xB7 ").concat(B.note, "</p>\n      <div class=\"sbar\" style=\"margin-top:10px\"><label for=\"bChapSel\">Cap\xEDtulo</label><select id=\"bChapSel\">").concat(B.ch.map(function (c, i) {
+              return "<option value=\"".concat(i, "\"").concat(i === ci ? ' selected' : '', ">").concat(i + 1, ". ").concat(c[0], "</option>");
+            }).join(''), "</select></div>\n      ").concat(desc ? "<p class=\"bdesc\">".concat(desc, "</p>") : '');
+            $g('bChapSel').onchange = function () {
+              var i = +$g('bChapSel').value;
+              bChap[id] = i;
+              try {
+                localStorage.setItem('taller.bk.' + id, i);
+              } catch (e) {}
+              $g('eHist').innerHTML = '';
+              if ($g('gView').closest('#viewBook')) $g('gView').hidden = true;
+              bookOpen(id);
+            };
+            $g('eChap').innerHTML = '';
             _B$ch$ci = _slicedToArray(B.ch[ci], 2), name = _B$ch$ci[0], items = _B$ch$ci[1], byId = {};
             CAT.forEach(function (r) {
               byId[r[0]] = r;
             });
             if (items.length) {
-              _context0.n = 7;
+              _context1.n = 7;
               break;
             }
             $g('ePat').innerHTML = '<p class="empty">Este capítulo combina los anteriores: no tiene apartados propios.</p>';
-            return _context0.a(2);
+            return _context1.a(2);
           case 7:
             none = '<br><span class="erwnone">sin detector todavía</span>';
             if (B.kind === 'tactic') {
@@ -11115,8 +11191,12 @@ var BOOKS = {
             } else {
               sideCols = id !== 'flores';
               head = "<tr><th>Apartado</th><th>Partidas</th>".concat(sideCols ? '<th>Tú con ventaja</th><th>Tú defendiendo</th>' : '', "<th>Ganadas</th><th>Tablas</th><th>Perdidas</th><th>% de puntos</th></tr>");
-              row = function row(n, lb) {
-                var has = n in DT,
+              row = function row(n0, lb) {
+                var _n0$split3 = n0.split('|'),
+                  _n0$split4 = _slicedToArray(_n0$split3, 2),
+                  n = _n0$split4[0],
+                  role = _n0$split4[1],
+                  has = n in DT,
                   span = sideCols ? 7 : 5;
                 if (!has) return "<td><b>".concat(n, ".</b> ").concat(lb).concat(none, "</td><td colspan=\"").concat(span, "\" class=\"erwnone\">\u2013</td>");
                 var s = {
@@ -11127,6 +11207,7 @@ var BOOKS = {
                   d: 0
                 };
                 DT[n].forEach(function (o) {
+                  if (role && o[2] !== role) return;
                   var r = byId[o[0]];
                   if (r) {
                     s[r[5]]++;
@@ -11134,14 +11215,16 @@ var BOOKS = {
                   }
                 });
                 var tot = s.W + s.D + s.L;
-                return "<td>".concat(/^c\d/.test(n) ? '' : '<b>' + n + '.</b> ').concat(lb, "</td><td><b>").concat(tot, "</b></td>").concat(sideCols ? "<td>".concat(s.a, "</td><td>").concat(s.d, "</td>") : '', "<td>").concat(s.W, "</td><td>").concat(s.D, "</td><td>").concat(s.L, "</td><td>").concat(tot ? Math.round(100 * (s.W + s.D / 2) / tot) + ' %' : '–', "</td>");
+                return "<td>".concat(role ? '&nbsp;&nbsp;↳ ' : /^c\d/.test(n) ? '' : '<b>' + n + '.</b> ').concat(lb, "</td><td><b>").concat(tot, "</b></td>").concat(sideCols ? "<td>".concat(s.a, "</td><td>").concat(s.d, "</td>") : '', "<td>").concat(s.W, "</td><td>").concat(s.D, "</td><td>").concat(s.L, "</td><td>").concat(tot ? Math.round(100 * (s.W + s.D / 2) / tot) + ' %' : '–', "</td>");
               };
             }
-            $g('ePat').innerHTML = "<h4 class=\"gsubh\">Cap\xEDtulo ".concat(ci + 1, ": ").concat(name, "</h4><table class=\"stbl gsum\"><thead>").concat(head, "</thead><tbody>").concat(('c' + ci in DT ? [['c' + ci, '<b>Todo el capítulo</b> (este tipo de final en tus partidas)']] : []).concat(items).map(function (_ref13) {
+            $g('ePat').innerHTML = "<h4 class=\"gsubh\">Cap\xEDtulo ".concat(ci + 1, ": ").concat(name, "</h4><table class=\"stbl gsum\"><thead>").concat(head, "</thead><tbody>").concat(('c' + ci in DT ? [['c' + ci, '<b>Todo el capítulo</b> (este tipo de final en tus partidas)']] : []).concat(items).reduce(function (a, it) {
+              return a.concat([it], id === 'flores' && it[0] in DT ? floresRoles(it[0]) : []);
+            }, []).map(function (_ref13) {
               var _ref14 = _slicedToArray(_ref13, 2),
                 n = _ref14[0],
                 lb = _ref14[1];
-              return "<tr class=\"click\" data-n=\"".concat(n, "\">").concat(row(n, lb), "</tr>");
+              return "<tr class=\"click".concat(n.includes('|') ? ' sub' : '', "\" data-n=\"").concat(n, "\">").concat(row(n, lb), "</tr>");
             }).join(''), "</tbody></table>");
             $g('ePat').querySelectorAll('tr.click').forEach(function (tr) {
               return tr.onclick = function () {
@@ -11149,21 +11232,55 @@ var BOOKS = {
               };
             });
           case 8:
-            return _context0.a(2);
+            return _context1.a(2);
         }
-      }, _callee0, null, [[3, 5]]);
+      }, _callee1, null, [[3, 5]]);
     }));
     return _bookOpen.apply(this, arguments);
   }
-  function bookHist(id, n, byId) {
+  var FL_ATT = {
+    '1': 'el peón aislado',
+    '2': 'los peones colgantes',
+    '5': 'el ataque de minoría',
+    '6': 'el Stonewall'
+  };
+  var FL_OWN = {
+    '3': 'b',
+    '4': 'b',
+    '7': 'b',
+    '8': 'b',
+    '10': 'b',
+    '11': 'w',
+    '12': 'b',
+    '13': 'b',
+    '14': 'b',
+    '19': 'b',
+    '22c': 'b',
+    '22d': 'b'
+  };
+  function floresRoles(n) {
+    if (FL_ATT[n]) return [[n + '|a', "atacando: tienes t\xFA ".concat(FL_ATT[n])], [n + '|d', "defendiendo: ".concat(FL_ATT[n], " es del rival")]];
+    var own = FL_OWN[n] === 'w' ? 'blancas' : 'negras',
+      oth = FL_OWN[n] === 'w' ? 'negras' : 'blancas';
+    return [[n + '|o', "con ".concat(own, ": la estructura es tuya")], [n + '|x', "con ".concat(oth, ": juegas contra ella")]];
+  }
+  function bookHist(id, n0, byId) {
+    var _n0$split = n0.split('|'),
+      _n0$split2 = _slicedToArray(_n0$split, 2),
+      n = _n0$split2[0],
+      role = _n0$split2[1];
     var B = BOOKS[id],
       it = B.ch.reduce(function (a, c) {
         return a.concat(c[1]);
       }, []).find(function (p) {
         return p[0] === n;
       }),
-      lb = it ? it[1] : 'Todo el capítulo ' + (+n.slice(1) + 1),
-      occ = DETB[id][n];
+      lb = (it ? it[1] : 'Todo el capítulo ' + (+n.slice(1) + 1)) + (role ? ' · ' + floresRoles(n).find(function (x) {
+        return x[0] === n0;
+      })[1] : ''),
+      occ = DETB[id][n] && DETB[id][n].filter(function (o) {
+        return !role || o[2] === role;
+      });
     if (!occ) {
       $g('eHist').innerHTML = "<div class=\"card\"><h4 class=\"gsubh\" style=\"margin-top:0\">".concat(n, ". ").concat(lb, "</h4><p class=\"erwnone\">Todav\xEDa no hay detector para este apartado, as\xED que no hay historial. Los detectores se ir\xE1n a\xF1adiendo cap\xEDtulo a cap\xEDtulo.</p></div>");
       return;
@@ -11208,15 +11325,11 @@ var BOOKS = {
           while (1) switch (_context4.n) {
             case 0:
               _rows$b$dataset$i = _slicedToArray(rows[+b.dataset.i], 2), r = _rows$b$dataset$i[0], o = _rows$b$dataset$i[1];
-              document.querySelector('[data-main="games"]').click();
               _context4.n = 1;
-              return openGame(r, true);
-            case 1:
-              view.tag = r[9].find(function (t) {
+              return openHere($g('bViewHost'), r, r[9].find(function (t) {
                 return t[0] === o[1];
-              }) || null;
-              go(o[1]);
-            case 2:
+              }) || null, o[1]);
+            case 1:
               return _context4.a(2);
           }
         }, _callee4);
@@ -11275,53 +11388,53 @@ var BOOKS = {
     return _connect.apply(this, arguments);
   }
   function _connect() {
-    _connect = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee1() {
+    _connect = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee10() {
       var _yield$Promise$all, _yield$Promise$all2, db, user, id, _t8;
-      return _regenerator().w(function (_context1) {
-        while (1) switch (_context1.p = _context1.n) {
+      return _regenerator().w(function (_context10) {
+        while (1) switch (_context10.p = _context10.n) {
           case 0:
-            _context1.p = 0;
+            _context10.p = 0;
             if (!(!window.claude || !window.claude.use)) {
-              _context1.n = 1;
+              _context10.n = 1;
               break;
             }
-            return _context1.a(2);
+            return _context10.a(2);
           case 1:
-            _context1.n = 2;
+            _context10.n = 2;
             return Promise.all([window.claude.use('db'), window.claude.use('user')]);
           case 2:
-            _yield$Promise$all = _context1.v;
+            _yield$Promise$all = _context10.v;
             _yield$Promise$all2 = _slicedToArray(_yield$Promise$all, 2);
             db = _yield$Promise$all2[0];
             user = _yield$Promise$all2[1];
             if (!(!db || !user)) {
-              _context1.n = 3;
+              _context10.n = 3;
               break;
             }
-            return _context1.a(2);
+            return _context10.a(2);
           case 3:
-            _context1.n = 4;
+            _context10.n = 4;
             return user.id();
           case 4:
-            id = _context1.v;
+            id = _context10.v;
             if (id) {
-              _context1.n = 5;
+              _context10.n = 5;
               break;
             }
-            return _context1.a(2);
+            return _context10.a(2);
           case 5:
             DB = db;
             UID = id;
-            _context1.n = 7;
+            _context10.n = 7;
             break;
           case 6:
-            _context1.p = 6;
-            _t8 = _context1.v;
+            _context10.p = 6;
+            _t8 = _context10.v;
             DB = null;
           case 7:
-            return _context1.a(2);
+            return _context10.a(2);
         }
-      }, _callee1, null, [[0, 6]]);
+      }, _callee10, null, [[0, 6]]);
     }));
     return _connect.apply(this, arguments);
   }
@@ -11332,26 +11445,26 @@ var BOOKS = {
     return _loadState.apply(this, arguments);
   }
   function _loadState() {
-    _loadState = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee10() {
+    _loadState = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee11() {
       var L, cs, st, any, anyLocal, _i, _Object$keys, k, n, _t9;
-      return _regenerator().w(function (_context10) {
-        while (1) switch (_context10.p = _context10.n) {
+      return _regenerator().w(function (_context11) {
+        while (1) switch (_context11.p = _context11.n) {
           case 0:
             L = local();
-            _context10.n = 1;
+            _context11.n = 1;
             return connect();
           case 1:
             if (DB) {
-              _context10.n = 2;
+              _context11.n = 2;
               break;
             }
-            return _context10.a(2, L);
+            return _context11.a(2, L);
           case 2:
-            _context10.p = 2;
-            _context10.n = 3;
+            _context11.p = 2;
+            _context11.n = 3;
             return root().collection('cycles').get();
           case 3:
-            cs = _context10.v;
+            cs = _context11.v;
             st = {
               level: L.level,
               cycles: {
@@ -11384,43 +11497,43 @@ var BOOKS = {
             });
             dbOn = true;
             if (!(!any && anyLocal)) {
-              _context10.n = 9;
+              _context11.n = 9;
               break;
             }
             _i = 0, _Object$keys = Object.keys(L.cycles);
           case 4:
             if (!(_i < _Object$keys.length)) {
-              _context10.n = 8;
+              _context11.n = 8;
               break;
             }
             k = _Object$keys[_i];
             n = 0;
           case 5:
             if (!(n < L.cycles[k].length)) {
-              _context10.n = 7;
+              _context11.n = 7;
               break;
             }
-            _context10.n = 6;
+            _context11.n = 6;
             return root().collection('cycles').doc(k + '_' + n).set(L.cycles[k][n]);
           case 6:
             n++;
-            _context10.n = 5;
+            _context11.n = 5;
             break;
           case 7:
             _i++;
-            _context10.n = 4;
+            _context11.n = 4;
             break;
           case 8:
-            return _context10.a(2, L);
+            return _context11.a(2, L);
           case 9:
-            return _context10.a(2, st);
+            return _context11.a(2, st);
           case 10:
-            _context10.p = 10;
-            _t9 = _context10.v;
+            _context11.p = 10;
+            _t9 = _context11.v;
             dbOn = false;
-            return _context10.a(2, L);
+            return _context11.a(2, L);
         }
-      }, _callee10, null, [[2, 10]]);
+      }, _callee11, null, [[2, 10]]);
     }));
     return _loadState.apply(this, arguments);
   }
@@ -11463,42 +11576,42 @@ var BOOKS = {
     return _open.apply(this, arguments);
   } // cycles table and progress
   function _open() {
-    _open = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee11() {
+    _open = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee12() {
       var _t0;
-      return _regenerator().w(function (_context11) {
-        while (1) switch (_context11.p = _context11.n) {
+      return _regenerator().w(function (_context12) {
+        while (1) switch (_context12.p = _context12.n) {
           case 0:
             if (S) {
-              _context11.n = 2;
+              _context12.n = 2;
               break;
             }
             $w('wpBox').innerHTML = '<p class="empty">Cargando tus ciclos…</p>';
-            _context11.n = 1;
+            _context12.n = 1;
             return loadState();
           case 1:
-            S = _context11.v;
+            S = _context12.v;
             $w('wpBox').innerHTML = '';
           case 2:
             if (P) {
-              _context11.n = 6;
+              _context12.n = 6;
               break;
             }
             $w('wpBox').innerHTML = '<p class="empty">Cargando ejercicios…</p>';
-            _context11.p = 3;
-            _context11.n = 4;
+            _context12.p = 3;
+            _context12.n = 4;
             return fetch(GAMES_BASE + 'woodpecker.json').then(function (r) {
               if (!r.ok) throw 0;
               return r.json();
             });
           case 4:
-            P = _context11.v;
-            _context11.n = 6;
+            P = _context12.v;
+            _context12.n = 6;
             break;
           case 5:
-            _context11.p = 5;
-            _t0 = _context11.v;
+            _context12.p = 5;
+            _t0 = _context12.v;
             $w('wpBox').innerHTML = '<p class="empty">No se han podido cargar los ejercicios.</p>';
-            return _context11.a(2);
+            return _context12.a(2);
           case 6:
             $w('wpLevel').value = S.level;
             $w('wpLevel').onchange = function () {
@@ -11534,9 +11647,9 @@ var BOOKS = {
             };
             panel();
           case 7:
-            return _context11.a(2);
+            return _context12.a(2);
         }
-      }, _callee11, null, [[3, 5]]);
+      }, _callee12, null, [[3, 5]]);
     }));
     return _open.apply(this, arguments);
   }
@@ -11637,24 +11750,24 @@ var BOOKS = {
     $w('wpNext').onclick = next;
     cur.busy = true;
   }
-  function tap(_x8) {
+  function tap(_x10) {
     return _tap.apply(this, arguments);
   }
   function _tap() {
-    _tap = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee12(sq) {
+    _tap = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee13(sq) {
       var g, _pc, from, pc, m, u, want, ok;
-      return _regenerator().w(function (_context12) {
-        while (1) switch (_context12.n) {
+      return _regenerator().w(function (_context13) {
+        while (1) switch (_context13.n) {
           case 0:
             if (!(!cur || cur.busy)) {
-              _context12.n = 1;
+              _context13.n = 1;
               break;
             }
-            return _context12.a(2);
+            return _context13.a(2);
           case 1:
             g = new Chess(cur.fen);
             if (cur.sel) {
-              _context12.n = 2;
+              _context13.n = 2;
               break;
             }
             _pc = g.get(sq);
@@ -11662,25 +11775,25 @@ var BOOKS = {
               cur.sel = sq;
               draw();
             }
-            return _context12.a(2);
+            return _context13.a(2);
           case 2:
             from = cur.sel;
             cur.sel = null;
             if (!(from === sq)) {
-              _context12.n = 3;
+              _context13.n = 3;
               break;
             }
             draw();
-            return _context12.a(2);
+            return _context13.a(2);
           case 3:
             pc = g.get(sq);
             if (!(pc && pc.color === g.turn())) {
-              _context12.n = 4;
+              _context13.n = 4;
               break;
             }
             cur.sel = sq;
             draw();
-            return _context12.a(2);
+            return _context13.a(2);
           case 4:
             m = g.move({
               from: from,
@@ -11688,43 +11801,43 @@ var BOOKS = {
               promotion: 'q'
             });
             if (m) {
-              _context12.n = 5;
+              _context13.n = 5;
               break;
             }
             draw();
-            return _context12.a(2);
+            return _context13.a(2);
           case 5:
             u = m.from + m.to + (m.promotion ? m.promotion : ''), want = cur.pv[cur.k];
             if (!(want && (u === want || u.slice(0, 4) === want.slice(0, 4)))) {
-              _context12.n = 6;
+              _context13.n = 6;
               break;
             }
-            return _context12.a(2, advance(g, m));
+            return _context13.a(2, advance(g, m));
           case 6:
             // another move: ask the browser engine whether it is as good as the solution
             cur.busy = true;
             say("Compruebo ".concat(es(m.san), " con el motor\u2026"));
-            _context12.n = 7;
+            _context13.n = 7;
             return altOk(g.fen());
           case 7:
-            ok = _context12.v;
+            ok = _context13.v;
             cur.busy = false;
             if (!ok) {
-              _context12.n = 8;
+              _context13.n = 8;
               break;
             }
             cur.fen = g.fen();
             cur.last = m.from + m.to;
             draw();
-            return _context12.a(2, finish(true, "<b style=\"color:#2f7d4f\">\xA1Bien! ".concat(es(m.san), "</b> tambi\xE9n ").concat(cur.p[3] === '1/2-1/2' ? 'aguanta' : 'gana', " (no es la l\xEDnea del libro, pero el motor la da por buena).")));
+            return _context13.a(2, finish(true, "<b style=\"color:#2f7d4f\">\xA1Bien! ".concat(es(m.san), "</b> tambi\xE9n ").concat(cur.p[3] === '1/2-1/2' ? 'aguanta' : 'gana', " (no es la l\xEDnea del libro, pero el motor la da por buena).")));
           case 8:
             cur.fails++;
             draw();
             say("<b style=\"color:#c0392b\">".concat(es(m.san), " no es.</b> Int\xE9ntalo otra vez o pulsa \xABVer la soluci\xF3n\xBB."));
           case 9:
-            return _context12.a(2);
+            return _context13.a(2);
         }
-      }, _callee12);
+      }, _callee13);
     }));
     return _tap.apply(this, arguments);
   }
@@ -11763,47 +11876,47 @@ var BOOKS = {
       return m ? es(m.san) : '';
     }).join(' ');
   }
-  function altOk(_x9) {
+  function altOk(_x11) {
     return _altOk.apply(this, arguments);
   }
   function _altOk() {
-    _altOk = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee13(fen) {
+    _altOk = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee14(fen) {
       var r, l, sgn, v, sc;
-      return _regenerator().w(function (_context13) {
-        while (1) switch (_context13.n) {
+      return _regenerator().w(function (_context14) {
+        while (1) switch (_context14.n) {
           case 0:
             if (!(typeof ENGINE === 'undefined')) {
-              _context13.n = 1;
+              _context14.n = 1;
               break;
             }
-            return _context13.a(2, false);
+            return _context14.a(2, false);
           case 1:
-            _context13.n = 2;
+            _context14.n = 2;
             return ENGINE.evaluate(fen, 14);
           case 2:
-            r = _context13.v;
+            r = _context14.v;
             if (!(!r || !r.lines || !r.lines[0])) {
-              _context13.n = 3;
+              _context14.n = 3;
               break;
             }
-            return _context13.a(2, false);
+            return _context14.a(2, false);
           case 3:
             l = r.lines[0], sgn = cur.me === 'w' ? 1 : -1, v = engCp(l) * sgn, sc = cur.p[5] || '0';
             if (!(sc[0] === '#')) {
-              _context13.n = 4;
+              _context14.n = 4;
               break;
             }
-            return _context13.a(2, l.mate != null && l.mate * sgn > 0);
+            return _context14.a(2, l.mate != null && l.mate * sgn > 0);
           case 4:
             if (!(cur.p[3] === '1/2-1/2')) {
-              _context13.n = 5;
+              _context14.n = 5;
               break;
             }
-            return _context13.a(2, v >= -60);
+            return _context14.a(2, v >= -60);
           case 5:
-            return _context13.a(2, v >= Math.min(+sc - 100, 300));
+            return _context14.a(2, v >= Math.min(+sc - 100, 300));
         }
-      }, _callee13);
+      }, _callee14);
     }));
     return _altOk.apply(this, arguments);
   }
@@ -11847,30 +11960,30 @@ var BOOKS = {
     return _open2.apply(this, arguments);
   }
   function _open2() {
-    _open2 = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee14() {
+    _open2 = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee15() {
       var seen, _t1;
-      return _regenerator().w(function (_context14) {
-        while (1) switch (_context14.p = _context14.n) {
+      return _regenerator().w(function (_context15) {
+        while (1) switch (_context15.p = _context15.n) {
           case 0:
             if (G) {
-              _context14.n = 4;
+              _context15.n = 4;
               break;
             }
-            _context14.p = 1;
-            _context14.n = 2;
+            _context15.p = 1;
+            _context15.n = 2;
             return fetch(GAMES_BASE + 'logical.json').then(function (r) {
               if (!r.ok) throw 0;
               return r.json();
             });
           case 2:
-            G = _context14.v;
-            _context14.n = 4;
+            G = _context15.v;
+            _context15.n = 4;
             break;
           case 3:
-            _context14.p = 3;
-            _t1 = _context14.v;
+            _context15.p = 3;
+            _t1 = _context15.v;
             $l('lcList').innerHTML = '<p class="empty">No se han podido cargar las partidas.</p>';
-            return _context14.a(2);
+            return _context15.a(2);
           case 4:
             seen = {};
             try {
@@ -11885,9 +11998,9 @@ var BOOKS = {
               };
             });
           case 5:
-            return _context14.a(2);
+            return _context15.a(2);
         }
-      }, _callee14, null, [[1, 3]]);
+      }, _callee15, null, [[1, 3]]);
     }));
     return _open2.apply(this, arguments);
   }
@@ -12049,42 +12162,42 @@ var BOOKS = {
     return _why.apply(this, arguments);
   }
   function _why() {
-    _why = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee15() {
+    _why = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee16() {
       var v, k, pre, r, _t10;
-      return _regenerator().w(function (_context15) {
-        while (1) switch (_context15.p = _context15.n) {
+      return _regenerator().w(function (_context16) {
+        while (1) switch (_context16.p = _context16.n) {
           case 0:
             if (!(!cur || !cur.ply || typeof SAMPLE === 'undefined' || !SAMPLE)) {
-              _context15.n = 1;
+              _context16.n = 1;
               break;
             }
-            return _context15.a(2);
+            return _context16.a(2);
           case 1:
             v = cur, k = v.ply - 1;
             pre = v.ss.slice(0, k).map(function (s, i) {
               return (i % 2 === 0 ? i / 2 + 1 + '. ' : '') + s;
             }).join(' ');
             $l('lcInfo').innerHTML = 'Preguntando a Claude…';
-            _context15.p = 2;
-            _context15.n = 3;
+            _context16.p = 2;
+            _context16.n = 3;
             return SAMPLE("Eres un entrenador de ajedrez. Partida ".concat(v.g[1], " \u2013 ").concat(v.g[2], " (").concat(v.g[3], "). Jugadas hasta ahora (notaci\xF3n espa\xF1ola): ").concat(pre, ". Explica en espa\xF1ol, tuteando, en 3 o 4 frases y con tus propias palabras, la idea de la jugada ").concat(Math.floor(k / 2) + 1).concat(k % 2 ? '...' : '.', " ").concat(v.ss[k], ": qu\xE9 busca, qu\xE9 amenaza o qu\xE9 prepara, y qu\xE9 principio general ilustra. Si no est\xE1s seguro de un c\xE1lculo concreto, dilo."), {
               onText: function onText(x) {
                 $l('lcInfo').innerHTML = esc2(x.text);
               }
             });
           case 3:
-            r = _context15.v;
+            r = _context16.v;
             $l('lcInfo').innerHTML = "<b>".concat(v.ss[k], ":</b> ").concat(esc2(r.text));
-            _context15.n = 5;
+            _context16.n = 5;
             break;
           case 4:
-            _context15.p = 4;
-            _t10 = _context15.v;
+            _context16.p = 4;
+            _t10 = _context16.v;
             $l('lcInfo').innerHTML = 'Ahora no he podido responder. Inténtalo más tarde.';
           case 5:
-            return _context15.a(2);
+            return _context16.a(2);
         }
-      }, _callee15, null, [[2, 4]]);
+      }, _callee16, null, [[2, 4]]);
     }));
     return _why.apply(this, arguments);
   }
@@ -16345,18 +16458,18 @@ var LIVE_USER = '';
     return _fetchGames.apply(this, arguments);
   }
   function _fetchGames() {
-    _fetchGames = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee16() {
+    _fetchGames = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee17() {
       var user, st, cache, ar, months, nowKey, todo, i, _iterator3, _step4, _loop4, _t11, _t12;
-      return _regenerator().w(function (_context17) {
-        while (1) switch (_context17.p = _context17.n) {
+      return _regenerator().w(function (_context18) {
+        while (1) switch (_context18.p = _context18.n) {
           case 0:
             user = $('liveUser').value.trim().toLowerCase();
             if (user) {
-              _context17.n = 1;
+              _context18.n = 1;
               break;
             }
             $('liveUser').focus();
-            return _context17.a(2);
+            return _context18.a(2);
           case 1:
             try {
               localStorage.setItem('taller.user', user);
@@ -16370,14 +16483,14 @@ var LIVE_USER = '';
               g: [],
               done: []
             };
-            _context17.p = 2;
-            _context17.n = 3;
+            _context18.p = 2;
+            _context18.n = 3;
             return fetch("https://api.chess.com/pub/player/".concat(encodeURIComponent(user), "/games/archives")).then(function (r) {
               if (!r.ok) throw new Error(r.status === 404 ? 'Usuario no encontrado' : 'Error ' + r.status);
               return r.json();
             });
           case 3:
-            ar = _context17.v;
+            ar = _context18.v;
             months = ar.archives;
             nowKey = months[months.length - 1];
             todo = months.filter(function (m) {
@@ -16385,21 +16498,21 @@ var LIVE_USER = '';
             });
             i = 0;
             _iterator3 = _createForOfIteratorHelper(todo);
-            _context17.p = 4;
+            _context18.p = 4;
             _loop4 = /*#__PURE__*/_regenerator().m(function _loop4() {
               var m, j, key;
-              return _regenerator().w(function (_context16) {
-                while (1) switch (_context16.n) {
+              return _regenerator().w(function (_context17) {
+                while (1) switch (_context17.n) {
                   case 0:
                     m = _step4.value;
                     i++;
                     st.textContent = "Descargando ".concat(i, " de ").concat(todo.length, "\u2026");
-                    _context16.n = 1;
+                    _context17.n = 1;
                     return fetch(m).then(function (r) {
                       return r.json();
                     });
                   case 1:
-                    j = _context16.v;
+                    j = _context17.v;
                     key = m.slice(-7);
                     cache.g = cache.g.filter(function (x) {
                       return x.m !== key;
@@ -16429,31 +16542,31 @@ var LIVE_USER = '';
                     });
                     if (cache.done.indexOf(m) < 0) cache.done.push(m);
                   case 2:
-                    return _context16.a(2);
+                    return _context17.a(2);
                 }
               }, _loop4);
             });
             _iterator3.s();
           case 5:
             if ((_step4 = _iterator3.n()).done) {
-              _context17.n = 7;
+              _context18.n = 7;
               break;
             }
-            return _context17.d(_regeneratorValues(_loop4()), 6);
+            return _context18.d(_regeneratorValues(_loop4()), 6);
           case 6:
-            _context17.n = 5;
+            _context18.n = 5;
             break;
           case 7:
-            _context17.n = 9;
+            _context18.n = 9;
             break;
           case 8:
-            _context17.p = 8;
-            _t11 = _context17.v;
+            _context18.p = 8;
+            _t11 = _context18.v;
             _iterator3.e(_t11);
           case 9:
-            _context17.p = 9;
+            _context18.p = 9;
             _iterator3.f();
-            return _context17.f(9);
+            return _context18.f(9);
           case 10:
             cache.g.sort(function (a, b) {
               return a.t - b.t;
@@ -16462,16 +16575,16 @@ var LIVE_USER = '';
             GAMES = cache.g;
             st.textContent = "".concat(GAMES.length, " partidas blitz \xB7 actualizado");
             renderGames();
-            _context17.n = 12;
+            _context18.n = 12;
             break;
           case 11:
-            _context17.p = 11;
-            _t12 = _context17.v;
+            _context18.p = 11;
+            _t12 = _context18.v;
             st.textContent = 'No he podido descargar: ' + (_t12 && _t12.message ? _t12.message : _t12) + '. Si estás dentro de Claude, prueba la versión del iPad.';
           case 12:
-            return _context17.a(2);
+            return _context18.a(2);
         }
-      }, _callee16, null, [[4, 8, 9, 10], [2, 11]]);
+      }, _callee17, null, [[4, 8, 9, 10], [2, 11]]);
     }));
     return _fetchGames.apply(this, arguments);
   }
