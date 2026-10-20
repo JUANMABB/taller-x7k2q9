@@ -11038,7 +11038,7 @@ var BOOKS = {
   }
   function _bookOpen() {
     _bookOpen = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee0(id) {
-      var B, DT, ci, _B$ch$ci, name, items, byId, none, head, row, _t7;
+      var B, DT, ci, _B$ch$ci, name, items, byId, none, head, row, sideCols, _t7;
       return _regenerator().w(function (_context0) {
         while (1) switch (_context0.p = _context0.n) {
           case 0:
@@ -11113,24 +11113,31 @@ var BOOKS = {
                 return "<td><b>".concat(n, ".</b> ").concat(lb, "</td><td><b>").concat(tot, "</b></td><td>").concat(s.f, "</td><td>").concat(s.m, "</td><td>").concat(tot ? Math.round(100 * s.f / tot) + ' %' : '–', "</td><td><b>").concat(s.c + s.x, "</b></td><td>").concat(s.c, "</td><td>").concat(s.x, "</td>");
               };
             } else {
-              head = '<tr><th>Apartado</th><th>Partidas</th><th>Ganadas</th><th>Tablas</th><th>Perdidas</th><th>% de puntos</th></tr>';
+              sideCols = id !== 'flores';
+              head = "<tr><th>Apartado</th><th>Partidas</th>".concat(sideCols ? '<th>Tú con ventaja</th><th>Tú defendiendo</th>' : '', "<th>Ganadas</th><th>Tablas</th><th>Perdidas</th><th>% de puntos</th></tr>");
               row = function row(n, lb) {
-                var has = n in DT;
-                if (!has) return "<td><b>".concat(n, ".</b> ").concat(lb).concat(none, "</td><td colspan=\"5\" class=\"erwnone\">\u2013</td>");
+                var has = n in DT,
+                  span = sideCols ? 7 : 5;
+                if (!has) return "<td><b>".concat(n, ".</b> ").concat(lb).concat(none, "</td><td colspan=\"").concat(span, "\" class=\"erwnone\">\u2013</td>");
                 var s = {
                   W: 0,
                   D: 0,
-                  L: 0
+                  L: 0,
+                  a: 0,
+                  d: 0
                 };
                 DT[n].forEach(function (o) {
                   var r = byId[o[0]];
-                  if (r) s[r[5]]++;
+                  if (r) {
+                    s[r[5]]++;
+                    if (o[2]) s[o[2]]++;
+                  }
                 });
                 var tot = s.W + s.D + s.L;
-                return "<td><b>".concat(n, ".</b> ").concat(lb, "</td><td><b>").concat(tot, "</b></td><td>").concat(s.W, "</td><td>").concat(s.D, "</td><td>").concat(s.L, "</td><td>").concat(tot ? Math.round(100 * (s.W + s.D / 2) / tot) + ' %' : '–', "</td>");
+                return "<td>".concat(/^c\d/.test(n) ? '' : '<b>' + n + '.</b> ').concat(lb, "</td><td><b>").concat(tot, "</b></td>").concat(sideCols ? "<td>".concat(s.a, "</td><td>").concat(s.d, "</td>") : '', "<td>").concat(s.W, "</td><td>").concat(s.D, "</td><td>").concat(s.L, "</td><td>").concat(tot ? Math.round(100 * (s.W + s.D / 2) / tot) + ' %' : '–', "</td>");
               };
             }
-            $g('ePat').innerHTML = "<h4 class=\"gsubh\">Cap\xEDtulo ".concat(ci + 1, ": ").concat(name, "</h4><table class=\"stbl gsum\"><thead>").concat(head, "</thead><tbody>").concat(items.map(function (_ref13) {
+            $g('ePat').innerHTML = "<h4 class=\"gsubh\">Cap\xEDtulo ".concat(ci + 1, ": ").concat(name, "</h4><table class=\"stbl gsum\"><thead>").concat(head, "</thead><tbody>").concat(('c' + ci in DT ? [['c' + ci, '<b>Todo el capítulo</b> (este tipo de final en tus partidas)']] : []).concat(items).map(function (_ref13) {
               var _ref14 = _slicedToArray(_ref13, 2),
                 n = _ref14[0],
                 lb = _ref14[1];
@@ -11150,11 +11157,12 @@ var BOOKS = {
   }
   function bookHist(id, n, byId) {
     var B = BOOKS[id],
-      lb = B.ch.reduce(function (a, c) {
+      it = B.ch.reduce(function (a, c) {
         return a.concat(c[1]);
       }, []).find(function (p) {
         return p[0] === n;
-      })[1],
+      }),
+      lb = it ? it[1] : 'Todo el capítulo ' + (+n.slice(1) + 1),
       occ = DETB[id][n];
     if (!occ) {
       $g('eHist').innerHTML = "<div class=\"card\"><h4 class=\"gsubh\" style=\"margin-top:0\">".concat(n, ". ").concat(lb, "</h4><p class=\"erwnone\">Todav\xEDa no hay detector para este apartado, as\xED que no hay historial. Los detectores se ir\xE1n a\xF1adiendo cap\xEDtulo a cap\xEDtulo.</p></div>");
