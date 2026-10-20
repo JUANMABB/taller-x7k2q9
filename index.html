@@ -365,6 +365,7 @@ footer { font-size: 12px; color: var(--muted); max-width: 90ch; }
 .gtags { display: flex; flex-wrap: wrap; gap: 6px; }
 .gtag { all: unset; cursor: pointer; font-size: 12.5px; padding: 4px 9px; border-radius: 999px; }
 .gtag span { opacity: .8; }
+.linkbtn { all: unset; cursor: pointer; color: var(--accent, #2f6db5); text-decoration: underline; font-weight: 600; }
 .gboardwrap { display: grid; grid-template-columns: minmax(0, 480px); justify-content: center; }
 .ggraph svg { width: 100%; height: 110px; display: block; cursor: pointer; border-radius: 8px; }
 .ggraph .gbg { fill: #2b2b2b; } .ggraph .garea { fill: #f4f1ea; opacity: .9; } .ggraph .gline { fill: none; stroke: var(--walnut); stroke-width: 1.5; } .ggraph .gmid { stroke: #888; stroke-width: 1; stroke-dasharray: 4 4; } .ggraph .gcur { stroke: #2e6f9e; stroke-width: 2; }
@@ -2408,7 +2409,7 @@ if (typeof define !== 'undefined')
     <p class="note" style="font-size:13px;color:var(--muted);margin:0">Tus partidas de blitz analizadas con Stockfish. Cada táctica queda etiquetada en la jugada donde aparece: <b class="tgk m">perdida</b> (la tenías y no la jugaste), <b class="tgk f">aprovechada</b> o <b class="tgk c">concedida</b> (tu jugada se la dejó al rival). Pulsa una fila de la tabla para filtrar por esa táctica.</p>
     <div class="sbar">
       <select id="gTheme" aria-label="Táctica"></select>
-      <select id="gOut" aria-label="Resultado de la táctica"><option value="">Perdidas, aprovechadas y concedidas</option><option value="m">Solo perdidas</option><option value="f">Solo aprovechadas</option><option value="c">Solo concedidas</option></select>
+      <select id="gOut" aria-label="Resultado de la táctica"><option value="">Perdidas, aprovechadas y concedidas</option><option value="m">Solo perdidas</option><option value="f">Solo aprovechadas</option><option value="c">Solo concedidas (tus errores)</option><option value="e">Solo errores evitables</option></select>
       <select id="gCol" aria-label="Color"><option value="">Blancas y negras</option><option value="w">Con blancas</option><option value="b">Con negras</option></select>
       <select id="gRes" aria-label="Resultado"><option value="">Cualquier resultado</option><option value="W">Ganadas</option><option value="L">Perdidas</option><option value="D">Tablas</option></select>
       <label for="gYear">Año</label><select id="gYear"></select>
@@ -9777,7 +9778,7 @@ var GAMES_BASE = 'partidas/',
       return (!col || r[2] === col) && (!res || r[5] === res) && (!y || r[1].startsWith(y)) && (!q || ecoName(r[7]).toLowerCase().includes(q));
     });
     var okTag = function okTag(t) {
-      return (!th || t[1] === th) && (!out || (out === 'c' ? 'cx'.includes(t[2]) : t[2] === out));
+      return (!th || t[1] === th) && (!out || (out === 'c' ? 'cx'.includes(t[2]) : out === 'e' ? 'cx'.includes(t[2]) && t[6] === 'e' : t[2] === out));
     };
     return {
       base: base,
@@ -9794,26 +9795,47 @@ var GAMES_BASE = 'partidas/',
       okTag = _filt.okTag;
     // summary by theme over the games of the filter (without the tactic filter)
     var S = {};
+    var E = 0,
+      EE = 0,
+      EG = 0;
     base.forEach(function (r) {
-      return r[9].forEach(function (t) {
+      var had = false;
+      r[9].forEach(function (t) {
         var s = S[t[1]] = S[t[1]] || {
           f: 0,
           m: 0,
           c: 0,
-          x: 0
+          x: 0,
+          e: 0
         };
         s[t[2]]++;
+        if ('cx'.includes(t[2])) {
+          E++;
+          had = true;
+          if (t[6] === 'e') {
+            s.e++;
+            EE++;
+          }
+        }
       });
+      if (had) EG++;
     });
     var keys = TH_ORDER.filter(function (k) {
       return S[k];
     });
-    $g('gSum').innerHTML = "<table class=\"stbl\"><thead><tr><th>T\xE1ctica</th><th>Aprovechadas</th><th>Perdidas</th><th>% vista</th><th>Concedidas</th><th>\u2026el rival no la vio</th></tr></thead><tbody>".concat(keys.map(function (k) {
+    var n100 = base.length ? 100 * E / base.length : 0;
+    $g('gSum').innerHTML = (E ? "<p class=\"sumline\"><b>Tus errores que dieron una t\xE1ctica al rival:</b> ".concat(E.toLocaleString('es-ES'), " en ").concat(EG.toLocaleString('es-ES'), " de ").concat(base.length.toLocaleString('es-ES'), " partidas (").concat(String(n100.toFixed(0)), " por cada 100 partidas). <b>").concat(Math.round(100 * EE / E), " %</b> eran evitables: hab\xEDa m\xE1s de una jugada que no dejaba nada. <button type=\"button\" class=\"btn small\" id=\"gErr\">Ver los errores evitables</button></p>") : '') + "<table class=\"stbl\"><thead><tr><th>T\xE1ctica</th><th>Aprovechadas</th><th>Perdidas</th><th>% vista</th><th>Se la diste al rival</th><th>\u2026evitables</th><th>\u2026el rival no la vio</th></tr></thead><tbody>".concat(keys.map(function (k) {
       var s = S[k],
         tot = s.f + s.m,
         pc = tot ? 100 * s.f / tot : null;
-      return "<tr class=\"click\" data-k=\"".concat(k, "\"><td>").concat(TH[k], "</td><td>").concat(s.f, "</td><td>").concat(s.m, "</td><td class=\"").concat(pc == null ? '' : pc < 50 ? 'cell-bad' : pc >= 70 ? 'cell-good' : '', "\">").concat(pc == null ? '–' : Math.round(pc) + ' %', "</td><td>").concat(s.c + s.x, "</td><td>").concat(s.x, "</td></tr>");
+      return "<tr class=\"click\" data-k=\"".concat(k, "\"><td>").concat(TH[k], "</td><td>").concat(s.f, "</td><td>").concat(s.m, "</td><td class=\"").concat(pc == null ? '' : pc < 50 ? 'cell-bad' : pc >= 70 ? 'cell-good' : '', "\">").concat(pc == null ? '–' : Math.round(pc) + ' %', "</td><td>").concat(s.c + s.x, "</td><td>").concat(s.e, "</td><td>").concat(s.x, "</td></tr>");
     }).join(''), "</tbody></table>");
+    var ge = $g('gErr');
+    if (ge) ge.onclick = function () {
+      $g('gOut').value = 'e';
+      page = 60;
+      render();
+    };
     $g('gSum').querySelectorAll('tr.click').forEach(function (tr) {
       return tr.onclick = function () {
         $g('gTheme').value = tr.dataset.k;
@@ -9886,7 +9908,7 @@ var GAMES_BASE = 'partidas/',
             });
             th = $g('gTheme').value, out = $g('gOut').value;
             first = r[9].find(function (t) {
-              return (!th || t[1] === th) && (!out || (out === 'c' ? 'cx'.includes(t[2]) : t[2] === out));
+              return (!th || t[1] === th) && (!out || (out === 'c' ? 'cx'.includes(t[2]) : out === 'e' ? 'cx'.includes(t[2]) && t[6] === 'e' : t[2] === out));
             });
             view = {
               r: r,
@@ -9936,7 +9958,7 @@ var GAMES_BASE = 'partidas/',
     if (!view) return;
     view.ply = Math.max(0, Math.min(view.sans.length, p));
     view.sel = null;
-    if (view.tag && view.tag[0] !== view.ply) view.tag = null;
+    if (view.tag && view.tag[0] !== view.ply && !('cx'.includes(view.tag[2]) && view.tag[0] + 1 === view.ply)) view.tag = null;
     paint();
   }
   function arrowsFor() {
@@ -9946,14 +9968,23 @@ var GAMES_BASE = 'partidas/',
     var played = view.ucis[t[0]],
       best = t[4];
     if (t[2] === 'c' || t[2] === 'x') {
-      if (played) out.push({
-        u: played,
-        c: '#c0392b'
-      });
-      if (best) out.push({
-        u: best,
-        c: '#d1822a'
-      });
+      if (view.ply === t[0] + 1) {
+        if (best) out.push({
+          u: best,
+          c: '#d1822a'
+        });
+      } else {
+        if (played) out.push({
+          u: played,
+          c: '#c0392b'
+        });
+        (t[5] || []).forEach(function (u) {
+          return out.push({
+            u: u,
+            c: '#2f7d4f'
+          });
+        });
+      }
     } else {
       if (played && played !== best) out.push({
         u: played,
@@ -10008,15 +10039,40 @@ var GAMES_BASE = 'partidas/',
     if (t && !v.solve) {
       var bestSan = sanOf(v.fens[t[0]], t[4]),
         playSan = v.ss[t[0]];
-      info = "<b>".concat(tagLabel(t), " \xB7 ").concat(OUT[t[2]], "</b><br>") + (t[2] === 'm' ? "Jugaste <b style=\"color:#c0392b\">".concat(playSan, "</b>; ten\xEDas <b style=\"color:#2f7d4f\">").concat(bestSan, "</b>. Te cost\xF3 ").concat(costTxt(t[3]), ".") : t[2] === 'f' ? "Jugaste <b style=\"color:#2f7d4f\">".concat(playSan, "</b>, la mejor jugada.") : "Tu jugada <b style=\"color:#c0392b\">".concat(playSan, "</b> le dej\xF3 al rival <b style=\"color:#d1822a\">").concat(sanOf(v.fens[t[0] + 1], t[4]), "</b>").concat(t[2] === 'x' ? ', pero no la vio' : '', ". Perdiste ").concat(costTxt(t[3]), "."));
+      info = "<b>".concat(tagLabel(t), " \xB7 ").concat(OUT[t[2]], "</b><br>") + (t[2] === 'm' ? "Jugaste <b style=\"color:#c0392b\">".concat(playSan, "</b>; ten\xEDas <b style=\"color:#2f7d4f\">").concat(bestSan, "</b>. Te cost\xF3 ").concat(costTxt(t[3]), ".") : t[2] === 'f' ? "Jugaste <b style=\"color:#2f7d4f\">".concat(playSan, "</b>, la mejor jugada.") : concTxt(v, t, playSan));
     }
     if (v.solve) info = v.solve.msg;
     $g('gInfo').innerHTML = info;
-    $g('gSolve').hidden = !(t && t[2] === 'm') || !!v.solve;
+    var rb = $g('gInfo').querySelector('[data-go]');
+    if (rb) rb.onclick = function () {
+      view.solve = null;
+      view.tag = null;
+      go(+rb.dataset.go);
+    };
+    var ab = $g('gInfo').querySelector('#gAfter');
+    if (ab) ab.onclick = function () {
+      return go(t[0] + 1);
+    };
+    var cx = t && 'cx'.includes(t[2]);
+    $g('gSolve').textContent = cx ? 'Evita el error' : 'Resuélvelo tú';
+    $g('gSolve').hidden = !(t && (t[2] === 'm' || cx && t[5] && v.ply === t[0])) || !!v.solve;
     $g('gGraph').querySelectorAll('.gcur').forEach(function (x) {
       x.setAttribute('x1', gx(v.ply));
       x.setAttribute('x2', gx(v.ply));
     });
+  }
+  // a move of yours that handed the rival a tactic: what avoided it, and whether the trouble began earlier
+  function concTxt(v, t, playSan) {
+    var rival = sanOf(v.fens[t[0] + 1], t[4]);
+    if (v.ply === t[0] + 1) return "El rival pod\xEDa jugar <b style=\"color:#d1822a\">".concat(rival, "</b> (").concat(TH[t[1]].toLowerCase(), ")").concat(t[2] === 'x' ? ', pero no lo vio' : '', ".");
+    var s = "Tu jugada <b style=\"color:#c0392b\">".concat(playSan, "</b> le dej\xF3 al rival <b style=\"color:#d1822a\">").concat(rival, "</b>").concat(t[2] === 'x' ? ', pero no lo vio' : '', ". Perdiste ").concat(costTxt(t[3]), ".");
+    if (t[5]) {
+      s += "<br>Lo evitabas con ".concat(t[5].map(function (u) {
+        return "<b style=\"color:#2f7d4f\">".concat(sanOf(v.fens[t[0]], u), "</b>");
+      }).join(' o '), ".");
+      if (t[6] === 'e') s += ' Había más de una jugada buena: <b>era un error evitable</b>.';else s += ' Solo esa jugada lo evitaba: la posición ya era difícil.' + (t[7] >= 0 ? " El problema empez\xF3 en tu jugada <button type=\"button\" class=\"linkbtn\" data-go=\"".concat(t[7], "\">").concat(Math.floor(t[7] / 2) + 1).concat(t[7] % 2 ? '…' : '.', " ").concat(v.ss[t[7]], "</button>.") : '');
+    }
+    return s + " <button type=\"button\" class=\"linkbtn\" id=\"gAfter\">Ver la t\xE1ctica del rival \u25B6</button>";
   }
   function sanOf(fen, u) {
     if (!u) return '';
@@ -10129,10 +10185,11 @@ var GAMES_BASE = 'partidas/',
   function startSolve() {
     var t = view.tag;
     if (!t) return;
+    var cx = 'cx'.includes(t[2]);
     view.solve = {
       t: t,
       tries: 0,
-      msg: "<b>Resu\xE9lvelo:</b> juegan las ".concat(view.r[2] === 'w' ? 'blancas' : 'negras', ". Toca la pieza y despu\xE9s la casilla. Tema: ").concat(TH[t[1]], ".")
+      msg: cx ? "<b>Evita el error:</b> juegan las ".concat(view.r[2] === 'w' ? 'blancas' : 'negras', ". En la partida jugaste algo que dej\xF3 una t\xE1ctica al rival. Busca una jugada que no deje nada. Toca la pieza y despu\xE9s la casilla.") : "<b>Resu\xE9lvelo:</b> juegan las ".concat(view.r[2] === 'w' ? 'blancas' : 'negras', ". Toca la pieza y despu\xE9s la casilla. Tema: ").concat(TH[t[1]], ".")
     };
     view.ply = t[0];
     view.sel = null;
@@ -10171,16 +10228,19 @@ var GAMES_BASE = 'partidas/',
       return;
     }
     var t = view.solve.t,
-      ok = from + sq === t[4].slice(0, 4);
+      cx = 'cx'.includes(t[2]),
+      ok = cx ? (t[5] || []).some(function (u) {
+        return u.slice(0, 4) === from + sq;
+      }) : from + sq === t[4].slice(0, 4);
     if (ok) {
-      var msg = "<b style=\"color:#2f7d4f\">\xA1Bien! ".concat(es(m.san), "</b> era la jugada.") + (view.solve.tries ? " (a la ".concat(view.solve.tries + 1, "\xAA)") : '');
+      var msg = "<b style=\"color:#2f7d4f\">\xA1Bien! ".concat(es(m.san), "</b> ").concat(cx ? 'no deja nada al rival' : 'era la jugada', ".") + (view.solve.tries ? " (a la ".concat(view.solve.tries + 1, "\xAA)") : '');
       view.solve = null;
       view.tag = t;
       paint();
       $g('gInfo').innerHTML = msg + '<br>' + $g('gInfo').innerHTML;
     } else {
       view.solve.tries++;
-      view.solve.msg = "<b style=\"color:#c0392b\">".concat(es(m.san), " no es.</b> Int\xE9ntalo otra vez").concat(view.solve.tries >= 2 ? ' (o pulsa «Ver la solución»)' : '', ". Tema: ").concat(TH[t[1]], ".");
+      view.solve.msg = "<b style=\"color:#c0392b\">".concat(es(m.san), " no es.</b> Int\xE9ntalo otra vez").concat(view.solve.tries >= 2 ? ' (o pulsa «Ver la solución»)' : '', ". ").concat(cx ? 'Busca una jugada que no deje ninguna táctica al rival' : 'Tema: ' + TH[t[1]], ".");
       paint();
     }
   }
