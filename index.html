@@ -365,6 +365,7 @@ footer { font-size: 12px; color: var(--muted); max-width: 90ch; }
 .gtags { display: flex; flex-wrap: wrap; gap: 6px; }
 .gtag { all: unset; cursor: pointer; font-size: 12.5px; padding: 4px 9px; border-radius: 999px; }
 .gtag span { opacity: .8; }
+.stbl tr.sub td { color: var(--muted); font-size: 13px; }
 .linkbtn { all: unset; cursor: pointer; color: var(--accent, #2f6db5); text-decoration: underline; font-weight: 600; }
 .gboardwrap { display: grid; grid-template-columns: minmax(0, 480px); justify-content: center; }
 .ggraph svg { width: 100%; height: 110px; display: block; cursor: pointer; border-radius: 8px; }
@@ -9625,7 +9626,16 @@ var GAMES_BASE = 'partidas/',
     M5: 'Mate en 5 o más',
     MP: 'Mate de pasillo',
     PG: 'Pieza gratis',
+    PGq: 'Pieza gratis: dama',
+    PGr: 'Pieza gratis: torre',
+    PGb: 'Pieza gratis: alfil',
+    PGn: 'Pieza gratis: caballo',
     GM: 'Gana material',
+    GMq: 'Gana material: dama',
+    GMr: 'Gana material: torre',
+    GMb: 'Gana material: alfil',
+    GMn: 'Gana material: caballo',
+    GMp: 'Gana material: peón',
     HN: 'Horquilla de caballo',
     HP: 'Horquilla de peón',
     HB: 'Horquilla de alfil',
@@ -9639,7 +9649,7 @@ var GAMES_BASE = 'partidas/',
     CO: 'Coronación',
     OT: 'Otra táctica'
   };
-  var TH_ORDER = ['M1', 'MP', 'M2', 'M3', 'M4', 'M5', 'PG', 'GM', 'HN', 'HP', 'HB', 'HR', 'HQ', 'HK', 'CL', 'EN', 'DS', 'DJ', 'CO', 'OT'];
+  var TH_ORDER = ['M1', 'MP', 'M2', 'M3', 'M4', 'M5', 'PG', 'PGq', 'PGr', 'PGb', 'PGn', 'GM', 'GMq', 'GMr', 'GMb', 'GMn', 'GMp', 'HN', 'HP', 'HB', 'HR', 'HQ', 'HK', 'CL', 'EN', 'DS', 'DJ', 'CO', 'OT'];
   var OUT = {
     m: 'Perdida',
     f: 'Aprovechada',
@@ -9702,6 +9712,9 @@ var GAMES_BASE = 'partidas/',
   var tagLabel = function tagLabel(t) {
     return "".concat(TH[t[1]] || t[1], " \xB7 ").concat(Math.floor(t[0] / 2) + 1).concat(t[0] % 2 ? '…' : '.');
   };
+  var thOk = function thOk(th, k) {
+    return !th || k === th || (th === 'PG' || th === 'GM') && k.slice(0, 2) === th;
+  };
   function load() {
     return _load.apply(this, arguments);
   }
@@ -9743,7 +9756,7 @@ var GAMES_BASE = 'partidas/',
             $g('gTheme').innerHTML = '<option value="">Todas las tácticas</option>' + TH_ORDER.filter(function (k) {
               return CAT.some(function (r) {
                 return r[9].some(function (t) {
-                  return t[1] === k;
+                  return thOk(k, t[1]);
                 });
               });
             }).map(function (k) {
@@ -9778,7 +9791,7 @@ var GAMES_BASE = 'partidas/',
       return (!col || r[2] === col) && (!res || r[5] === res) && (!y || r[1].startsWith(y)) && (!q || ecoName(r[7]).toLowerCase().includes(q));
     });
     var okTag = function okTag(t) {
-      return (!th || t[1] === th) && (!out || (out === 'c' ? 'cx'.includes(t[2]) : out === 'e' ? 'cx'.includes(t[2]) && t[6] === 'e' : t[2] === out));
+      return thOk(th, t[1]) && (!out || (out === 'c' ? 'cx'.includes(t[2]) : out === 'e' ? 'cx'.includes(t[2]) && t[6] === 'e' : t[2] === out));
     };
     return {
       base: base,
@@ -9801,21 +9814,23 @@ var GAMES_BASE = 'partidas/',
     base.forEach(function (r) {
       var had = false;
       r[9].forEach(function (t) {
-        var s = S[t[1]] = S[t[1]] || {
-          f: 0,
-          m: 0,
-          c: 0,
-          x: 0,
-          e: 0
-        };
-        s[t[2]]++;
+        var ks = [t[1]];
+        if (t[1].length === 3) ks.push(t[1].slice(0, 2));
+        ks.forEach(function (k) {
+          var s = S[k] = S[k] || {
+            f: 0,
+            m: 0,
+            c: 0,
+            x: 0,
+            e: 0
+          };
+          s[t[2]]++;
+          if ('cx'.includes(t[2]) && t[6] === 'e') s.e++;
+        });
         if ('cx'.includes(t[2])) {
           E++;
           had = true;
-          if (t[6] === 'e') {
-            s.e++;
-            EE++;
-          }
+          if (t[6] === 'e') EE++;
         }
       });
       if (had) EG++;
@@ -9828,7 +9843,8 @@ var GAMES_BASE = 'partidas/',
       var s = S[k],
         tot = s.f + s.m,
         pc = tot ? 100 * s.f / tot : null;
-      return "<tr class=\"click\" data-k=\"".concat(k, "\"><td>").concat(TH[k], "</td><td>").concat(s.f, "</td><td>").concat(s.m, "</td><td class=\"").concat(pc == null ? '' : pc < 50 ? 'cell-bad' : pc >= 70 ? 'cell-good' : '', "\">").concat(pc == null ? '–' : Math.round(pc) + ' %', "</td><td>").concat(s.c + s.x, "</td><td>").concat(s.e, "</td><td>").concat(s.x, "</td></tr>");
+      var sub = k.length === 3;
+      return "<tr class=\"click".concat(sub ? ' sub' : '', "\" data-k=\"").concat(k, "\"><td>").concat(sub ? '&nbsp;&nbsp;↳ ' + TH[k].split(': ')[1] : TH[k] + (k === 'PG' || k === 'GM' ? ' (total)' : ''), "</td><td>").concat(s.f, "</td><td>").concat(s.m, "</td><td class=\"").concat(pc == null ? '' : pc < 50 ? 'cell-bad' : pc >= 70 ? 'cell-good' : '', "\">").concat(pc == null ? '–' : Math.round(pc) + ' %', "</td><td>").concat(s.c + s.x, "</td><td>").concat(s.e, "</td><td>").concat(s.x, "</td></tr>");
     }).join(''), "</tbody></table>");
     var ge = $g('gErr');
     if (ge) ge.onclick = function () {
@@ -9908,7 +9924,7 @@ var GAMES_BASE = 'partidas/',
             });
             th = $g('gTheme').value, out = $g('gOut').value;
             first = r[9].find(function (t) {
-              return (!th || t[1] === th) && (!out || (out === 'c' ? 'cx'.includes(t[2]) : out === 'e' ? 'cx'.includes(t[2]) && t[6] === 'e' : t[2] === out));
+              return thOk(th, t[1]) && (!out || (out === 'c' ? 'cx'.includes(t[2]) : out === 'e' ? 'cx'.includes(t[2]) && t[6] === 'e' : t[2] === out));
             });
             view = {
               r: r,
