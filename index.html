@@ -11106,7 +11106,7 @@ var BOOK_DESC = {
   }
   function _bookOpen() {
     _bookOpen = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee1(id) {
-      var B, DT, ci, desc, _B$ch$ci, name, items, byId, none, tac, okRole, head, row, roles, _t7;
+      var B, DT, ci, desc, _B$ch$ci, name, items, byId, none, tac, okRole, endb, head, row, roles, keys, seenG, cl, lt, ng, avg, _t7;
       return _regenerator().w(function (_context1) {
         while (1) switch (_context1.p = _context1.n) {
           case 0:
@@ -11185,20 +11185,23 @@ var BOOK_DESC = {
             tac = B.kind === 'tactic', okRole = function okRole(o, role) {
               return !role || (tac ? (role === 'a' ? 'fm' : 'cx').includes(o[2]) : o[2] === role);
             };
-            head = "<tr><th>Apartado</th><th>".concat(tac ? 'Veces' : 'Partidas', "</th>").concat(tac ? '<th>Se aprovechó</th><th>Se escapó</th><th>% aprovechado</th>' : '', "<th>Ganadas</th><th>Tablas</th><th>Perdidas</th><th>% de puntos</th></tr>");
+            endb = !tac && id !== 'flores';
+            head = "<tr><th>Apartado</th><th>".concat(tac ? 'Veces' : 'Partidas', "</th>").concat(tac ? '<th>Se aprovechó</th><th>Se escapó</th><th>% aprovechado</th>' : '', "<th>Ganadas</th>").concat(endb ? '<th>…por tiempo</th>' : '', "<th>Tablas</th><th>Perdidas</th>").concat(endb ? '<th>…por tiempo</th>' : '', "<th>% de puntos</th></tr>");
             row = function row(n0, lb) {
               var _n0$split3 = n0.split('|'),
                 _n0$split4 = _slicedToArray(_n0$split3, 2),
                 n = _n0$split4[0],
                 role = _n0$split4[1],
-                span = tac ? 7 : 4;
+                span = tac ? 7 : endb ? 6 : 4;
               if (!(n in DT)) return "<td><b>".concat(n, ".</b> ").concat(lb).concat(none, "</td><td colspan=\"").concat(span + 1, "\" class=\"erwnone\">\u2013</td>");
               var s = {
                   W: 0,
                   D: 0,
                   L: 0,
                   ok: 0,
-                  ko: 0
+                  ko: 0,
+                  WT: 0,
+                  LT: 0
                 },
                 games = new Set();
               DT[n].forEach(function (o) {
@@ -11209,23 +11212,54 @@ var BOOK_DESC = {
                 if (games.has(o[0])) return;
                 games.add(o[0]);
                 var r = byId[o[0]];
-                if (r) s[r[5]]++;
+                if (r) {
+                  s[r[5]]++;
+                  if (onTime(r)) s[r[5] + 'T']++;
+                }
               });
               var g = s.W + s.D + s.L,
                 t = s.ok + s.ko;
-              return "<td>".concat(role ? '&nbsp;&nbsp;↳ ' : /^c\d/.test(n) ? '' : '<b>' + n + '.</b> ').concat(lb, "</td><td><b>").concat(tac ? t : g, "</b></td>").concat(tac ? "<td>".concat(s.ok, "</td><td>").concat(s.ko, "</td><td>").concat(t ? Math.round(100 * s.ok / t) + ' %' : '–', "</td>") : '', "<td>").concat(s.W, "</td><td>").concat(s.D, "</td><td>").concat(s.L, "</td><td>").concat(g ? Math.round(100 * (s.W + s.D / 2) / g) + ' %' : '–', "</td>");
+              return "<td>".concat(role ? '&nbsp;&nbsp;↳ ' : /^c\d/.test(n) ? '' : '<b>' + n + '.</b> ').concat(lb, "</td><td><b>").concat(tac ? t : g, "</b></td>").concat(tac ? "<td>".concat(s.ok, "</td><td>").concat(s.ko, "</td><td>").concat(t ? Math.round(100 * s.ok / t) + ' %' : '–', "</td>") : '', "<td>").concat(s.W, "</td>").concat(endb ? "<td>".concat(s.WT || '', "</td>") : '', "<td>").concat(s.D, "</td><td>").concat(s.L, "</td>").concat(endb ? "<td class=\"".concat(s.LT ? 'cell-bad' : '', "\">").concat(s.LT || '', "</td>") : '', "<td>").concat(g ? Math.round(100 * (s.W + s.D / 2) / g) + ' %' : '–', "</td>");
             };
             roles = function roles(n) {
               return id === 'flores' && !/^c\d/.test(n) ? floresRoles(n) : [[n + '|a', ROLE_LB[B.kind === 'tactic' ? 'tactic' : 'end'][0]], [n + '|d', ROLE_LB[B.kind === 'tactic' ? 'tactic' : 'end'][1]]];
             };
             $g('ePat').innerHTML = "<h4 class=\"gsubh\">Cap\xEDtulo ".concat(ci + 1, ": ").concat(name, "</h4><div class=\"tscroll\"><table class=\"stbl gsum\"><thead>").concat(head, "</thead><tbody>").concat(('c' + ci in DT ? [['c' + ci, '<b>Todo el capítulo</b>']] : []).concat(items).reduce(function (a, it) {
               return a.concat([it], it[0] in DT ? roles(it[0]) : []);
-            }, []).map(function (_ref17) {
-              var _ref18 = _slicedToArray(_ref17, 2),
-                n = _ref18[0],
-                lb = _ref18[1];
+            }, []).map(function (_ref19) {
+              var _ref20 = _slicedToArray(_ref19, 2),
+                n = _ref20[0],
+                lb = _ref20[1];
               return "<tr class=\"click".concat(n.includes('|') ? ' sub' : '', "\" data-n=\"").concat(n, "\">").concat(row(n, lb), "</tr>");
             }).join(''), "</tbody></table></div>");
+            if (endb) {
+              keys = 'c' + ci in DT ? ['c' + ci] : items.map(function (x) {
+                return x[0];
+              }).filter(function (k) {
+                return k in DT;
+              }), seenG = new Set(), cl = {
+                W: [],
+                X: []
+              };
+              lt = 0, ng = 0;
+              keys.forEach(function (k) {
+                return DT[k].forEach(function (o) {
+                  if (seenG.has(o[0])) return;
+                  seenG.add(o[0]);
+                  var r = byId[o[0]];
+                  if (!r) return;
+                  ng++;
+                  if (r[5] === 'L' && onTime(r)) lt++;
+                  if (o[3] != null) cl[r[5] === 'W' ? 'W' : 'X'].push(o[3]);
+                });
+              });
+              avg = function avg(a) {
+                return a.length ? fclk(a.reduce(function (x, y) {
+                  return x + y;
+                }, 0) / a.length) : '–';
+              };
+              if (ng) $g('ePat').insertAdjacentHTML('beforeend', "<p class=\"sumline\" style=\"margin-top:8px\"><b>Reloj al llegar a estos finales</b> (tu tiempo): ".concat(avg(cl.W), " de media en los que ganaste y ").concat(avg(cl.X), " en los que no. ").concat(lt ? "Perdiste <b>".concat(lt, "</b> de ").concat(ng, " por tiempo (").concat(Math.round(100 * lt / ng), " %).") : 'Ninguno perdido por tiempo.', "</p>"));
+            }
             $g('ePat').querySelectorAll('tr.click').forEach(function (tr) {
               return tr.onclick = function () {
                 return bookHist(id, tr.dataset.n, byId);
@@ -11238,6 +11272,9 @@ var BOOK_DESC = {
     }));
     return _bookOpen.apply(this, arguments);
   }
+  var onTime = function onTime(r) {
+    return /time/.test(r[6] || '') && !/insufficient/.test(r[6] || '');
+  };
   var ROLE_LB = {
     tactic: ['atacando: el patrón era tuyo', 'defendiendo: se lo dejaste al rival'],
     end: ['atacando: tienes tú el bando fuerte', 'defendiendo: el bando fuerte es el rival']
@@ -11332,22 +11369,29 @@ var BOOK_DESC = {
       return tac ? 'fc'.includes(o[2]) : 'ao'.includes(o[2]) ? r[5] === 'W' : r[5] !== 'L';
     };
     var nOk = rows.filter(okOf).length;
+    var endb = !tac && id !== 'flores',
+      lostT = function lostT(_ref12) {
+        var _ref13 = _slicedToArray(_ref12, 1),
+          r = _ref13[0];
+        return r[5] === 'L' && onTime(r);
+      },
+      nLT = endb ? rows.filter(lostT).length : 0;
     var _draw = function draw(f) {
       var sel = rows.filter(function (x) {
-          return f === 'all' || f === 'ok' === okOf(x);
+          return f === 'all' || (f === 'lt' ? lostT(x) : f === 'ok' === okOf(x));
         }),
         shown = sel.slice(0, 100);
-      $g('bList').innerHTML = "<p class=\"sumline\" style=\"margin:0 0 6px\"><b>".concat(/^c\d/.test(n) ? '' : n + '. ').concat(lb, "</b></p><div class=\"seg bfilt\">").concat([['all', 'Todas', rows.length], ['ok', 'Aprovechadas', nOk], ['ko', 'No aprovechadas', rows.length - nOk]].map(function (_ref12) {
-        var _ref13 = _slicedToArray(_ref12, 3),
-          k = _ref13[0],
-          t = _ref13[1],
-          c = _ref13[2];
+      $g('bList').innerHTML = "<p class=\"sumline\" style=\"margin:0 0 6px\"><b>".concat(/^c\d/.test(n) ? '' : n + '. ').concat(lb, "</b></p><div class=\"seg bfilt\">").concat([['all', 'Todas', rows.length], ['ok', 'Aprovechadas', nOk], ['ko', 'No aprovechadas', rows.length - nOk]].concat(endb && nLT ? [['lt', 'Perdidas por tiempo', nLT]] : []).map(function (_ref14) {
+        var _ref15 = _slicedToArray(_ref14, 3),
+          k = _ref15[0],
+          t = _ref15[1],
+          c = _ref15[2];
         return "<button type=\"button\" data-f=\"".concat(k, "\" aria-pressed=\"").concat(k === f, "\">").concat(t, " (").concat(c, ")</button>");
-      }).join(''), "</div>").concat(sel.length > 100 ? '<p class="sumline" style="margin:4px 0">Las 100 más recientes.</p>' : '', "<div class=\"elist\" style=\"margin-top:6px\">").concat(shown.map(function (_ref14, i) {
-        var _ref15 = _slicedToArray(_ref14, 2),
-          r = _ref15[0],
-          o = _ref15[1];
-        return "<button type=\"button\" class=\"erow\" data-i=\"".concat(i, "\"><span><b>").concat(fmtDate(r[1]), "</b><br><small>").concat(r[2] === 'w' ? 'blancas' : 'negras', " \xB7 ").concat(RES[r[5]].toLowerCase(), "</small></span><span><b>").concat(Math.floor(o[1] / 2) + 1).concat(o[1] % 2 ? '…' : '.', "</b>").concat(tac ? ' ' + OUT[o[2]] : '', " \xB7 <span class=\"").concat(okOf([r, o]) ? 'okm' : 'kom', "\">").concat(okOf([r, o]) ? 'aprovechada' : 'no aprovechada', "</span></span><span></span></button>");
+      }).join(''), "</div>").concat(sel.length > 100 ? '<p class="sumline" style="margin:4px 0">Las 100 más recientes.</p>' : '', "<div class=\"elist\" style=\"margin-top:6px\">").concat(shown.map(function (_ref16, i) {
+        var _ref17 = _slicedToArray(_ref16, 2),
+          r = _ref17[0],
+          o = _ref17[1];
+        return "<button type=\"button\" class=\"erow\" data-i=\"".concat(i, "\"><span><b>").concat(fmtDate(r[1]), "</b><br><small>").concat(r[2] === 'w' ? 'blancas' : 'negras', " \xB7 ").concat(RES[r[5]].toLowerCase(), "</small></span><span><b>").concat(Math.floor(o[1] / 2) + 1).concat(o[1] % 2 ? '…' : '.', "</b>").concat(tac ? ' ' + OUT[o[2]] : '', " \xB7 <span class=\"").concat(okOf([r, o]) ? 'okm' : 'kom', "\">").concat(okOf([r, o]) ? 'aprovechada' : 'no aprovechada').concat(endb && !okOf([r, o]) ? r[5] === 'L' && onTime(r) ? ' · por tiempo' : ' · en el tablero' : '', "</span>").concat(endb && o[3] != null ? "<br><small>reloj al empezar el final: ".concat(fclk(o[3]), "</small>") : '', "</span><span></span></button>");
       }).join('') || '<p class="empty">Ninguna partida.</p>', "</div>");
       $g('bList').querySelectorAll('.bfilt button').forEach(function (b) {
         return b.onclick = function () {
@@ -14984,10 +15028,10 @@ var LIVE_USER = '';
     var a = by['2022'],
       z = by['2026'];
     var rushY = {};
-    SD.rush.forEach(function (_ref19) {
-      var _ref20 = _slicedToArray(_ref19, 2),
-        t = _ref20[0],
-        s = _ref20[1];
+    SD.rush.forEach(function (_ref21) {
+      var _ref22 = _slicedToArray(_ref21, 2),
+        t = _ref22[0],
+        s = _ref22[1];
       var k = new Date(t * 1000).getUTCFullYear();
       (rushY[k] = rushY[k] || []).push(s);
     });
@@ -15002,12 +15046,12 @@ var LIVE_USER = '';
     }, 0)), 'blitz desde oct 2022'], ['Precisión', nf(M.acc(z)) + ' %', "2022: ".concat(nf(M.acc(a)), " %"), M.acc(z) > M.acc(a)], ['Fallos graves / 100 jugadas', nf(M.per(z, 'bl', 'm'), 2), "2022: ".concat(nf(M.per(a, 'bl', 'm'), 2)), M.per(z, 'bl', 'm') < M.per(a, 'bl', 'm')], ['Derrotas por tiempo', nf(M.to(z)) + ' %', "2022: ".concat(nf(M.to(a)), " %"), M.to(z) < M.to(a)], ['Puntuación (últimas 100)', nf(M.score(last100)) + ' %', 'de los puntos posibles'], ['Puzzle Rush (media 2026)', nf(avg(rushY[2026])), "2022: ".concat(nf(avg(rushY[2022])), " \xB7 r\xE9cord ").concat(Math.max.apply(null, SD.rush.map(function (x) {
       return x[1];
     }))), true], ['Problemas puntuados', fInt(SD.puz[SD.puz.length - 1][2]), 'puntuación actual']];
-    $('kpis').innerHTML = k.map(function (_ref21) {
-      var _ref22 = _slicedToArray(_ref21, 4),
-        t = _ref22[0],
-        v = _ref22[1],
-        s = _ref22[2],
-        up = _ref22[3];
+    $('kpis').innerHTML = k.map(function (_ref23) {
+      var _ref24 = _slicedToArray(_ref23, 4),
+        t = _ref24[0],
+        v = _ref24[1],
+        s = _ref24[2],
+        up = _ref24[3];
       return "<div class=\"kpi\"><span>".concat(t, "</span><b>").concat(v, "</b><span>").concat(up == null ? s : "<em class=\"".concat(up ? 'up' : 'down', "\">").concat(up ? '▲' : '▼', "</em> ").concat(s), "</span></div>");
     }).join('');
     drawEloM();
@@ -15201,14 +15245,14 @@ var LIVE_USER = '';
     }, true, 1], ['Puzzle Rush (mejor serie)', r0.length ? Math.max.apply(null, r0) : null, r1.length ? Math.max.apply(null, r1) : null, fInt, true, 1], ['Problemas (puntuación)', pzAt(30), pzAt(0), fInt, true, 10]];
     var good = [],
       bad = [];
-    var tr = rows.map(function (_ref23) {
-      var _ref24 = _slicedToArray(_ref23, 6),
-        lab = _ref24[0],
-        a = _ref24[1],
-        b = _ref24[2],
-        f = _ref24[3],
-        up = _ref24[4],
-        min = _ref24[5];
+    var tr = rows.map(function (_ref25) {
+      var _ref26 = _slicedToArray(_ref25, 6),
+        lab = _ref26[0],
+        a = _ref26[1],
+        b = _ref26[2],
+        f = _ref26[3],
+        up = _ref26[4],
+        min = _ref26[5];
       var cls = '',
         arrow = '';
       if (a != null && b != null && up != null && Math.abs(b - a) >= min && min > 0) {
@@ -15517,11 +15561,11 @@ var LIVE_USER = '';
     var distinct = failRows(weeks[11]).filter(function (x) {
       return x.fails;
     }).length;
-    $('trnKpis').innerHTML = [['Jugadas practicadas', fInt(now[0]), 'esta semana'], ['Fallos', fInt(now[1]), now[0] ? nf(pct(now)) + ' % de las jugadas' : '–'], ['Posiciones con fallo', fInt(distinct), 'distintas, esta semana'], ['Semana pasada', prev[0] ? nf(pct(prev)) + ' %' : '–', prev[0] ? "".concat(prev[1], " fallos en ").concat(prev[0], " jugadas") : 'sin datos']].map(function (_ref25) {
-      var _ref26 = _slicedToArray(_ref25, 3),
-        a = _ref26[0],
-        b = _ref26[1],
-        c = _ref26[2];
+    $('trnKpis').innerHTML = [['Jugadas practicadas', fInt(now[0]), 'esta semana'], ['Fallos', fInt(now[1]), now[0] ? nf(pct(now)) + ' % de las jugadas' : '–'], ['Posiciones con fallo', fInt(distinct), 'distintas, esta semana'], ['Semana pasada', prev[0] ? nf(pct(prev)) + ' %' : '–', prev[0] ? "".concat(prev[1], " fallos en ").concat(prev[0], " jugadas") : 'sin datos']].map(function (_ref27) {
+      var _ref28 = _slicedToArray(_ref27, 3),
+        a = _ref28[0],
+        b = _ref28[1],
+        c = _ref28[2];
       return "<div class=\"kpi\"><span>".concat(a, "</span><b>").concat(b, "</b><span>").concat(c, "</span></div>");
     }).join('');
     var ch = $('trnCharts');
@@ -15673,10 +15717,10 @@ var LIVE_USER = '';
   function tacRows() {
     // row: [q, n, forks 6x(f,m), pins 6x, free 6x, mates 5x(f,m), material f,m, capturing 6, hanging 6]
     var types = [];
-    [['Horquilla de', 2], ['Clavada con', 14], ['Capturar gratis:', 26]].forEach(function (_ref27) {
-      var _ref28 = _slicedToArray(_ref27, 2),
-        nm = _ref28[0],
-        off = _ref28[1];
+    [['Horquilla de', 2], ['Clavada con', 14], ['Capturar gratis:', 26]].forEach(function (_ref29) {
+      var _ref30 = _slicedToArray(_ref29, 2),
+        nm = _ref30[0],
+        off = _ref30[1];
       return PIE.forEach(function (p, i) {
         if (p === 'rey' && nm !== 'Horquilla de') return;
         types.push({
@@ -15728,10 +15772,10 @@ var LIVE_USER = '';
     var pc = function pc(s) {
       return s[0] + s[1] ? 100 * s[0] / (s[0] + s[1]) : null;
     };
-    var list = TC.th.map(function (_ref29) {
-      var _ref30 = _slicedToArray(_ref29, 2),
-        k = _ref30[0],
-        name = _ref30[1];
+    var list = TC.th.map(function (_ref31) {
+      var _ref32 = _slicedToArray(_ref31, 2),
+        k = _ref32[0],
+        name = _ref32[1];
       var ly = sum(lastQ, k),
         all = sum(Q, k);
       return {
@@ -15987,10 +16031,10 @@ var LIVE_USER = '';
     var g = segVal('puzGroup', 'g') || 'M';
     var host = $('puzCharts');
     host.innerHTML = '';
-    var R = SD.rush.map(function (_ref31) {
-      var _ref32 = _slicedToArray(_ref31, 2),
-        t = _ref32[0],
-        s = _ref32[1];
+    var R = SD.rush.map(function (_ref33) {
+      var _ref34 = _slicedToArray(_ref33, 2),
+        t = _ref34[0],
+        s = _ref34[1];
       return {
         date: new Date(t * 1000),
         s: s
@@ -16024,10 +16068,10 @@ var LIVE_USER = '';
         return x.s;
       }),
       last30 = all.slice(-30);
-    $('puzKpis').innerHTML = [['Series jugadas', fInt(all.length)], ['Récord', Math.max.apply(null, all)], ['Media últimas 30', nf(avg(last30))], ['Media primeras 100', nf(avg(all.slice(0, 100)))], ['Problemas puntuados', fInt(SD.puz[SD.puz.length - 1][2]) + ' pts'], ['Máximo puntuados', '2.070']].map(function (_ref33) {
-      var _ref34 = _slicedToArray(_ref33, 2),
-        a = _ref34[0],
-        b = _ref34[1];
+    $('puzKpis').innerHTML = [['Series jugadas', fInt(all.length)], ['Récord', Math.max.apply(null, all)], ['Media últimas 30', nf(avg(last30))], ['Media primeras 100', nf(avg(all.slice(0, 100)))], ['Problemas puntuados', fInt(SD.puz[SD.puz.length - 1][2]) + ' pts'], ['Máximo puntuados', '2.070']].map(function (_ref35) {
+      var _ref36 = _slicedToArray(_ref35, 2),
+        a = _ref36[0],
+        b = _ref36[1];
       return "<div class=\"kpi\"><span>".concat(a, "</span><b>").concat(b, "</b></div>");
     }).join('');
     chart(host, {
@@ -16382,11 +16426,11 @@ var LIVE_USER = '';
     var col = c === 'w' ? 'blancas' : 'negras';
     var yAll = sum(qs, idx),
       y1 = sum(last4, idx);
-    $('opeBookKpis').innerHTML = [['Te sales tú primero', fPct(pct(y1)), "todo: ".concat(fPct(pct(yAll)))], ['Jugada en que te sales tú', f2(me(y1)), "todo: ".concat(f2(me(yAll)))], ['Jugada en que se sale el rival', f2(op(y1)), "todo: ".concat(f2(op(yAll)))], ['Partidas', fInt(y1[0]), "\xFAltimos 4 trimestres con ".concat(col)]].map(function (_ref35) {
-      var _ref36 = _slicedToArray(_ref35, 3),
-        t = _ref36[0],
-        v = _ref36[1],
-        s = _ref36[2];
+    $('opeBookKpis').innerHTML = [['Te sales tú primero', fPct(pct(y1)), "todo: ".concat(fPct(pct(yAll)))], ['Jugada en que te sales tú', f2(me(y1)), "todo: ".concat(f2(me(yAll)))], ['Jugada en que se sale el rival', f2(op(y1)), "todo: ".concat(f2(op(yAll)))], ['Partidas', fInt(y1[0]), "\xFAltimos 4 trimestres con ".concat(col)]].map(function (_ref37) {
+      var _ref38 = _slicedToArray(_ref37, 3),
+        t = _ref38[0],
+        v = _ref38[1],
+        s = _ref38[2];
       return "<div class=\"kpi\"><span>".concat(t, "</span><b>").concat(v, "</b><span>").concat(s, "</span></div>");
     }).join('');
     var rows = idx.map(function (i) {
