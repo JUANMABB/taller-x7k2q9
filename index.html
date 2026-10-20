@@ -33,6 +33,7 @@
   --font-display: "Young Serif", Georgia, "Times New Roman", serif;
   --font-body: "Figtree", system-ui, -apple-system, "Segoe UI", sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, Menlo, Consolas, monospace;
+  --eng-bg: #eef3fb; --accent2: #2f6db5;
   color-scheme: light;
 }
 @media (prefers-color-scheme: dark) {
@@ -40,6 +41,7 @@
     --bg: #161a18; --panel: #1f2421; --ink: #e8ebe7; --muted: #9aa49e; --line: #333b36;
     --walnut: #d39a6a; --walnut-soft: #3a2a1d; --good: #6cc48f; --good-soft: #1f3a29;
     --bad: #ec8a78; --bad-soft: #43231e; --warn: #e2b55d; --warn-soft: #3d311a;
+    --eng-bg: #1d2a3a; --accent2: #7fb0ea;
     color-scheme: dark;
   }
 }
@@ -47,6 +49,7 @@
   --bg: #161a18; --panel: #1f2421; --ink: #e8ebe7; --muted: #9aa49e; --line: #333b36;
   --walnut: #d39a6a; --walnut-soft: #3a2a1d; --good: #6cc48f; --good-soft: #1f3a29;
   --bad: #ec8a78; --bad-soft: #43231e; --warn: #e2b55d; --warn-soft: #3d311a;
+  --eng-bg: #1d2a3a; --accent2: #7fb0ea;
   color-scheme: dark;
 }
 * { box-sizing: border-box; }
@@ -373,7 +376,7 @@ footer { font-size: 12px; color: var(--muted); max-width: 90ch; }
 .gtag span { opacity: .8; }
 .gsum th.grp { text-align: center; border-bottom: 1px solid var(--line, #ddd); }
 .gsum small { color: var(--muted); font-size: 12px; }
-.geng { font-size: 13.5px; background: #eef3fb; color: #1f3f66; }
+.geng { font-size: 13.5px; background: var(--eng-bg); color: var(--ink); }
 .gpv { color: var(--muted); font-size: 12.5px; }
 .etables { display: grid; gap: 12px; margin-top: 12px; }
 .tscroll { overflow-x: auto; }
@@ -389,8 +392,10 @@ footer { font-size: 12px; color: var(--muted); max-width: 90ch; }
 .erwch button[aria-pressed="true"] { background: var(--walnut); color: #fff; border-color: var(--walnut); }
 .erwnone { color: var(--muted); font-size: 12.5px; }
 .glist2 .erow { grid-template-columns: 1fr; gap: 2px; } .glist2 .erow .et { text-align: left; } .erow.on { border-color: var(--walnut); box-shadow: 0 0 0 1px var(--walnut) inset; }
+.bfilt { flex-wrap: wrap; } .bfilt button { font-size: 12.5px; }
+.okm { color: var(--good); font-weight: 600; } .kom { color: var(--bad); font-weight: 600; }
 .elist { display: grid; gap: 6px; }
-.erow { all: unset; cursor: pointer; display: grid; grid-template-columns: 92px 1fr auto; gap: 10px; align-items: center; padding: 8px 12px; background: var(--card, #fff); border: 1px solid var(--line, #e3e1da); border-radius: 10px; font-size: 13.5px; }
+.erow { all: unset; cursor: pointer; display: grid; grid-template-columns: 92px 1fr auto; gap: 10px; align-items: center; padding: 8px 12px; background: var(--panel); color: var(--ink); border: 1px solid var(--line); border-radius: 10px; font-size: 13.5px; }
 .erow:hover { border-color: var(--walnut); }
 .erow .et { color: var(--muted); font-size: 12.5px; text-align: right; white-space: nowrap; }
 .erow .et b.fast { color: var(--bad); } .erow .et b.low { color: var(--warn); }
@@ -10315,7 +10320,7 @@ var BOOK_DESC = {
     if (t && !v.solve) {
       var bestSan = sanOf(v.fens[t[0]], t[4]),
         playSan = v.ss[t[0]];
-      info = "<b>".concat(tagLabel(t), " \xB7 ").concat(OUT[t[2]], "</b><br>") + (t[2] === 'm' ? /^M/.test(t[1]) && typeof t[5] === 'number' && t[5] > t[0] ? "Ten\xEDas ".concat(TH[t[1]].toLowerCase(), " empezando por <b style=\"color:#2f7d4f\">").concat(bestSan, "</b>. Empezaste bien, pero en tu jugada <button type=\"button\" class=\"linkbtn\" data-go=\"").concat(t[5], "\">").concat(Math.floor(t[5] / 2) + 1).concat(t[5] % 2 ? '…' : '.', " ").concat(v.ss[t[5]], "</button> dejaste escapar el mate.") : "Jugaste <b style=\"color:#c0392b\">".concat(playSan, "</b>; ten\xEDas <b style=\"color:#2f7d4f\">").concat(bestSan, "</b>. Te cost\xF3 ").concat(costTxt(t[3]), ".") : t[2] === 'f' ? "Jugaste <b style=\"color:#2f7d4f\">".concat(playSan, "</b>, la mejor jugada.") : concTxt(v, t, playSan));
+      info = "<b>".concat(tagLabel(t), " \xB7 ").concat(OUT[t[2]], "</b><br>") + (t[2] === 'm' ? /^M/.test(t[1]) && typeof t[5] === 'number' && t[5] > t[0] ? "Ten\xEDas ".concat(TH[t[1]].toLowerCase(), " empezando por <b style=\"color:var(--good)\">").concat(bestSan, "</b>. Empezaste bien, pero en tu jugada <button type=\"button\" class=\"linkbtn\" data-go=\"").concat(t[5], "\">").concat(Math.floor(t[5] / 2) + 1).concat(t[5] % 2 ? '…' : '.', " ").concat(v.ss[t[5]], "</button> dejaste escapar el mate.") : "Jugaste <b style=\"color:var(--bad)\">".concat(playSan, "</b>; ten\xEDas <b style=\"color:var(--good)\">").concat(bestSan, "</b>. Te cost\xF3 ").concat(costTxt(t[3]), ".") : t[2] === 'f' ? "Jugaste <b style=\"color:var(--good)\">".concat(playSan, "</b>, la mejor jugada.") : concTxt(v, t, playSan));
     }
     if (v.solve) info = v.solve.msg;
     if (v.ex) info = "<b>Explorando</b> desde la jugada ".concat(Math.floor(v.ply / 2) + 1, ": ").concat(v.ex.sans.length ? exLine() : 'mueve una pieza para probar otra jugada.', " <button type=\"button\" class=\"linkbtn\" id=\"gBack\">Volver a la partida</button>");
@@ -10348,11 +10353,11 @@ var BOOK_DESC = {
   // a move of yours that handed the rival a tactic: what avoided it, and whether the trouble began earlier
   function concTxt(v, t, playSan) {
     var rival = sanOf(v.fens[t[0] + 1], t[4]);
-    if (v.ply === t[0] + 1) return "El rival pod\xEDa jugar <b style=\"color:#d1822a\">".concat(rival, "</b> (").concat(TH[t[1]].toLowerCase(), ")").concat(t[2] === 'x' ? ', pero no lo vio' : '', ".");
-    var s = "Tu jugada <b style=\"color:#c0392b\">".concat(playSan, "</b> le dej\xF3 al rival <b style=\"color:#d1822a\">").concat(rival, "</b>").concat(t[2] === 'x' ? ', pero no lo vio' : '', ". Perdiste ").concat(/^M/.test(t[1]) ? 'la partida: te podían dar mate' : costTxt(t[3]), ".");
+    if (v.ply === t[0] + 1) return "El rival pod\xEDa jugar <b style=\"color:var(--warn)\">".concat(rival, "</b> (").concat(TH[t[1]].toLowerCase(), ")").concat(t[2] === 'x' ? ', pero no lo vio' : '', ".");
+    var s = "Tu jugada <b style=\"color:var(--bad)\">".concat(playSan, "</b> le dej\xF3 al rival <b style=\"color:var(--warn)\">").concat(rival, "</b>").concat(t[2] === 'x' ? ', pero no lo vio' : '', ". Perdiste ").concat(/^M/.test(t[1]) ? 'la partida: te podían dar mate' : costTxt(t[3]), ".");
     if (t[5]) {
       s += "<br>Lo evitabas con ".concat(t[5].map(function (u) {
-        return "<b style=\"color:#2f7d4f\">".concat(sanOf(v.fens[t[0]], u), "</b>");
+        return "<b style=\"color:var(--good)\">".concat(sanOf(v.fens[t[0]], u), "</b>");
       }).join(' o '), ".");
       if (t[6] === 'e') s += ' Había más de una jugada buena: <b>era un error evitable</b>.';else s += ' Solo esa jugada lo evitaba: la posición ya era difícil.' + (t[7] >= 0 ? " El problema empez\xF3 en tu jugada <button type=\"button\" class=\"linkbtn\" data-go=\"".concat(t[7], "\">").concat(Math.floor(t[7] / 2) + 1).concat(t[7] % 2 ? '…' : '.', " ").concat(v.ss[t[7]], "</button>.") : '');
     }
@@ -10433,7 +10438,7 @@ var BOOK_DESC = {
             _iterator2.f();
           }
         }
-        box.innerHTML = "<b>Motor:</b> <b style=\"color:#2f6db5\">".concat(pv[0] || u, "</b> \xB7 ").concat(ev, " (desde tu lado) \xB7 profundidad ").concat(r.depth).concat(pv.length > 1 ? "<br><span class=\"gpv\">L\xEDnea: ".concat(pv.join(' '), "</span>") : '');
+        box.innerHTML = "<b>Motor:</b> <b style=\"color:var(--accent2)\">".concat(pv[0] || u, "</b> \xB7 ").concat(ev, " (desde tu lado) \xB7 profundidad ").concat(r.depth).concat(pv.length > 1 ? "<br><span class=\"gpv\">L\xEDnea: ".concat(pv.join(' '), "</span>") : '');
         if (!view.eng || view.eng.u !== u) {
           view.eng = {
             u: u
@@ -10608,14 +10613,14 @@ var BOOK_DESC = {
         return u.slice(0, 4) === from + sq;
       }) : from + sq === t[4].slice(0, 4);
     if (ok) {
-      var msg = "<b style=\"color:#2f7d4f\">\xA1Bien! ".concat(es(m.san), "</b> ").concat(cx ? 'no deja nada al rival' : 'era la jugada', ".") + (view.solve.tries ? " (a la ".concat(view.solve.tries + 1, "\xAA)") : '');
+      var msg = "<b style=\"color:var(--good)\">\xA1Bien! ".concat(es(m.san), "</b> ").concat(cx ? 'no deja nada al rival' : 'era la jugada', ".") + (view.solve.tries ? " (a la ".concat(view.solve.tries + 1, "\xAA)") : '');
       view.solve = null;
       view.tag = t;
       paint();
       $g('gInfo').innerHTML = msg + '<br>' + $g('gInfo').innerHTML;
     } else {
       view.solve.tries++;
-      view.solve.msg = "<b style=\"color:#c0392b\">".concat(es(m.san), " no es.</b> Int\xE9ntalo otra vez").concat(view.solve.tries >= 2 ? ' (o pulsa «Ver la solución»)' : '', ". ").concat(cx ? 'Busca una jugada que no deje ninguna táctica al rival' : 'Tema: ' + TH[t[1]], ".");
+      view.solve.msg = "<b style=\"color:var(--bad)\">".concat(es(m.san), " no es.</b> Int\xE9ntalo otra vez").concat(view.solve.tries >= 2 ? ' (o pulsa «Ver la solución»)' : '', ". ").concat(cx ? 'Busca una jugada que no deje ninguna táctica al rival' : 'Tema: ' + TH[t[1]], ".");
       paint();
     }
   }
@@ -11215,10 +11220,10 @@ var BOOK_DESC = {
             };
             $g('ePat').innerHTML = "<h4 class=\"gsubh\">Cap\xEDtulo ".concat(ci + 1, ": ").concat(name, "</h4><div class=\"tscroll\"><table class=\"stbl gsum\"><thead>").concat(head, "</thead><tbody>").concat(('c' + ci in DT ? [['c' + ci, '<b>Todo el capítulo</b>']] : []).concat(items).reduce(function (a, it) {
               return a.concat([it], it[0] in DT ? roles(it[0]) : []);
-            }, []).map(function (_ref13) {
-              var _ref14 = _slicedToArray(_ref13, 2),
-                n = _ref14[0],
-                lb = _ref14[1];
+            }, []).map(function (_ref17) {
+              var _ref18 = _slicedToArray(_ref17, 2),
+                n = _ref18[0],
+                lb = _ref18[1];
               return "<tr class=\"click".concat(n.includes('|') ? ' sub' : '', "\" data-n=\"").concat(n, "\">").concat(row(n, lb), "</tr>");
             }).join(''), "</tbody></table></div>");
             $g('ePat').querySelectorAll('tr.click').forEach(function (tr) {
@@ -11314,39 +11319,65 @@ var BOOK_DESC = {
       x[k]++;
     });
     var H = tac ? ['Aprovechados', 'Perdidos', 'Se lo diste al rival'] : ['Ganadas', 'Tablas', 'Perdidas'];
-    $g('eHist').innerHTML = "<div class=\"card\"><h4 class=\"gsubh\" style=\"margin-top:0\">".concat(n, ". ").concat(lb, ": historial por trimestre</h4><div class=\"tscroll\"><table class=\"stbl\"><thead><tr><th>Trimestre</th>").concat(H.map(function (h) {
+    $g('eHist').innerHTML = "<div class=\"card\"><h4 class=\"gsubh\" style=\"margin-top:0\">".concat(/^c\d/.test(n) ? '' : n + '. ').concat(lb, ": historial por trimestre</h4><div class=\"tscroll\"><table class=\"stbl\"><thead><tr><th>Trimestre</th>").concat(H.map(function (h) {
       return "<th>".concat(h, "</th>");
     }).join(''), "</tr></thead><tbody>").concat(Object.keys(Q).sort().reverse().map(function (q) {
       return "<tr><td>".concat(q, "</td><td>").concat(Q[q].a, "</td><td>").concat(Q[q].b, "</td><td>").concat(Q[q].c, "</td></tr>");
     }).join(''), "</tbody></table></div></div>");
-    $g('bList').innerHTML = "<p class=\"sumline\" style=\"margin:0 0 6px\"><b>".concat(n, ". ").concat(lb, "</b>: ").concat(rows.length, " partidas").concat(rows.length > 100 ? ' (las 100 más recientes)' : '', "</p><div class=\"elist\">").concat(rows.slice(0, 100).map(function (_ref10, i) {
+    // filter: all / taken advantage of / not. Tactics: the pattern was played. Endgames and structures: attacking (or own structure) → won; defending (or against it) → not lost
+    var okOf = function okOf(_ref10) {
       var _ref11 = _slicedToArray(_ref10, 2),
         r = _ref11[0],
         o = _ref11[1];
-      return "<button type=\"button\" class=\"erow\" data-i=\"".concat(i, "\"><span><b>").concat(fmtDate(r[1]), "</b><br><small>").concat(r[2] === 'w' ? 'blancas' : 'negras', " \xB7 ").concat(RES[r[5]].toLowerCase(), "</small></span><span><b>").concat(Math.floor(o[1] / 2) + 1).concat(o[1] % 2 ? '…' : '.', "</b>").concat(tac ? ' ' + OUT[o[2]] : '', "</span><span></span></button>");
-    }).join(''), "</div>");
-    $g('bList').querySelectorAll('.erow').forEach(function (b) {
-      return b.onclick = /*#__PURE__*/_asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee4() {
-        var _rows$b$dataset$i, r, o;
-        return _regenerator().w(function (_context4) {
-          while (1) switch (_context4.n) {
-            case 0:
-              $g('bList').querySelectorAll('.erow').forEach(function (x) {
-                return x.classList.toggle('on', x === b);
-              });
-              _rows$b$dataset$i = _slicedToArray(rows[+b.dataset.i], 2), r = _rows$b$dataset$i[0], o = _rows$b$dataset$i[1];
-              _context4.n = 1;
-              return openHere($g('bViewHost'), r, r[9].find(function (t) {
-                return t[0] === o[1];
-              }) || null, o[1], true);
-            case 1:
-              return _context4.a(2);
-          }
-        }, _callee4);
-      }));
-    });
-    var first = $g('bList').querySelector('.erow');
-    if (first) first.click();
+      return tac ? 'fc'.includes(o[2]) : 'ao'.includes(o[2]) ? r[5] === 'W' : r[5] !== 'L';
+    };
+    var nOk = rows.filter(okOf).length;
+    var _draw = function draw(f) {
+      var sel = rows.filter(function (x) {
+          return f === 'all' || f === 'ok' === okOf(x);
+        }),
+        shown = sel.slice(0, 100);
+      $g('bList').innerHTML = "<p class=\"sumline\" style=\"margin:0 0 6px\"><b>".concat(/^c\d/.test(n) ? '' : n + '. ').concat(lb, "</b></p><div class=\"seg bfilt\">").concat([['all', 'Todas', rows.length], ['ok', 'Aprovechadas', nOk], ['ko', 'No aprovechadas', rows.length - nOk]].map(function (_ref12) {
+        var _ref13 = _slicedToArray(_ref12, 3),
+          k = _ref13[0],
+          t = _ref13[1],
+          c = _ref13[2];
+        return "<button type=\"button\" data-f=\"".concat(k, "\" aria-pressed=\"").concat(k === f, "\">").concat(t, " (").concat(c, ")</button>");
+      }).join(''), "</div>").concat(sel.length > 100 ? '<p class="sumline" style="margin:4px 0">Las 100 más recientes.</p>' : '', "<div class=\"elist\" style=\"margin-top:6px\">").concat(shown.map(function (_ref14, i) {
+        var _ref15 = _slicedToArray(_ref14, 2),
+          r = _ref15[0],
+          o = _ref15[1];
+        return "<button type=\"button\" class=\"erow\" data-i=\"".concat(i, "\"><span><b>").concat(fmtDate(r[1]), "</b><br><small>").concat(r[2] === 'w' ? 'blancas' : 'negras', " \xB7 ").concat(RES[r[5]].toLowerCase(), "</small></span><span><b>").concat(Math.floor(o[1] / 2) + 1).concat(o[1] % 2 ? '…' : '.', "</b>").concat(tac ? ' ' + OUT[o[2]] : '', " \xB7 <span class=\"").concat(okOf([r, o]) ? 'okm' : 'kom', "\">").concat(okOf([r, o]) ? 'aprovechada' : 'no aprovechada', "</span></span><span></span></button>");
+      }).join('') || '<p class="empty">Ninguna partida.</p>', "</div>");
+      $g('bList').querySelectorAll('.bfilt button').forEach(function (b) {
+        return b.onclick = function () {
+          return _draw(b.dataset.f);
+        };
+      });
+      $g('bList').querySelectorAll('.erow').forEach(function (b) {
+        return b.onclick = /*#__PURE__*/_asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee4() {
+          var _shown$b$dataset$i, r, o;
+          return _regenerator().w(function (_context4) {
+            while (1) switch (_context4.n) {
+              case 0:
+                $g('bList').querySelectorAll('.erow').forEach(function (x) {
+                  return x.classList.toggle('on', x === b);
+                });
+                _shown$b$dataset$i = _slicedToArray(shown[+b.dataset.i], 2), r = _shown$b$dataset$i[0], o = _shown$b$dataset$i[1];
+                _context4.n = 1;
+                return openHere($g('bViewHost'), r, r[9].find(function (t) {
+                  return t[0] === o[1];
+                }) || null, o[1], true);
+              case 1:
+                return _context4.a(2);
+            }
+          }, _callee4);
+        }));
+      });
+      var first = $g('bList').querySelector('.erow');
+      if (first) first.click();
+    };
+    _draw('all');
   }
   window.tacOpen = tacOpen;
   window.endOpen = endOpen;
@@ -11841,11 +11872,11 @@ var BOOK_DESC = {
             cur.fen = g.fen();
             cur.last = m.from + m.to;
             draw();
-            return _context13.a(2, finish(true, "<b style=\"color:#2f7d4f\">\xA1Bien! ".concat(es(m.san), "</b> tambi\xE9n ").concat(cur.p[3] === '1/2-1/2' ? 'aguanta' : 'gana', " (no es la l\xEDnea del libro, pero el motor la da por buena).")));
+            return _context13.a(2, finish(true, "<b style=\"color:var(--good)\">\xA1Bien! ".concat(es(m.san), "</b> tambi\xE9n ").concat(cur.p[3] === '1/2-1/2' ? 'aguanta' : 'gana', " (no es la l\xEDnea del libro, pero el motor la da por buena).")));
           case 8:
             cur.fails++;
             draw();
-            say("<b style=\"color:#c0392b\">".concat(es(m.san), " no es.</b> Int\xE9ntalo otra vez o pulsa \xABVer la soluci\xF3n\xBB."));
+            say("<b style=\"color:var(--bad)\">".concat(es(m.san), " no es.</b> Int\xE9ntalo otra vez o pulsa \xABVer la soluci\xF3n\xBB."));
           case 9:
             return _context13.a(2);
         }
@@ -11858,7 +11889,7 @@ var BOOK_DESC = {
     cur.last = m.from + m.to;
     cur.k++;
     draw();
-    if (cur.k >= cur.pv.length || (g.game_over ? g.game_over() : g.isGameOver())) return finish(true, "<b style=\"color:#2f7d4f\">\xA1Resuelto!</b> ".concat(line()));
+    if (cur.k >= cur.pv.length || (g.game_over ? g.game_over() : g.isGameOver())) return finish(true, "<b style=\"color:var(--good)\">\xA1Resuelto!</b> ".concat(line()));
     var r = cur.pv[cur.k];
     cur.busy = true;
     setTimeout(function () {
@@ -11873,7 +11904,7 @@ var BOOK_DESC = {
       cur.k++;
       cur.busy = false;
       draw();
-      if (cur.k >= cur.pv.length) return finish(true, "<b style=\"color:#2f7d4f\">\xA1Resuelto!</b> ".concat(line()));
+      if (cur.k >= cur.pv.length) return finish(true, "<b style=\"color:var(--good)\">\xA1Resuelto!</b> ".concat(line()));
       say("Bien: ".concat(es(m.san), ". El rival responde ").concat(mv ? es(mv.san) : '', ". Sigue."));
     }, 450);
   }
@@ -12168,7 +12199,7 @@ var BOOK_DESC = {
       return;
     }
     paint();
-    $l('lcInfo').innerHTML = "<b style=\"color:#c0392b\">".concat(es(m.san), "</b> no es la de la partida. Prueba otra vez.");
+    $l('lcInfo').innerHTML = "<b style=\"color:var(--bad)\">".concat(es(m.san), "</b> no es la de la partida. Prueba otra vez.");
   }
   function why() {
     return _why.apply(this, arguments);
@@ -14953,10 +14984,10 @@ var LIVE_USER = '';
     var a = by['2022'],
       z = by['2026'];
     var rushY = {};
-    SD.rush.forEach(function (_ref15) {
-      var _ref16 = _slicedToArray(_ref15, 2),
-        t = _ref16[0],
-        s = _ref16[1];
+    SD.rush.forEach(function (_ref19) {
+      var _ref20 = _slicedToArray(_ref19, 2),
+        t = _ref20[0],
+        s = _ref20[1];
       var k = new Date(t * 1000).getUTCFullYear();
       (rushY[k] = rushY[k] || []).push(s);
     });
@@ -14971,12 +15002,12 @@ var LIVE_USER = '';
     }, 0)), 'blitz desde oct 2022'], ['Precisión', nf(M.acc(z)) + ' %', "2022: ".concat(nf(M.acc(a)), " %"), M.acc(z) > M.acc(a)], ['Fallos graves / 100 jugadas', nf(M.per(z, 'bl', 'm'), 2), "2022: ".concat(nf(M.per(a, 'bl', 'm'), 2)), M.per(z, 'bl', 'm') < M.per(a, 'bl', 'm')], ['Derrotas por tiempo', nf(M.to(z)) + ' %', "2022: ".concat(nf(M.to(a)), " %"), M.to(z) < M.to(a)], ['Puntuación (últimas 100)', nf(M.score(last100)) + ' %', 'de los puntos posibles'], ['Puzzle Rush (media 2026)', nf(avg(rushY[2026])), "2022: ".concat(nf(avg(rushY[2022])), " \xB7 r\xE9cord ").concat(Math.max.apply(null, SD.rush.map(function (x) {
       return x[1];
     }))), true], ['Problemas puntuados', fInt(SD.puz[SD.puz.length - 1][2]), 'puntuación actual']];
-    $('kpis').innerHTML = k.map(function (_ref17) {
-      var _ref18 = _slicedToArray(_ref17, 4),
-        t = _ref18[0],
-        v = _ref18[1],
-        s = _ref18[2],
-        up = _ref18[3];
+    $('kpis').innerHTML = k.map(function (_ref21) {
+      var _ref22 = _slicedToArray(_ref21, 4),
+        t = _ref22[0],
+        v = _ref22[1],
+        s = _ref22[2],
+        up = _ref22[3];
       return "<div class=\"kpi\"><span>".concat(t, "</span><b>").concat(v, "</b><span>").concat(up == null ? s : "<em class=\"".concat(up ? 'up' : 'down', "\">").concat(up ? '▲' : '▼', "</em> ").concat(s), "</span></div>");
     }).join('');
     drawEloM();
@@ -15170,14 +15201,14 @@ var LIVE_USER = '';
     }, true, 1], ['Puzzle Rush (mejor serie)', r0.length ? Math.max.apply(null, r0) : null, r1.length ? Math.max.apply(null, r1) : null, fInt, true, 1], ['Problemas (puntuación)', pzAt(30), pzAt(0), fInt, true, 10]];
     var good = [],
       bad = [];
-    var tr = rows.map(function (_ref19) {
-      var _ref20 = _slicedToArray(_ref19, 6),
-        lab = _ref20[0],
-        a = _ref20[1],
-        b = _ref20[2],
-        f = _ref20[3],
-        up = _ref20[4],
-        min = _ref20[5];
+    var tr = rows.map(function (_ref23) {
+      var _ref24 = _slicedToArray(_ref23, 6),
+        lab = _ref24[0],
+        a = _ref24[1],
+        b = _ref24[2],
+        f = _ref24[3],
+        up = _ref24[4],
+        min = _ref24[5];
       var cls = '',
         arrow = '';
       if (a != null && b != null && up != null && Math.abs(b - a) >= min && min > 0) {
@@ -15486,11 +15517,11 @@ var LIVE_USER = '';
     var distinct = failRows(weeks[11]).filter(function (x) {
       return x.fails;
     }).length;
-    $('trnKpis').innerHTML = [['Jugadas practicadas', fInt(now[0]), 'esta semana'], ['Fallos', fInt(now[1]), now[0] ? nf(pct(now)) + ' % de las jugadas' : '–'], ['Posiciones con fallo', fInt(distinct), 'distintas, esta semana'], ['Semana pasada', prev[0] ? nf(pct(prev)) + ' %' : '–', prev[0] ? "".concat(prev[1], " fallos en ").concat(prev[0], " jugadas") : 'sin datos']].map(function (_ref21) {
-      var _ref22 = _slicedToArray(_ref21, 3),
-        a = _ref22[0],
-        b = _ref22[1],
-        c = _ref22[2];
+    $('trnKpis').innerHTML = [['Jugadas practicadas', fInt(now[0]), 'esta semana'], ['Fallos', fInt(now[1]), now[0] ? nf(pct(now)) + ' % de las jugadas' : '–'], ['Posiciones con fallo', fInt(distinct), 'distintas, esta semana'], ['Semana pasada', prev[0] ? nf(pct(prev)) + ' %' : '–', prev[0] ? "".concat(prev[1], " fallos en ").concat(prev[0], " jugadas") : 'sin datos']].map(function (_ref25) {
+      var _ref26 = _slicedToArray(_ref25, 3),
+        a = _ref26[0],
+        b = _ref26[1],
+        c = _ref26[2];
       return "<div class=\"kpi\"><span>".concat(a, "</span><b>").concat(b, "</b><span>").concat(c, "</span></div>");
     }).join('');
     var ch = $('trnCharts');
@@ -15642,10 +15673,10 @@ var LIVE_USER = '';
   function tacRows() {
     // row: [q, n, forks 6x(f,m), pins 6x, free 6x, mates 5x(f,m), material f,m, capturing 6, hanging 6]
     var types = [];
-    [['Horquilla de', 2], ['Clavada con', 14], ['Capturar gratis:', 26]].forEach(function (_ref23) {
-      var _ref24 = _slicedToArray(_ref23, 2),
-        nm = _ref24[0],
-        off = _ref24[1];
+    [['Horquilla de', 2], ['Clavada con', 14], ['Capturar gratis:', 26]].forEach(function (_ref27) {
+      var _ref28 = _slicedToArray(_ref27, 2),
+        nm = _ref28[0],
+        off = _ref28[1];
       return PIE.forEach(function (p, i) {
         if (p === 'rey' && nm !== 'Horquilla de') return;
         types.push({
@@ -15697,10 +15728,10 @@ var LIVE_USER = '';
     var pc = function pc(s) {
       return s[0] + s[1] ? 100 * s[0] / (s[0] + s[1]) : null;
     };
-    var list = TC.th.map(function (_ref25) {
-      var _ref26 = _slicedToArray(_ref25, 2),
-        k = _ref26[0],
-        name = _ref26[1];
+    var list = TC.th.map(function (_ref29) {
+      var _ref30 = _slicedToArray(_ref29, 2),
+        k = _ref30[0],
+        name = _ref30[1];
       var ly = sum(lastQ, k),
         all = sum(Q, k);
       return {
@@ -15956,10 +15987,10 @@ var LIVE_USER = '';
     var g = segVal('puzGroup', 'g') || 'M';
     var host = $('puzCharts');
     host.innerHTML = '';
-    var R = SD.rush.map(function (_ref27) {
-      var _ref28 = _slicedToArray(_ref27, 2),
-        t = _ref28[0],
-        s = _ref28[1];
+    var R = SD.rush.map(function (_ref31) {
+      var _ref32 = _slicedToArray(_ref31, 2),
+        t = _ref32[0],
+        s = _ref32[1];
       return {
         date: new Date(t * 1000),
         s: s
@@ -15993,10 +16024,10 @@ var LIVE_USER = '';
         return x.s;
       }),
       last30 = all.slice(-30);
-    $('puzKpis').innerHTML = [['Series jugadas', fInt(all.length)], ['Récord', Math.max.apply(null, all)], ['Media últimas 30', nf(avg(last30))], ['Media primeras 100', nf(avg(all.slice(0, 100)))], ['Problemas puntuados', fInt(SD.puz[SD.puz.length - 1][2]) + ' pts'], ['Máximo puntuados', '2.070']].map(function (_ref29) {
-      var _ref30 = _slicedToArray(_ref29, 2),
-        a = _ref30[0],
-        b = _ref30[1];
+    $('puzKpis').innerHTML = [['Series jugadas', fInt(all.length)], ['Récord', Math.max.apply(null, all)], ['Media últimas 30', nf(avg(last30))], ['Media primeras 100', nf(avg(all.slice(0, 100)))], ['Problemas puntuados', fInt(SD.puz[SD.puz.length - 1][2]) + ' pts'], ['Máximo puntuados', '2.070']].map(function (_ref33) {
+      var _ref34 = _slicedToArray(_ref33, 2),
+        a = _ref34[0],
+        b = _ref34[1];
       return "<div class=\"kpi\"><span>".concat(a, "</span><b>").concat(b, "</b></div>");
     }).join('');
     chart(host, {
@@ -16351,11 +16382,11 @@ var LIVE_USER = '';
     var col = c === 'w' ? 'blancas' : 'negras';
     var yAll = sum(qs, idx),
       y1 = sum(last4, idx);
-    $('opeBookKpis').innerHTML = [['Te sales tú primero', fPct(pct(y1)), "todo: ".concat(fPct(pct(yAll)))], ['Jugada en que te sales tú', f2(me(y1)), "todo: ".concat(f2(me(yAll)))], ['Jugada en que se sale el rival', f2(op(y1)), "todo: ".concat(f2(op(yAll)))], ['Partidas', fInt(y1[0]), "\xFAltimos 4 trimestres con ".concat(col)]].map(function (_ref31) {
-      var _ref32 = _slicedToArray(_ref31, 3),
-        t = _ref32[0],
-        v = _ref32[1],
-        s = _ref32[2];
+    $('opeBookKpis').innerHTML = [['Te sales tú primero', fPct(pct(y1)), "todo: ".concat(fPct(pct(yAll)))], ['Jugada en que te sales tú', f2(me(y1)), "todo: ".concat(f2(me(yAll)))], ['Jugada en que se sale el rival', f2(op(y1)), "todo: ".concat(f2(op(yAll)))], ['Partidas', fInt(y1[0]), "\xFAltimos 4 trimestres con ".concat(col)]].map(function (_ref35) {
+      var _ref36 = _slicedToArray(_ref35, 3),
+        t = _ref36[0],
+        v = _ref36[1],
+        s = _ref36[2];
       return "<div class=\"kpi\"><span>".concat(t, "</span><b>").concat(v, "</b><span>").concat(s, "</span></div>");
     }).join('');
     var rows = idx.map(function (i) {
