@@ -395,8 +395,7 @@ footer { font-size: 12px; color: var(--muted); max-width: 90ch; }
 .bfilt { flex-wrap: wrap; } .bfilt button { font-size: 12.5px; }
 .okm { color: var(--good); font-weight: 600; } .kom { color: var(--bad); font-weight: 600; }
 .cnum { cursor: pointer; text-decoration: underline dotted; text-underline-offset: 3px; color: inherit; } .cnum:hover { color: var(--walnut); }
-.apsub { margin-bottom: -6px; }
-.optree td.nm { cursor: pointer; } .optree .l2 td.nm { padding-left: 22px; } .optree .l3 td.nm { padding-left: 44px; font-family: var(--font-mono); font-size: 12.5px; } .optree .tw { display: inline-block; width: 14px; color: var(--muted); }
+.optree td.nm { cursor: pointer; } .optree .l2 td.nm { padding-left: 22px; } .optree .optot td { border-top: 1px solid var(--line); background: var(--eng-bg); } .optree .l3 td.nm { padding-left: 44px; font-family: var(--font-mono); font-size: 12.5px; } .optree .tw { display: inline-block; width: 14px; color: var(--muted); }
 .elist { display: grid; gap: 6px; }
 .erow { all: unset; cursor: pointer; display: grid; grid-template-columns: 92px 1fr auto; gap: 10px; align-items: center; padding: 8px 12px; background: var(--panel); color: var(--ink); border: 1px solid var(--line); border-radius: 10px; font-size: 13.5px; }
 .erow:hover { border-color: var(--walnut); }
@@ -2190,8 +2189,9 @@ if (typeof define !== 'undefined')
 
   <nav class="mainnav" role="tablist" aria-label="Sección">
     <button type="button" role="tab" data-main="report" aria-selected="false">Informe</button>
+    <button type="button" role="tab" data-main="train" aria-selected="true">Taller de aperturas</button>
     <span class="navsep" aria-hidden="true"></span>
-    <button type="button" role="tab" data-main="train" aria-selected="true">Aperturas</button>
+    <button type="button" role="tab" data-main="op" aria-selected="false">Aperturas</button>
     <button type="button" role="tab" data-main="tac" aria-selected="false">Tácticas</button>
     <button type="button" role="tab" data-main="end" aria-selected="false">Finales</button>
     <span class="navsep" aria-hidden="true"></span>
@@ -2207,9 +2207,8 @@ if (typeof define !== 'undefined')
     <button type="button" role="tab" data-main="lc" aria-selected="false">Logical Chess</button>
   </nav>
 
-  <div class="seg apsub" id="apSub" hidden><button type="button" data-s="train" aria-pressed="true">Entrenar</button><button type="button" data-s="mine" aria-pressed="false">Mis aperturas</button></div>
-  <section class="games" id="viewOpen" hidden aria-label="Mis aperturas">
-    <p class="note" style="font-size:13px;color:var(--muted);margin:0">Tus partidas clasificadas por apertura, variante y línea, con el nombre que les da Chess.com. Pulsa el nombre para desplegar las variantes, y una cifra para ver esas partidas al lado.</p>
+  <section class="games" id="viewOpen" hidden aria-label="Aperturas">
+    <p class="note" style="font-size:13px;color:var(--muted);margin:0">Tus partidas clasificadas por apertura, con el nombre que les da Chess.com. Pulsa el nombre de una apertura para ver debajo todas sus líneas: en verde las que te van mejor que la media de esa apertura y en rojo las que te van peor. Pulsa una cifra para ver esas partidas al lado.</p>
     <div class="sbar"><select id="opCol" aria-label="Color"><option value="">Blancas y negras</option><option value="w">Con blancas</option><option value="b">Con negras</option></select><label for="opPer">Periodo</label><select id="opPer"></select><label for="opMin">Mínimo</label><select id="opMin"><option value="1">1 partida</option><option value="5">5 partidas</option><option value="10" selected>10 partidas</option><option value="30">30 partidas</option></select></div>
     <div class="tscroll" id="opTable"></div>
     <div class="ggrid" style="margin-top:12px"><div class="glist2" id="opList"></div><div id="opViewHost"></div></div>
@@ -11559,7 +11558,7 @@ var BOOK_DESC = {
     };
     _draw(f0 || 'all');
   }
-  // ---------- Mis aperturas: games by opening → variation → line (Chess.com names) ----------
+  // ---------- Aperturas: games by opening → its lines (variation · moves, Chess.com names) ----------
   var OP_KEY = ['Defense', 'Opening', 'Game', 'Gambit', 'Attack', 'System', 'Countergambit', 'Indian', 'Declined', 'Accepted'];
   function parseEco(slug) {
     if (!slug) return ['Apertura sin nombre', '', ''];
@@ -11644,10 +11643,8 @@ var BOOK_DESC = {
         a = _parseEco2[0],
         b = _parseEco2[1],
         c = _parseEco2[2],
-        k1 = a,
-        k2 = a + '|' + (b || '·'),
-        k3 = k2 + '|' + (c || '·');
-      [k1, k2, k3].forEach(function (k) {
+        k2 = a + '|' + (b || '·') + '|' + (c || '·');
+      [a, k2].forEach(function (k) {
         (T[k] = T[k] || []).push(r);
       });
     });
@@ -11671,28 +11668,39 @@ var BOOK_DESC = {
           return 'cx'.includes(t[2]);
         }).length;
       });
+      s.pts = 100 * (s.W + s.D / 2) / s.n;
+      s.e100 = 100 * s.err / s.n;
       return s;
     };
-    var lab = function lab(k, lv) {
-      var p = k.split('|');
-      var v = p[lv - 1];
-      return v === '·' ? lv === 2 ? '(sin variante)' : '(línea principal)' : v;
+    var lab = function lab(k) {
+      var p = k.split('|'),
+        v = p[1] === '·' ? '' : p[1],
+        m = p[2] === '·' ? '' : p[2];
+      return v && m ? v + ' · ' + m : v || m || 'Línea principal';
     };
-    var _row = function row(k, lv) {
+    var c = function c(v, f, cls) {
+      return "<td class=\"".concat(cls || '', "\">").concat(v ? "<a class=\"cnum\" data-f=\"".concat(f, "\">").concat(v, "</a>") : v === 0 ? '0' : '', "</td>");
+    };
+    // ref: the opening's own stats; lines are coloured against it (only with 10+ games)
+    var cells = function cells(s, ref) {
+      var pc = ref ? s.n >= 10 ? s.pts < ref.pts - 5 ? 'cell-bad' : s.pts > ref.pts + 5 ? 'cell-good' : '' : '' : s.n >= 10 ? s.pts < 47 ? 'cell-bad' : s.pts > 53 ? 'cell-good' : '' : '';
+      var ec = ref && s.n >= 10 ? s.e100 > ref.e100 * 1.15 ? 'cell-bad' : s.e100 < ref.e100 * 0.85 ? 'cell-good' : '' : '';
+      return "".concat(c("<b>".concat(s.n, "</b>"), 'all')).concat(c(s.W, 'W')).concat(c(s.WT, 'WT')).concat(c(s.D, 'D')).concat(c(s.L, 'L')).concat(c(s.LT, 'LT', s.LT ? 'cell-bad' : ''), "<td class=\"").concat(pc, "\">").concat(Math.round(s.pts), " %</td><td>").concat(Math.round(s.elo / s.n), "</td><td class=\"").concat(ec, "\">").concat(s.e100.toFixed(0), "</td>");
+    };
+    var row = function row(k) {
       var s = st(T[k]),
         kids = Object.keys(T).filter(function (x) {
-          return x.split('|').length === lv + 1 && x.startsWith(k + '|') && T[x].length >= min;
+          return x.startsWith(k + '|') && T[x].length >= min;
+        }).sort(function (a, b) {
+          return T[b].length - T[a].length;
         });
-      var tw = lv < 3 && kids.length ? "<span class=\"tw\">".concat(opOpen[k] ? '▾' : '▸', "</span>") : '<span class="tw"></span>',
-        c = function c(v, f, cls) {
-          return "<td class=\"".concat(cls || '', "\">").concat(v ? "<a class=\"cnum\" data-f=\"".concat(f, "\">").concat(v, "</a>") : v === 0 ? '0' : '', "</td>");
-        };
-      var h = "<tr class=\"l".concat(lv, "\" data-k=\"").concat(esc2(k), "\"><td class=\"nm\">").concat(tw).concat(esc2(lab(k, lv)), "</td>").concat(c("<b>".concat(s.n, "</b>"), 'all')).concat(c(s.W, 'W')).concat(c(s.WT, 'WT')).concat(c(s.D, 'D')).concat(c(s.L, 'L')).concat(c(s.LT, 'LT', s.LT ? 'cell-bad' : ''), "<td class=\"").concat(s.n >= 10 ? 100 * (s.W + s.D / 2) / s.n < 47 ? 'cell-bad' : 100 * (s.W + s.D / 2) / s.n > 53 ? 'cell-good' : '' : '', "\">").concat(Math.round(100 * (s.W + s.D / 2) / s.n), " %</td><td>").concat(Math.round(s.elo / s.n), "</td><td>").concat((100 * s.err / s.n).toFixed(0), "</td></tr>");
-      if (opOpen[k]) kids.sort(function (a, b) {
-        return T[b].length - T[a].length;
-      }).forEach(function (x) {
-        h += _row(x, lv + 1);
-      });
+      var h = "<tr class=\"l1\" data-k=\"".concat(esc2(k), "\"><td class=\"nm\"><span class=\"tw\">").concat(kids.length ? opOpen[k] ? '▾' : '▸' : '', "</span>").concat(esc2(k), "</td>").concat(cells(s), "</tr>");
+      if (opOpen[k] && kids.length) {
+        h += "<tr class=\"l2 optot\" data-k=\"".concat(esc2(k), "\"><td class=\"nm\"><span class=\"tw\"></span><b>Total de la apertura</b> <small>(").concat(kids.length, " ").concat(kids.length === 1 ? 'línea' : 'líneas', ")</small></td>").concat(cells(s), "</tr>");
+        kids.forEach(function (x) {
+          h += "<tr class=\"l2\" data-k=\"".concat(esc2(x), "\"><td class=\"nm\"><span class=\"tw\"></span>").concat(esc2(lab(x)), "</td>").concat(cells(st(T[x]), s), "</tr>");
+        });
+      }
       return h;
     };
     var tops = Object.keys(T).filter(function (k) {
@@ -11700,15 +11708,15 @@ var BOOK_DESC = {
     }).sort(function (a, b) {
       return T[b].length - T[a].length;
     });
-    $g('opTable').innerHTML = "<p class=\"sumline\">".concat(R.length.toLocaleString('es-ES'), " partidas \xB7 ").concat(tops.length, " aperturas con al menos ").concat(min, " ").concat(min === 1 ? 'partida' : 'partidas', ".</p><table class=\"stbl optree\"><thead><tr><th>Apertura / variante / l\xEDnea</th><th>Partidas</th><th>Ganadas</th><th>\u2026por tiempo</th><th>Tablas</th><th>Perdidas</th><th>\u2026por tiempo</th><th>% puntos</th><th>Elo rival</th><th>Errores graves /100</th></tr></thead><tbody>").concat(tops.map(function (k) {
-      return _row(k, 1);
+    $g('opTable').innerHTML = "<p class=\"sumline\">".concat(R.length.toLocaleString('es-ES'), " partidas \xB7 ").concat(tops.length, " aperturas con al menos ").concat(min, " ").concat(min === 1 ? 'partida' : 'partidas', ".</p><table class=\"stbl optree\"><thead><tr><th>Apertura / l\xEDnea</th><th>Partidas</th><th>Ganadas</th><th>\u2026por tiempo</th><th>Tablas</th><th>Perdidas</th><th>\u2026por tiempo</th><th>% puntos</th><th>Elo rival</th><th>Errores graves /100</th></tr></thead><tbody>").concat(tops.map(function (k) {
+      return row(k);
     }).join(''), "</tbody></table>");
     $g('opTable').querySelectorAll('tr[data-k]').forEach(function (tr) {
       return tr.onclick = function (ev) {
         var k = tr.dataset.k,
           a = ev.target.closest('.cnum');
         if (a) return opList(k, a.dataset.f);
-        if (ev.target.closest('td.nm')) {
+        if (tr.classList.contains('l1') && ev.target.closest('td.nm')) {
           opOpen[k] = !opOpen[k];
           renderOpenings();
         }
@@ -17332,19 +17340,11 @@ var LIVE_USER = '';
     nav.forEach(function (b) {
       return b.setAttribute('aria-selected', b.dataset.main === m);
     });
-    var apS = 'train';
-    try {
-      apS = localStorage.getItem('taller.apsub') || 'train';
-    } catch (e) {}
-    if ($('apSub')) {
-      $('apSub').hidden = m !== 'train';
-      $('viewOpen').hidden = m !== 'train' || apS !== 'mine';
-      $('apSub').querySelectorAll('button').forEach(function (b) {
-        return b.setAttribute('aria-pressed', b.dataset.s === apS);
-      });
-      if (m === 'train' && apS === 'mine' && window.openingsOpen) window.openingsOpen();
+    if ($('viewOpen')) {
+      $('viewOpen').hidden = m !== 'op';
+      if (m === 'op' && window.openingsOpen) window.openingsOpen();
     }
-    $('viewTrain').hidden = m !== 'train' || apS === 'mine';
+    $('viewTrain').hidden = m !== 'train';
     $('viewStats').hidden = m !== 'stats' && m !== 'report';
     document.querySelector('#viewStats .subnav').hidden = m === 'report';
     if ($('viewGames')) {
@@ -17394,14 +17394,6 @@ var LIVE_USER = '';
   nav.forEach(function (b) {
     return b.onclick = function () {
       return showMain(b.dataset.main);
-    };
-  });
-  if ($('apSub')) $('apSub').querySelectorAll('button').forEach(function (b) {
-    return b.onclick = function () {
-      try {
-        localStorage.setItem('taller.apsub', b.dataset.s);
-      } catch (e) {}
-      showMain('train');
     };
   });
   var m0 = 'train';
