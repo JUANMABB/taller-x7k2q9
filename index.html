@@ -9872,43 +9872,131 @@ var BOOK_DESC = {
   var costTxt = function costTxt(c) {
     return c >= 50 ? 'un mate (o recibirlo)' : String(c).replace('.', ',') + ' peones';
   };
+  // mating patterns as numbered in the user's book (Patrones de jaque mate, L. E. Valle Maytín)
   var MPN = {
-    pa: 'Mate del pasillo',
-    an: 'Mate de Anastasia',
-    ar: 'Mate árabe',
-    co: 'Mate de la coz (ahogado)',
-    bo: 'Mate de Boden',
-    ep: 'Mate de las hombreras',
-    da: 'Mate de Damiano',
-    be: 'Beso de la muerte',
-    es: 'Mate de la escalera',
-    ot: 'Otros mates'
+    "1": "Mate de Anastasia",
+    "2": "Mate árabe",
+    "3": "Mate de Anderssen",
+    "4": "Mate de Boden",
+    "5": "Mate de la ballesta",
+    "6": "Mate de Blackburne",
+    "7": "Mate de la batería",
+    "8": "Mate de la coz (y de Lucena)",
+    "9": "Mate de la caja",
+    "10": "Mate de Cozio y cola de paloma",
+    "11": "Mate de cola de golondrina",
+    "12": "Mate de las charreteras",
+    "13": "Mate del cerdo ciego",
+    "14": "Mate de Damiano",
+    "15": "Mate de Damiano con alfil",
+    "16": "Mate de David contra Goliat",
+    "17": "Mate de la escalera",
+    "18": "Mate del ferrocarril",
+    "19": "Mate de Greco",
+    "20": "Mate del gancho",
+    "21": "Mate de Lolli",
+    "22": "Mate del loco",
+    "23": "Mate de Mayet",
+    "24": "Mate de Morphy",
+    "25": "Mate de la Ópera",
+    "26": "Mate del pasillo",
+    "27": "Mate de Pillsbury",
+    "28": "Mate del triángulo",
+    "29": "Mate de Vukovic",
+    "30": "Mate de Réti",
+    "31": "Mate de dos alfiles",
+    "32": "Mate con dos caballos",
+    "33": "Mate con alfil y caballo",
+    "34": "Mate del pastor",
+    "35": "Mate de Legal",
+    "36": "Mate de los guardiamarinas",
+    "37": "Mate de Max Lange",
+    "38": "Mate de la esquina",
+    "39": "Mate por líneas abiertas",
+    "40": "Mate de dama y caballo",
+    "41": "Mate de asfixia"
   };
   var MPD = {
-    pa: 'rey encerrado en su primera fila por sus propios peones',
-    an: 'caballo y torre o dama por la banda',
-    ar: 'torre pegada al rey, protegida por un caballo',
-    co: 'caballo contra un rey rodeado de sus piezas',
-    bo: 'dos alfiles cruzados',
-    ep: 'dama de frente; el rey, entre dos piezas suyas',
-    da: 'dama pegada al rey, protegida por un peón',
-    be: 'dama pegada al rey, protegida por otra pieza',
-    es: 'dos piezas pesadas en líneas seguidas',
-    ot: 'ninguno de los anteriores'
+    "1": "caballo y torre o dama por la banda",
+    "2": "torre pegada al rey en la esquina, protegida por un caballo",
+    "3": "torre en la última fila protegida por un peón",
+    "4": "dos alfiles cruzados",
+    "5": "el alfil da el mate y la dama cubre las salidas",
+    "6": "dos alfiles y un caballo contra el enroque",
+    "7": "dama delante de una torre o un alfil que la protege desde lejos",
+    "8": "caballo contra un rey rodeado de sus piezas",
+    "9": "dama o torre (con el rey) contra el rey solo",
+    "10": "dama en diagonal, el rey encerrado por sus piezas",
+    "11": "dama de frente, el rey encerrado por sus piezas",
+    "12": "dama de frente; el rey, entre dos piezas suyas",
+    "13": "dos torres en la séptima",
+    "14": "dama pegada al rey, protegida por un peón",
+    "15": "dama pegada al rey, protegida por un alfil cercano",
+    "16": "el mate lo da un peón",
+    "17": "dos piezas pesadas en líneas seguidas",
+    "19": "dama o torre por la columna del rey y un alfil cubre la salida",
+    "20": "torre protegida por un caballo, y este por un peón",
+    "21": "dama en g7 protegida por un peón en f6",
+    "22": "dama por la diagonal e1-h4 / e8-h5",
+    "23": "torre en la última fila protegida por un alfil desde lejos",
+    "24": "el alfil da el mate y una torre cubre la salida, rey en la esquina",
+    "25": "torre en la última fila protegida por un alfil, rey en el centro",
+    "26": "el rey encerrado en su primera fila por sus peones",
+    "27": "torre por la columna de al lado y alfil en la gran diagonal",
+    "28": "dama pegada al rey protegida por una torre a su lado",
+    "29": "torre protegida por un caballo, rey en la banda",
+    "30": "el alfil da el mate con apoyo de una torre",
+    "31": "final de dos alfiles contra rey",
+    "32": "final de dos caballos contra rey",
+    "33": "final de alfil y caballo contra rey",
+    "34": "dama en f7 protegida por un alfil",
+    "40": "dama pegada al rey protegida por un caballo"
   };
   var MPS = {
-    pa: 'pasillo',
-    an: 'Anastasia',
-    ar: 'árabe',
-    co: 'coz',
-    bo: 'Boden',
-    ep: 'hombreras',
-    da: 'Damiano',
-    be: 'beso de la muerte',
-    es: 'escalera',
-    ot: ''
+    "1": "Anastasia",
+    "2": "árabe",
+    "3": "Anderssen",
+    "4": "Boden",
+    "5": "ballesta",
+    "6": "Blackburne",
+    "7": "batería",
+    "8": "coz",
+    "9": "caja",
+    "10": "Cozio",
+    "11": "cola de golondrina",
+    "12": "charreteras",
+    "13": "cerdo ciego",
+    "14": "Damiano",
+    "15": "Damiano con alfil",
+    "16": "David contra Goliat",
+    "17": "escalera",
+    "18": "ferrocarril",
+    "19": "Greco",
+    "20": "gancho",
+    "21": "Lolli",
+    "22": "loco",
+    "23": "Mayet",
+    "24": "Morphy",
+    "25": "Ópera",
+    "26": "pasillo",
+    "27": "Pillsbury",
+    "28": "triángulo",
+    "29": "Vukovic",
+    "30": "Réti",
+    "31": "dos alfiles",
+    "32": "dos caballos",
+    "33": "alfil y caballo",
+    "34": "pastor",
+    "35": "Legal",
+    "36": "guardiamarinas",
+    "37": "Max Lange",
+    "38": "esquina",
+    "39": "líneas abiertas",
+    "40": "dama y caballo",
+    "41": "asfixia"
   };
-  var MP_ORDER = ['pa', 'an', 'ar', 'co', 'bo', 'ep', 'da', 'be', 'es', 'ot'];
+  var MP_ORDER = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "22", "23", "24", "25", "26", "27", "28", "29", "30", "31", "32", "33", "34", "35", "36", "37", "38", "39", "40", "41"],
+    MP_NODET = ["18", "35", "36", "37", "38", "39", "41"];
   var tagLabel = function tagLabel(t) {
     return "".concat(TH[t[1]] || t[1]).concat(t[8] && MPS[t[8]] ? ' (' + MPS[t[8]] + ')' : '', " \xB7 ").concat(Math.floor(t[0] / 2) + 1).concat(t[0] % 2 ? '…' : '.');
   };
@@ -11085,11 +11173,17 @@ var BOOK_DESC = {
               return [k, TH[k], false];
             })) + (MP_ORDER.some(function (k) {
               return S['P:' + k];
-            }) ? "<h4 class=\"gsubh\">Tipos de mate</h4><p class=\"sumline\" style=\"margin-top:0\">Seg\xFAn la posici\xF3n final del mate (en los mates largos, la l\xEDnea del motor).</p>" + sumTable('Tipo de mate', MP_ORDER.filter(function (k) {
+            }) ? "<h4 class=\"gsubh\">Patrones de mate</h4><p class=\"sumline\" style=\"margin-top:0\">Numerados como en <i>Patrones de jaque mate</i> (Luis Enrique Valle Mayt\xEDn). Cada mate se clasifica por su posici\xF3n final (en los mates largos, la l\xEDnea del motor) en un solo patr\xF3n: el m\xE1s concreto. Los tests del libro (mate en 2 a 6) son la tabla de arriba.</p>" + sumTable('Patrón', MP_ORDER.filter(function (k) {
               return S['P:' + k];
             }).map(function (k) {
-              return ['P:' + k, "".concat(MPN[k], "<br><small>").concat(MPD[k], "</small>"), false];
-            })) : '');
+              return ['P:' + k, "<b>".concat(k, ".</b> ").concat(MPN[k], "<br><small>").concat(MPD[k] || '', "</small>"), false];
+            })) + "<p class=\"sumline\">Sin aparecer en tus partidas: ".concat(MP_ORDER.filter(function (k) {
+              return !S['P:' + k] && !MP_NODET.includes(k);
+            }).map(function (k) {
+              return k + '. ' + MPS[k];
+            }).join(', ') || 'ninguno', ". Sin detector todav\xEDa: ").concat(MP_NODET.map(function (k) {
+              return k + '. ' + MPS[k];
+            }).join(', '), " (el ferrocarril es una maniobra de jaques que acaba en el tri\xE1ngulo o la caja, y aparece dentro de ellos). ").concat(S['P:ot'] ? "Mates que no encajan en ning\xFAn patr\xF3n: ".concat((S['P:ot'].f + S['P:ot'].m + S['P:ot'].c + S['P:ot'].x).toLocaleString('es-ES'), ".") : '', "</p>") : '');
             bindRows('fSum', 'fCol', 'fYear');
           case 3:
             return _context0.a(2);
