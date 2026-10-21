@@ -395,7 +395,7 @@ footer { font-size: 12px; color: var(--muted); max-width: 90ch; }
 .bfilt { flex-wrap: wrap; } .bfilt button { font-size: 12.5px; }
 .okm { color: var(--good); font-weight: 600; } .kom { color: var(--bad); font-weight: 600; }
 .cnum { cursor: pointer; text-decoration: underline dotted; text-underline-offset: 3px; color: inherit; } .cnum:hover { color: var(--walnut); }
-.optree td.nm { cursor: pointer; } .optree .l2 td.nm { padding-left: 22px; } .optree .optot td { border-top: 1px solid var(--line); background: var(--eng-bg); } .optree .l3 td.nm { padding-left: 44px; font-family: var(--font-mono); font-size: 12.5px; } .optree .tw { display: inline-block; width: 14px; color: var(--muted); }
+.optree td.nm { cursor: pointer; } .optree .l2 td.nm { padding-left: 22px; } .optree .optot td { border-top: 1px solid var(--line); background: var(--eng-bg); } .optree .l3 td.nm { padding-left: 44px; font-family: var(--font-mono); font-size: 12.5px; } .optree .eco { color: var(--muted); font-size: 11.5px; margin-left: 4px; } .optree .tw { display: inline-block; width: 14px; color: var(--muted); }
 .elist { display: grid; gap: 6px; }
 .erow { all: unset; cursor: pointer; display: grid; grid-template-columns: 92px 1fr auto; gap: 10px; align-items: center; padding: 8px 12px; background: var(--panel); color: var(--ink); border: 1px solid var(--line); border-radius: 10px; font-size: 13.5px; }
 .erow:hover { border-color: var(--walnut); }
@@ -2208,7 +2208,7 @@ if (typeof define !== 'undefined')
   </nav>
 
   <section class="games" id="viewOpen" hidden aria-label="Aperturas">
-    <p class="note" style="font-size:13px;color:var(--muted);margin:0">Tus partidas clasificadas por apertura, con el nombre que les da Chess.com. Pulsa el nombre de una apertura para ver debajo todas sus líneas: en verde las que te van mejor que la media de esa apertura y en rojo las que te van peor. Pulsa una cifra para ver esas partidas al lado.</p>
+    <p class="note" style="font-size:13px;color:var(--muted);margin:0">Tus partidas clasificadas por apertura según la posición a la que llegan (base de aperturas de Lichess, con su código ECO): da igual el orden de jugadas. Pulsa el nombre de una apertura para ver debajo todas sus líneas: en verde las que te van mejor que la media de esa apertura y en rojo las que te van peor. Pulsa una cifra para ver esas partidas al lado.</p>
     <div class="sbar"><select id="opCol" aria-label="Color"><option value="">Blancas y negras</option><option value="w">Con blancas</option><option value="b">Con negras</option></select><label for="opPer">Periodo</label><select id="opPer"></select><label for="opMin">Mínimo</label><select id="opMin"><option value="1">1 partida</option><option value="5">5 partidas</option><option value="10" selected>10 partidas</option><option value="30">30 partidas</option></select></div>
     <div class="tscroll" id="opTable"></div>
     <div class="ggrid" style="margin-top:12px"><div class="glist2" id="opList"></div><div id="opViewHost"></div></div>
@@ -9861,7 +9861,11 @@ var BOOK_DESC = {
       }[c];
     });
   };
-  var ecoName = function ecoName(e) {
+  var ECON = null; // opening names by position (Lichess database, in Spanish): [eco, opening, line]
+  var ecoName = function ecoName(r) {
+    var n = ECON && r[10] != null && ECON[r[10]];
+    if (n) return n[0] + ' · ' + n[1] + (n[2] ? ': ' + n[2] : '');
+    var e = r[7];
     return e ? e.replace(/-/g, ' ').replace(/\s+/g, ' ') : 'Apertura sin nombre';
   };
   var termTxt = function termTxt(t) {
@@ -10056,7 +10060,7 @@ var BOOK_DESC = {
   }
   function _load() {
     _load = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee7() {
-      var years, _t4;
+      var _yield$Promise$all, _yield$Promise$all2, years, _t4;
       return _regenerator().w(function (_context7) {
         while (1) switch (_context7.p = _context7.n) {
           case 0:
@@ -10070,12 +10074,19 @@ var BOOK_DESC = {
             $g('gList').innerHTML = '<p class="empty">Cargando partidas…</p>';
             _context7.p = 2;
             _context7.n = 3;
-            return fetch(GAMES_BASE + 'catalog.json').then(function (r) {
+            return Promise.all([fetch(GAMES_BASE + 'catalog.json').then(function (r) {
               if (!r.ok) throw new Error(r.status);
               return r.json();
-            });
+            }), fetch(GAMES_BASE + 'eco_names.json').then(function (r) {
+              return r.ok ? r.json() : null;
+            }).catch(function () {
+              return null;
+            })]);
           case 3:
-            CAT = _context7.v;
+            _yield$Promise$all = _context7.v;
+            _yield$Promise$all2 = _slicedToArray(_yield$Promise$all, 2);
+            CAT = _yield$Promise$all2[0];
+            ECON = _yield$Promise$all2[1];
             _context7.n = 5;
             break;
           case 4:
@@ -10142,7 +10153,7 @@ var BOOK_DESC = {
       y = $g('gYear').value,
       q = $g('gEco').value.trim().toLowerCase();
     var base = CAT.filter(function (r) {
-      return (!col || r[2] === col) && resOk(res, r) && (!y || r[1].startsWith(y)) && (!q || ecoName(r[7]).toLowerCase().includes(q));
+      return (!col || r[2] === col) && resOk(res, r) && (!y || r[1].startsWith(y)) && (!q || ecoName(r).toLowerCase().includes(q));
     });
     var okTag = function okTag(t) {
       return thOk(th, t[1], t) && outOk(out, t);
@@ -10223,7 +10234,7 @@ var BOOK_DESC = {
     var L = $g('gList');
     L.innerHTML = rows.slice(0, page).map(function (r) {
       var tags = r[9].filter(okTag);
-      return "<button type=\"button\" class=\"grow2".concat(view && view.r === r ? ' on' : '', "\" data-id=\"").concat(r[0], "\"><span class=\"gr ").concat(r[5], "\">").concat(r[5] === 'W' ? '1' : r[5] === 'L' ? '0' : '½', "</span><span class=\"gm\"><b>").concat(fmtDate(r[1]), "</b> \xB7 ").concat(r[2] === 'w' ? 'blancas' : 'negras', " \xB7 ").concat(r[3], " vs ").concat(r[4], "<br><span class=\"ge\">").concat(esc2(ecoName(r[7])), "</span></span><span class=\"gt\">").concat(tags.slice(0, 4).map(function (t) {
+      return "<button type=\"button\" class=\"grow2".concat(view && view.r === r ? ' on' : '', "\" data-id=\"").concat(r[0], "\"><span class=\"gr ").concat(r[5], "\">").concat(r[5] === 'W' ? '1' : r[5] === 'L' ? '0' : '½', "</span><span class=\"gm\"><b>").concat(fmtDate(r[1]), "</b> \xB7 ").concat(r[2] === 'w' ? 'blancas' : 'negras', " \xB7 ").concat(r[3], " vs ").concat(r[4], "<br><span class=\"ge\">").concat(esc2(ecoName(r)), "</span></span><span class=\"gt\">").concat(tags.slice(0, 4).map(function (t) {
         return "<i class=\"tg ".concat(t[2], "\">").concat(t[1], "</i>");
       }).join('')).concat(tags.length > 4 ? "<i class=\"tg\">+".concat(tags.length - 4, "</i>") : '', "</span></button>");
     }).join('') + (rows.length > page ? "<button type=\"button\" class=\"btn small\" id=\"gMore\">Ver ".concat(Math.min(60, rows.length - page), " m\xE1s</button>") : '') + (rows.length ? '' : '<p class="empty">Ninguna partida con estos filtros.</p>');
@@ -10307,7 +10318,7 @@ var BOOK_DESC = {
               return b.classList.toggle('on', b.dataset.id === String(r[0]));
             });
             link = GAMES_LINKS ? " \xB7 <a href=\"https://www.chess.com/game/live/".concat(r[0], "\" target=\"_blank\" rel=\"noopener\">Ver en Chess.com</a>") : '';
-            $g('gHead').innerHTML = "<h3>".concat(r[2] === 'w' ? 'Blancas' : 'Negras', " \xB7 ").concat(RES[r[5]]).concat(r[6] ? ' por ' + esc2(termTxt(r[6])) : '', "</h3><p class=\"sumline\">").concat(fmtDate(r[1]), " \xB7 tu Elo ").concat(r[3], ", rival ").concat(d.o ? esc2(d.o) + ' ' : '').concat(r[4], " \xB7 ").concat(esc2(ecoName(r[7]))).concat(link, "</p>");
+            $g('gHead').innerHTML = "<h3>".concat(r[2] === 'w' ? 'Blancas' : 'Negras', " \xB7 ").concat(RES[r[5]]).concat(r[6] ? ' por ' + esc2(termTxt(r[6])) : '', "</h3><p class=\"sumline\">").concat(fmtDate(r[1]), " \xB7 tu Elo ").concat(r[3], ", rival ").concat(d.o ? esc2(d.o) + ' ' : '').concat(r[4], " \xB7 ").concat(esc2(ecoName(r))).concat(link, "</p>");
             $g('gTags').innerHTML = r[9].length ? r[9].map(function (t, i) {
               return "<button type=\"button\" class=\"gtag ".concat(t[2], "\" data-i=\"").concat(i, "\"><b>").concat(tagLabel(t), "</b> ").concat(OUT[t[2]]).concat(t[3] ? " <span>(".concat(t[3] >= 50 || /^M/.test(t[1]) ? 'mate' : '−' + String(t[3]).replace('.', ','), ")</span>") : '', "</button>");
             }).join('') : '<p class="empty">Ninguna táctica en esta partida.</p>';
@@ -11636,18 +11647,34 @@ var BOOK_DESC = {
       R = CAT.filter(function (r) {
         return (!col || r[2] === col) && opPerOk(r[1].slice(0, 7));
       });
-    var T = {};
+    var T = {},
+      ECO = {};
     R.forEach(function (r) {
-      var _parseEco = parseEco(r[7]),
-        _parseEco2 = _slicedToArray(_parseEco, 3),
-        a = _parseEco2[0],
-        b = _parseEco2[1],
-        c = _parseEco2[2],
-        k2 = a + '|' + (b || '·') + '|' + (c || '·');
+      var n = ECON && r[10] != null && ECON[r[10]];
+      var a, k2;
+      if (n) {
+        a = n[1];
+        k2 = a + '|' + (n[2] || '·');
+        (ECO[a] = ECO[a] || new Set()).add(n[0]);
+        (ECO[k2] = ECO[k2] || new Set()).add(n[0]);
+      } else {
+        var _parseEco = parseEco(r[7]),
+          _parseEco2 = _slicedToArray(_parseEco, 3),
+          x = _parseEco2[0],
+          y = _parseEco2[1],
+          z = _parseEco2[2];
+        a = x;
+        k2 = a + '|' + ((y + ' ' + z).trim() || '·');
+      }
       [a, k2].forEach(function (k) {
         (T[k] = T[k] || []).push(r);
       });
     });
+    var ecoOf = function ecoOf(k) {
+      if (!ECO[k]) return '';
+      var e = _toConsumableArray(ECO[k]).sort();
+      return ' <small class="eco">' + (e.length > 3 ? e[0] + '–' + e[e.length - 1] : e.join(', ')) + '</small>';
+    };
     OP = T;
     var st = function st(rs) {
       var s = {
@@ -11673,10 +11700,8 @@ var BOOK_DESC = {
       return s;
     };
     var lab = function lab(k) {
-      var p = k.split('|'),
-        v = p[1] === '·' ? '' : p[1],
-        m = p[2] === '·' ? '' : p[2];
-      return v && m ? v + ' · ' + m : v || m || 'Línea principal';
+      var v = k.split('|')[1];
+      return v === '·' ? 'Sin variante con nombre' : v;
     };
     var c = function c(v, f, cls) {
       return "<td class=\"".concat(cls || '', "\">").concat(v ? "<a class=\"cnum\" data-f=\"".concat(f, "\">").concat(v, "</a>") : v === 0 ? '0' : '', "</td>");
@@ -11694,11 +11719,11 @@ var BOOK_DESC = {
         }).sort(function (a, b) {
           return T[b].length - T[a].length;
         });
-      var h = "<tr class=\"l1\" data-k=\"".concat(esc2(k), "\"><td class=\"nm\"><span class=\"tw\">").concat(kids.length ? opOpen[k] ? '▾' : '▸' : '', "</span>").concat(esc2(k), "</td>").concat(cells(s), "</tr>");
+      var h = "<tr class=\"l1\" data-k=\"".concat(esc2(k), "\"><td class=\"nm\"><span class=\"tw\">").concat(kids.length ? opOpen[k] ? '▾' : '▸' : '', "</span>").concat(esc2(k)).concat(ecoOf(k), "</td>").concat(cells(s), "</tr>");
       if (opOpen[k] && kids.length) {
         h += "<tr class=\"l2 optot\" data-k=\"".concat(esc2(k), "\"><td class=\"nm\"><span class=\"tw\"></span><b>Total de la apertura</b> <small>(").concat(kids.length, " ").concat(kids.length === 1 ? 'línea' : 'líneas', ")</small></td>").concat(cells(s), "</tr>");
         kids.forEach(function (x) {
-          h += "<tr class=\"l2\" data-k=\"".concat(esc2(x), "\"><td class=\"nm\"><span class=\"tw\"></span>").concat(esc2(lab(x)), "</td>").concat(cells(st(T[x]), s), "</tr>");
+          h += "<tr class=\"l2\" data-k=\"".concat(esc2(x), "\"><td class=\"nm\"><span class=\"tw\"></span>").concat(esc2(lab(x))).concat(ecoOf(x), "</td>").concat(cells(st(T[x]), s), "</tr>");
         });
       }
       return h;
@@ -11846,7 +11871,7 @@ var BOOK_DESC = {
   }
   function _connect() {
     _connect = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee12() {
-      var _yield$Promise$all, _yield$Promise$all2, db, user, id, _t8;
+      var _yield$Promise$all3, _yield$Promise$all4, db, user, id, _t8;
       return _regenerator().w(function (_context12) {
         while (1) switch (_context12.p = _context12.n) {
           case 0:
@@ -11860,10 +11885,10 @@ var BOOK_DESC = {
             _context12.n = 2;
             return Promise.all([window.claude.use('db'), window.claude.use('user')]);
           case 2:
-            _yield$Promise$all = _context12.v;
-            _yield$Promise$all2 = _slicedToArray(_yield$Promise$all, 2);
-            db = _yield$Promise$all2[0];
-            user = _yield$Promise$all2[1];
+            _yield$Promise$all3 = _context12.v;
+            _yield$Promise$all4 = _slicedToArray(_yield$Promise$all3, 2);
+            db = _yield$Promise$all4[0];
+            user = _yield$Promise$all4[1];
             if (!(!db || !user)) {
               _context12.n = 3;
               break;
