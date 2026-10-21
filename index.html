@@ -394,6 +394,9 @@ footer { font-size: 12px; color: var(--muted); max-width: 90ch; }
 .glist2 .erow { grid-template-columns: 1fr; gap: 2px; } .glist2 .erow .et { text-align: left; } .erow.on { border-color: var(--walnut); box-shadow: 0 0 0 1px var(--walnut) inset; }
 .bfilt { flex-wrap: wrap; } .bfilt button { font-size: 12.5px; }
 .okm { color: var(--good); font-weight: 600; } .kom { color: var(--bad); font-weight: 600; }
+.cnum { cursor: pointer; text-decoration: underline dotted; text-underline-offset: 3px; color: inherit; } .cnum:hover { color: var(--walnut); }
+.apsub { margin-bottom: -6px; }
+.optree td.nm { cursor: pointer; } .optree .l2 td.nm { padding-left: 22px; } .optree .l3 td.nm { padding-left: 44px; font-family: var(--font-mono); font-size: 12.5px; } .optree .tw { display: inline-block; width: 14px; color: var(--muted); }
 .elist { display: grid; gap: 6px; }
 .erow { all: unset; cursor: pointer; display: grid; grid-template-columns: 92px 1fr auto; gap: 10px; align-items: center; padding: 8px 12px; background: var(--panel); color: var(--ink); border: 1px solid var(--line); border-radius: 10px; font-size: 13.5px; }
 .erow:hover { border-color: var(--walnut); }
@@ -2204,6 +2207,13 @@ if (typeof define !== 'undefined')
     <button type="button" role="tab" data-main="lc" aria-selected="false">Logical Chess</button>
   </nav>
 
+  <div class="seg apsub" id="apSub" hidden><button type="button" data-s="train" aria-pressed="true">Entrenar</button><button type="button" data-s="mine" aria-pressed="false">Mis aperturas</button></div>
+  <section class="games" id="viewOpen" hidden aria-label="Mis aperturas">
+    <p class="note" style="font-size:13px;color:var(--muted);margin:0">Tus partidas clasificadas por apertura, variante y línea, con el nombre que les da Chess.com. Pulsa el nombre para desplegar las variantes, y una cifra para ver esas partidas al lado.</p>
+    <div class="sbar"><select id="opCol" aria-label="Color"><option value="">Blancas y negras</option><option value="w">Con blancas</option><option value="b">Con negras</option></select><label for="opPer">Periodo</label><select id="opPer"></select><label for="opMin">Mínimo</label><select id="opMin"><option value="1">1 partida</option><option value="5">5 partidas</option><option value="10" selected>10 partidas</option><option value="30">30 partidas</option></select></div>
+    <div class="tscroll" id="opTable"></div>
+    <div class="ggrid" style="margin-top:12px"><div class="glist2" id="opList"></div><div id="opViewHost"></div></div>
+  </section>
   <div id="viewTrain" style="display:grid;gap:20px">
   <section class="proposal" aria-live="polite">
     <div class="txt">
@@ -2461,9 +2471,9 @@ if (typeof define !== 'undefined')
     <p class="note" style="font-size:13px;color:var(--muted);margin:0">Tus partidas de blitz analizadas con Stockfish. Cada táctica queda etiquetada en la jugada donde aparece: <b class="tgk m">perdida</b> (la tenías y no la jugaste), <b class="tgk f">aprovechada</b> o <b class="tgk c">concedida</b> (tu jugada se la dejó al rival). Pulsa una fila de la tabla para filtrar por esa táctica.</p>
     <div class="sbar">
       <select id="gTheme" aria-label="Táctica"></select>
-      <select id="gOut" aria-label="Resultado de la táctica"><option value="">Perdidas, aprovechadas y concedidas</option><option value="m">Solo perdidas</option><option value="f">Solo aprovechadas</option><option value="c">Solo concedidas (tus errores)</option><option value="e">Solo errores evitables</option></select>
+      <select id="gOut" aria-label="Resultado de la táctica"><option value="">Perdidas, aprovechadas y concedidas</option><option value="m">Solo perdidas</option><option value="f">Solo aprovechadas</option><option value="c">Solo concedidas (tus errores)</option><option value="e">Solo errores evitables</option><option value="own">Solo tuyas (aprovechadas y perdidas)</option><option value="cc">Concedidas que el rival aprovechó</option><option value="x">Concedidas que el rival no vio</option></select>
       <select id="gCol" aria-label="Color"><option value="">Blancas y negras</option><option value="w">Con blancas</option><option value="b">Con negras</option></select>
-      <select id="gRes" aria-label="Resultado"><option value="">Cualquier resultado</option><option value="W">Ganadas</option><option value="L">Perdidas</option><option value="D">Tablas</option></select>
+      <select id="gRes" aria-label="Resultado"><option value="">Cualquier resultado</option><option value="W">Ganadas</option><option value="L">Perdidas</option><option value="D">Tablas</option><option value="WT">Ganadas por tiempo</option><option value="LT">Perdidas por tiempo</option></select>
       <label for="gYear">Año</label><select id="gYear"></select>
       <input id="gEco" placeholder="Apertura (en inglés: Scotch, Sicilian…)" autocomplete="off" size="26">
       <span class="chip" id="gCount"></span>
@@ -9554,16 +9564,16 @@ function engJudge(_x2, _x3, _x4) {
   return _engJudge.apply(this, arguments);
 } // free exploration from the current position: any legal move for either side
 function _engJudge() {
-  _engJudge = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee18(seq, played, want) {
+  _engJudge = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee20(seq, played, want) {
     var tok, msgEl, before, g1, g2, white, a, b, s, pa, pb, f, diff, txt;
-    return _regenerator().w(function (_context19) {
-      while (1) switch (_context19.n) {
+    return _regenerator().w(function (_context21) {
+      while (1) switch (_context21.n) {
         case 0:
           if (!(!ENG_ON || ENGINE.status() === 'broken' || !want)) {
-            _context19.n = 1;
+            _context21.n = 1;
             break;
           }
-          return _context19.a(2);
+          return _context21.a(2);
         case 1:
           tok = ++engJudgeTok, msgEl = engEl('msg'), before = msgEl.innerHTML;
           g1 = new Chess(), g2 = new Chess();
@@ -9590,33 +9600,33 @@ function _engJudge() {
             to: want.slice(2, 4),
             promotion: 'q'
           });
-          _context19.n = 2;
+          _context21.n = 2;
           return ENGINE.evaluate(g1.fen(), 13);
         case 2:
-          a = _context19.v;
+          a = _context21.v;
           if (!(tok !== engJudgeTok || !a)) {
-            _context19.n = 3;
+            _context21.n = 3;
             break;
           }
-          return _context19.a(2);
+          return _context21.a(2);
         case 3:
-          _context19.n = 4;
+          _context21.n = 4;
           return ENGINE.evaluate(g2.fen(), 13);
         case 4:
-          b = _context19.v;
+          b = _context21.v;
           if (!(tok !== engJudgeTok || !b)) {
-            _context19.n = 5;
+            _context21.n = 5;
             break;
           }
-          return _context19.a(2);
+          return _context21.a(2);
         case 5:
           engKey = null;
           engUpdate(); // resume the panel's analysis
           if (!(msgEl.innerHTML !== before)) {
-            _context19.n = 6;
+            _context21.n = 6;
             break;
           }
-          return _context19.a(2);
+          return _context21.a(2);
         case 6:
           s = function s(x) {
             return (white ? 1 : -1) * engCp(x.lines[0]);
@@ -9631,9 +9641,9 @@ function _engJudge() {
           diff = pb - pa, txt = diff < 40 ? 'para el motor es igual de buena; aun así, apréndete la del plan' : diff < 120 ? 'un poco peor que la del plan' : diff < 300 ? 'claramente peor que la del plan' : 'un error grave';
           msgEl.insertAdjacentHTML('beforeend', "<div class=\"engjudge\">Motor: tu jugada ".concat(f(pa), " \xB7 la del plan ").concat(f(pb), " (desde tu lado): ").concat(txt, ".</div>"));
         case 7:
-          return _context19.a(2);
+          return _context21.a(2);
       }
-    }, _callee18);
+    }, _callee20);
   }));
   return _engJudge.apply(this, arguments);
 }
@@ -10020,12 +10030,12 @@ var BOOK_DESC = {
     return _openHere.apply(this, arguments);
   }
   function _openHere() {
-    _openHere = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee5(host, r, t, ply, noScroll) {
-      return _regenerator().w(function (_context5) {
-        while (1) switch (_context5.n) {
+    _openHere = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee6(host, r, t, ply, noScroll) {
+      return _regenerator().w(function (_context6) {
+        while (1) switch (_context6.n) {
           case 0:
             viewerIn(host);
-            _context5.n = 1;
+            _context6.n = 1;
             return openGame(r, false);
           case 1:
             view.tag = t || null;
@@ -10036,9 +10046,9 @@ var BOOK_DESC = {
               behavior: 'smooth'
             });
           case 2:
-            return _context5.a(2);
+            return _context6.a(2);
         }
-      }, _callee5);
+      }, _callee6);
     }));
     return _openHere.apply(this, arguments);
   }
@@ -10046,34 +10056,34 @@ var BOOK_DESC = {
     return _load.apply(this, arguments);
   }
   function _load() {
-    _load = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee6() {
+    _load = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee7() {
       var years, _t4;
-      return _regenerator().w(function (_context6) {
-        while (1) switch (_context6.p = _context6.n) {
+      return _regenerator().w(function (_context7) {
+        while (1) switch (_context7.p = _context7.n) {
           case 0:
             viewerHome();
             if (!CAT) {
-              _context6.n = 1;
+              _context7.n = 1;
               break;
             }
-            return _context6.a(2);
+            return _context7.a(2);
           case 1:
             $g('gList').innerHTML = '<p class="empty">Cargando partidas…</p>';
-            _context6.p = 2;
-            _context6.n = 3;
+            _context7.p = 2;
+            _context7.n = 3;
             return fetch(GAMES_BASE + 'catalog.json').then(function (r) {
               if (!r.ok) throw new Error(r.status);
               return r.json();
             });
           case 3:
-            CAT = _context6.v;
-            _context6.n = 5;
+            CAT = _context7.v;
+            _context7.n = 5;
             break;
           case 4:
-            _context6.p = 4;
-            _t4 = _context6.v;
+            _context7.p = 4;
+            _t4 = _context7.v;
             $g('gList').innerHTML = '<p class="empty">No se han podido cargar las partidas.</p>';
-            return _context6.a(2);
+            return _context7.a(2);
           case 5:
             years = _toConsumableArray(new Set(CAT.map(function (r) {
               return r[1].slice(0, 4);
@@ -10110,12 +10120,21 @@ var BOOK_DESC = {
             };
             render();
           case 6:
-            return _context6.a(2);
+            return _context7.a(2);
         }
-      }, _callee6, null, [[2, 4]]);
+      }, _callee7, null, [[2, 4]]);
     }));
     return _load.apply(this, arguments);
   }
+  var onTimeR = function onTimeR(r) {
+    return /time/.test(r[6] || '') && !/insufficient/.test(r[6] || '');
+  };
+  var resOk = function resOk(res, r) {
+    return !res || (res.length === 2 ? r[5] === res[0] && onTimeR(r) : r[5] === res);
+  };
+  var outOk = function outOk(out, t) {
+    return !out || (out === 'own' ? 'fm'.includes(t[2]) : out === 'c' ? 'cx'.includes(t[2]) : out === 'cc' ? t[2] === 'c' : out === 'e' ? 'cx'.includes(t[2]) && t[6] === 'e' : t[2] === out);
+  };
   function filt() {
     var th = $g('gTheme').value,
       out = $g('gOut').value,
@@ -10124,10 +10143,10 @@ var BOOK_DESC = {
       y = $g('gYear').value,
       q = $g('gEco').value.trim().toLowerCase();
     var base = CAT.filter(function (r) {
-      return (!col || r[2] === col) && (!res || r[5] === res) && (!y || r[1].startsWith(y)) && (!q || ecoName(r[7]).toLowerCase().includes(q));
+      return (!col || r[2] === col) && resOk(res, r) && (!y || r[1].startsWith(y)) && (!q || ecoName(r[7]).toLowerCase().includes(q));
     });
     var okTag = function okTag(t) {
-      return thOk(th, t[1], t) && (!out || (out === 'c' ? 'cx'.includes(t[2]) : out === 'e' ? 'cx'.includes(t[2]) && t[6] === 'e' : t[2] === out));
+      return thOk(th, t[1], t) && outOk(out, t);
     };
     return {
       base: base,
@@ -10151,7 +10170,10 @@ var BOOK_DESC = {
       var s = S[k],
         tot = s.f + s.m,
         pc = tot ? 100 * s.f / tot : null;
-      return "<tr class=\"click".concat(sub ? ' sub' : '', "\" data-k=\"").concat(k, "\"><td>").concat(label, "</td><td><b>").concat(tot, "</b></td><td>").concat(s.f, "</td><td>").concat(s.m, "</td><td class=\"").concat(pcCls(pc), "\">").concat(pc == null ? '–' : Math.round(pc) + ' %', "</td><td><b>").concat(s.c + s.x, "</b></td><td>").concat(s.c, "</td><td>").concat(s.x, "</td><td>").concat(s.e, "</td></tr>");
+      var cell = function cell(v, f, cls) {
+        return "<td class=\"".concat(cls || '', "\"><a class=\"cnum\" data-f=\"").concat(f, "\">").concat(v, "</a></td>");
+      };
+      return "<tr class=\"click".concat(sub ? ' sub' : '', "\" data-k=\"").concat(k, "\"><td>").concat(label, "</td>").concat(cell("<b>".concat(tot, "</b>"), 'own')).concat(cell(s.f, 'f')).concat(cell(s.m, 'm'), "<td class=\"").concat(pcCls(pc), "\">").concat(pc == null ? '–' : Math.round(pc) + ' %', "</td>").concat(cell("<b>".concat(s.c + s.x, "</b>"), 'c')).concat(cell(s.c, 'cc')).concat(cell(s.x, 'x')).concat(cell(s.e, 'e'), "</tr>");
     }).join(''), "</tbody></table>");
   }
   function render() {
@@ -10223,36 +10245,36 @@ var BOOK_DESC = {
     return _openGame.apply(this, arguments);
   }
   function _openGame() {
-    _openGame = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee7(r, scroll) {
+    _openGame = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee8(r, scroll) {
       var mon, d, sans, g, fens, ucis, th, out, first, link, _t5;
-      return _regenerator().w(function (_context7) {
-        while (1) switch (_context7.p = _context7.n) {
+      return _regenerator().w(function (_context8) {
+        while (1) switch (_context8.p = _context8.n) {
           case 0:
             mon = r[1].slice(0, 7);
             if (DET[mon]) {
-              _context7.n = 4;
+              _context8.n = 4;
               break;
             }
-            _context7.p = 1;
-            _context7.n = 2;
+            _context8.p = 1;
+            _context8.n = 2;
             return fetch(GAMES_BASE + mon + '.json').then(function (x) {
               return x.json();
             });
           case 2:
-            DET[mon] = _context7.v;
-            _context7.n = 4;
+            DET[mon] = _context8.v;
+            _context8.n = 4;
             break;
           case 3:
-            _context7.p = 3;
-            _t5 = _context7.v;
+            _context8.p = 3;
+            _t5 = _context8.v;
             DET[mon] = {};
           case 4:
             d = DET[mon][r[0]];
             if (d) {
-              _context7.n = 5;
+              _context8.n = 5;
               break;
             }
-            return _context7.a(2);
+            return _context8.a(2);
           case 5:
             sans = d.s ? d.s.split(' ') : [];
             g = new Chess(), fens = [g.fen()], ucis = [];
@@ -10263,7 +10285,7 @@ var BOOK_DESC = {
             });
             th = $g('gTheme').value, out = $g('gOut').value;
             first = r[9].find(function (t) {
-              return thOk(th, t[1], t) && (!out || (out === 'c' ? 'cx'.includes(t[2]) : out === 'e' ? 'cx'.includes(t[2]) && t[6] === 'e' : t[2] === out));
+              return thOk(th, t[1], t) && outOk(out, t);
             });
             view = {
               r: r,
@@ -10305,9 +10327,9 @@ var BOOK_DESC = {
               behavior: 'smooth'
             });
           case 6:
-            return _context7.a(2);
+            return _context8.a(2);
         }
-      }, _callee7, null, [[1, 3]]);
+      }, _callee8, null, [[1, 3]]);
     }));
     return _openGame.apply(this, arguments);
   }
@@ -10837,36 +10859,36 @@ var BOOK_DESC = {
     return _errorsOpen.apply(this, arguments);
   }
   function _errorsOpen() {
-    _errorsOpen = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee8() {
+    _errorsOpen = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee9() {
       var mons, years, qs, MN, _t6;
-      return _regenerator().w(function (_context8) {
-        while (1) switch (_context8.p = _context8.n) {
+      return _regenerator().w(function (_context9) {
+        while (1) switch (_context9.p = _context9.n) {
           case 0:
-            _context8.n = 1;
+            _context9.n = 1;
             return load();
           case 1:
             if (CAT) {
-              _context8.n = 2;
+              _context9.n = 2;
               break;
             }
-            return _context8.a(2);
+            return _context9.a(2);
           case 2:
             if (ERR) {
-              _context8.n = 6;
+              _context9.n = 6;
               break;
             }
-            _context8.p = 3;
-            _context8.n = 4;
+            _context9.p = 3;
+            _context9.n = 4;
             return fetch(GAMES_BASE + 'errors.json').then(function (r) {
               return r.json();
             });
           case 4:
-            ERR = _context8.v;
-            _context8.n = 6;
+            ERR = _context9.v;
+            _context9.n = 6;
             break;
           case 5:
-            _context8.p = 5;
-            _t6 = _context8.v;
+            _context9.p = 5;
+            _t6 = _context9.v;
             ERR = {};
           case 6:
             mons = _toConsumableArray(new Set(CAT.map(function (r) {
@@ -10898,9 +10920,9 @@ var BOOK_DESC = {
             renderErrStats();
             renderErrList();
           case 7:
-            return _context8.a(2);
+            return _context9.a(2);
         }
-      }, _callee8, null, [[3, 5]]);
+      }, _callee9, null, [[3, 5]]);
     }));
     return _errorsOpen.apply(this, arguments);
   }
@@ -11094,21 +11116,23 @@ var BOOK_DESC = {
       return $g(id).onchange = fn;
     });
   }
-  function goGames(k, col, yr) {
+  function goGames(k, col, yr, out) {
     ['gOut', 'gRes', 'gEco'].forEach(function (id) {
       $g(id).value = '';
     });
     $g('gCol').value = col || '';
     $g('gYear').value = yr || '';
     $g('gTheme').value = k;
+    $g('gOut').value = out || '';
     page = 60;
     document.querySelector('[data-main="games"]').click();
     render();
   }
   function bindRows(host, c, y) {
     $g(host).querySelectorAll('tr.click').forEach(function (tr) {
-      return tr.onclick = function () {
-        return goGames(tr.dataset.k, $g(c).value, $g(y).value);
+      return tr.onclick = function (ev) {
+        var a = ev.target.closest('.cnum');
+        goGames(tr.dataset.k, $g(c).value, $g(y).value, a ? a.dataset.f : '');
       };
     });
   }
@@ -11116,42 +11140,8 @@ var BOOK_DESC = {
     return _tacOpen.apply(this, arguments);
   }
   function _tacOpen() {
-    _tacOpen = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee9() {
+    _tacOpen = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee0() {
       var R;
-      return _regenerator().w(function (_context9) {
-        while (1) switch (_context9.n) {
-          case 0:
-            _context9.n = 1;
-            return load();
-          case 1:
-            if (CAT) {
-              _context9.n = 2;
-              break;
-            }
-            return _context9.a(2);
-          case 2:
-            secInit('tCol', 'tYear', tacOpen);
-            R = secRows('tCol', 'tYear');
-            sumTable.S = themeStats(R);
-            $g('tSum').innerHTML = "<p class=\"sumline\">".concat(R.length.toLocaleString('es-ES'), " partidas.</p>") + sumTable('Táctica', TH_ORDER.filter(function (k) {
-              return !/^M/.test(k) && sumTable.S[k];
-            }).map(function (k) {
-              return [k, k.length === 3 ? '&nbsp;&nbsp;↳ ' + TH[k].split(': ')[1] : TH[k] + (k === 'PG' || k === 'GM' ? ' (total)' : ''), k.length === 3];
-            }));
-            bindRows('tSum', 'tCol', 'tYear');
-          case 3:
-            return _context9.a(2);
-        }
-      }, _callee9);
-    }));
-    return _tacOpen.apply(this, arguments);
-  }
-  function endOpen() {
-    return _endOpen.apply(this, arguments);
-  } // ---------- Libros: one tab per book → chapters → items with your stats → history. DET[book] = {item: [[id, ply, outcome?], ...]} ----------
-  function _endOpen() {
-    _endOpen = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee0() {
-      var R, S;
       return _regenerator().w(function (_context0) {
         while (1) switch (_context0.n) {
           case 0:
@@ -11163,6 +11153,40 @@ var BOOK_DESC = {
               break;
             }
             return _context0.a(2);
+          case 2:
+            secInit('tCol', 'tYear', tacOpen);
+            R = secRows('tCol', 'tYear');
+            sumTable.S = themeStats(R);
+            $g('tSum').innerHTML = "<p class=\"sumline\">".concat(R.length.toLocaleString('es-ES'), " partidas.</p>") + sumTable('Táctica', TH_ORDER.filter(function (k) {
+              return !/^M/.test(k) && sumTable.S[k];
+            }).map(function (k) {
+              return [k, k.length === 3 ? '&nbsp;&nbsp;↳ ' + TH[k].split(': ')[1] : TH[k] + (k === 'PG' || k === 'GM' ? ' (total)' : ''), k.length === 3];
+            }));
+            bindRows('tSum', 'tCol', 'tYear');
+          case 3:
+            return _context0.a(2);
+        }
+      }, _callee0);
+    }));
+    return _tacOpen.apply(this, arguments);
+  }
+  function endOpen() {
+    return _endOpen.apply(this, arguments);
+  } // ---------- Libros: one tab per book → chapters → items with your stats → history. DET[book] = {item: [[id, ply, outcome?], ...]} ----------
+  function _endOpen() {
+    _endOpen = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee1() {
+      var R, S;
+      return _regenerator().w(function (_context1) {
+        while (1) switch (_context1.n) {
+          case 0:
+            _context1.n = 1;
+            return load();
+          case 1:
+            if (CAT) {
+              _context1.n = 2;
+              break;
+            }
+            return _context1.a(2);
           case 2:
             secInit('fCol', 'fYear', endOpen);
             R = secRows('fCol', 'fYear');
@@ -11186,9 +11210,9 @@ var BOOK_DESC = {
             }).join(', '), " (el ferrocarril es una maniobra de jaques que acaba en el tri\xE1ngulo o la caja, y aparece dentro de ellos). ").concat(S['P:ot'] ? "Mates que no encajan en ning\xFAn patr\xF3n: ".concat((S['P:ot'].f + S['P:ot'].m + S['P:ot'].c + S['P:ot'].x).toLocaleString('es-ES'), ".") : '', "</p>") : '');
             bindRows('fSum', 'fCol', 'fYear');
           case 3:
-            return _context0.a(2);
+            return _context1.a(2);
         }
-      }, _callee0);
+      }, _callee1);
     }));
     return _endOpen.apply(this, arguments);
   }
@@ -11199,10 +11223,10 @@ var BOOK_DESC = {
     return _bookOpen.apply(this, arguments);
   }
   function _bookOpen() {
-    _bookOpen = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee1(id) {
+    _bookOpen = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee10(id) {
       var B, DT, ci, desc, _B$ch$ci, name, items, byId, none, tac, okRole, endb, head, row, roles, keys, seenG, cl, lt, ng, avg, _t7;
-      return _regenerator().w(function (_context1) {
-        while (1) switch (_context1.p = _context1.n) {
+      return _regenerator().w(function (_context10) {
+        while (1) switch (_context10.p = _context10.n) {
           case 0:
             if (bCur !== id) {
               $g('eHist').innerHTML = '';
@@ -11210,32 +11234,32 @@ var BOOK_DESC = {
               if ($g('gView').closest('#viewBook')) $g('gView').hidden = true;
             }
             bCur = id;
-            _context1.n = 1;
+            _context10.n = 1;
             return load();
           case 1:
             if (CAT) {
-              _context1.n = 2;
+              _context10.n = 2;
               break;
             }
-            return _context1.a(2);
+            return _context10.a(2);
           case 2:
             if (id in DETB) {
-              _context1.n = 6;
+              _context10.n = 6;
               break;
             }
-            _context1.p = 3;
-            _context1.n = 4;
+            _context10.p = 3;
+            _context10.n = 4;
             return fetch(GAMES_BASE + 'books/' + id + '.json').then(function (r) {
               if (!r.ok) throw 0;
               return r.json();
             });
           case 4:
-            DETB[id] = _context1.v;
-            _context1.n = 6;
+            DETB[id] = _context10.v;
+            _context10.n = 6;
             break;
           case 5:
-            _context1.p = 5;
-            _t7 = _context1.v;
+            _context10.p = 5;
+            _t7 = _context10.v;
             DETB[id] = {};
           case 6:
             B = BOOKS[id], DT = DETB[id];
@@ -11269,11 +11293,11 @@ var BOOK_DESC = {
               byId[r[0]] = r;
             });
             if (items.length) {
-              _context1.n = 7;
+              _context10.n = 7;
               break;
             }
             $g('ePat').innerHTML = '<p class="empty">Este capítulo combina los anteriores: no tiene apartados propios.</p>';
-            return _context1.a(2);
+            return _context10.a(2);
           case 7:
             none = '<br><span class="erwnone">sin detector todavía</span>'; // every item: a total row and two role rows (attacking / defending); same columns everywhere
             tac = B.kind === 'tactic', okRole = function okRole(o, role) {
@@ -11313,17 +11337,17 @@ var BOOK_DESC = {
               });
               var g = s.W + s.D + s.L,
                 t = s.ok + s.ko;
-              return "<td>".concat(role ? '&nbsp;&nbsp;↳ ' : /^c\d/.test(n) ? '' : '<b>' + n + '.</b> ').concat(lb, "</td><td><b>").concat(tac ? t : g, "</b></td>").concat(tac ? "<td>".concat(s.ok, "</td><td>").concat(s.ko, "</td><td>").concat(t ? Math.round(100 * s.ok / t) + ' %' : '–', "</td>") : '', "<td>").concat(s.W, "</td>").concat(endb ? "<td>".concat(s.WT || '', "</td>") : '', "<td>").concat(s.D, "</td><td>").concat(s.L, "</td>").concat(endb ? "<td class=\"".concat(s.LT ? 'cell-bad' : '', "\">").concat(s.LT || '', "</td>") : '', "<td>").concat(g ? Math.round(100 * (s.W + s.D / 2) / g) + ' %' : '–', "</td>");
+              return "<td>".concat(role ? '&nbsp;&nbsp;↳ ' : /^c\d/.test(n) ? '' : '<b>' + n + '.</b> ').concat(lb, "</td><td><a class=\"cnum\" data-f=\"all\"><b>").concat(tac ? t : g, "</b></a></td>").concat(tac ? "<td><a class=\"cnum\" data-f=\"ok\">".concat(s.ok, "</a></td><td><a class=\"cnum\" data-f=\"ko\">").concat(s.ko, "</a></td><td>").concat(t ? Math.round(100 * s.ok / t) + ' %' : '–', "</td>") : '', "<td><a class=\"cnum\" data-f=\"W\">").concat(s.W, "</a></td>").concat(endb ? "<td>".concat(s.WT ? "<a class=\"cnum\" data-f=\"WT\">".concat(s.WT, "</a>") : '', "</td>") : '', "<td><a class=\"cnum\" data-f=\"D\">").concat(s.D, "</a></td><td><a class=\"cnum\" data-f=\"L\">").concat(s.L, "</a></td>").concat(endb ? "<td class=\"".concat(s.LT ? 'cell-bad' : '', "\">").concat(s.LT ? "<a class=\"cnum\" data-f=\"LT\">".concat(s.LT, "</a>") : '', "</td>") : '', "<td>").concat(g ? Math.round(100 * (s.W + s.D / 2) / g) + ' %' : '–', "</td>");
             };
             roles = function roles(n) {
               return id === 'flores' && !/^c\d/.test(n) ? floresRoles(n) : [[n + '|a', ROLE_LB[B.kind === 'tactic' ? 'tactic' : 'end'][0]], [n + '|d', ROLE_LB[B.kind === 'tactic' ? 'tactic' : 'end'][1]]];
             };
             $g('ePat').innerHTML = "<h4 class=\"gsubh\">Cap\xEDtulo ".concat(ci + 1, ": ").concat(name, "</h4><div class=\"tscroll\"><table class=\"stbl gsum\"><thead>").concat(head, "</thead><tbody>").concat(('c' + ci in DT ? [['c' + ci, '<b>Todo el capítulo</b>']] : []).concat(items).reduce(function (a, it) {
               return a.concat([it], it[0] in DT ? roles(it[0]) : []);
-            }, []).map(function (_ref19) {
-              var _ref20 = _slicedToArray(_ref19, 2),
-                n = _ref20[0],
-                lb = _ref20[1];
+            }, []).map(function (_ref30) {
+              var _ref31 = _slicedToArray(_ref30, 2),
+                n = _ref31[0],
+                lb = _ref31[1];
               return "<tr class=\"click".concat(n.includes('|') ? ' sub' : '', "\" data-n=\"").concat(n, "\">").concat(row(n, lb), "</tr>");
             }).join(''), "</tbody></table></div>");
             if (endb) {
@@ -11355,14 +11379,15 @@ var BOOK_DESC = {
               if (ng) $g('ePat').insertAdjacentHTML('beforeend', "<p class=\"sumline\" style=\"margin-top:8px\"><b>Reloj al llegar a estos finales</b> (tu tiempo): ".concat(avg(cl.W), " de media en los que ganaste y ").concat(avg(cl.X), " en los que no. ").concat(lt ? "Perdiste <b>".concat(lt, "</b> de ").concat(ng, " por tiempo (").concat(Math.round(100 * lt / ng), " %).") : 'Ninguno perdido por tiempo.', "</p>"));
             }
             $g('ePat').querySelectorAll('tr.click').forEach(function (tr) {
-              return tr.onclick = function () {
-                return bookHist(id, tr.dataset.n, byId);
+              return tr.onclick = function (ev) {
+                var a = ev.target.closest('.cnum');
+                bookHist(id, tr.dataset.n, byId, a ? a.dataset.f : 'all');
               };
             });
           case 8:
-            return _context1.a(2);
+            return _context10.a(2);
         }
-      }, _callee1, null, [[3, 5]]);
+      }, _callee10, null, [[3, 5]]);
     }));
     return _bookOpen.apply(this, arguments);
   }
@@ -11406,7 +11431,7 @@ var BOOK_DESC = {
       oth = FL_OWN[n] === 'w' ? 'negras' : 'blancas';
     return [[n + '|o', "con ".concat(own, ": la estructura es tuya")], [n + '|x', "con ".concat(oth, ": juegas contra ella")]];
   }
-  function bookHist(id, n0, byId) {
+  function bookHist(id, n0, byId, f0) {
     var _n0$split = n0.split('|'),
       _n0$split2 = _slicedToArray(_n0$split, 2),
       n = _n0$split2[0],
@@ -11470,21 +11495,38 @@ var BOOK_DESC = {
         return r[5] === 'L' && onTime(r);
       },
       nLT = endb ? rows.filter(lostT).length : 0;
+    var fOk = function fOk(f, x) {
+      var r = x[0];
+      return f === 'all' || (f === 'ok' ? okOf(x) : f === 'ko' ? !okOf(x) : f.length === 2 ? r[5] === f[0] && onTime(r) : r[5] === f);
+    };
+    var FL = [['all', 'Todas'], ['ok', 'Aprovechadas'], ['ko', 'No aprovechadas'], ['W', 'Ganadas'], ['D', 'Tablas'], ['L', 'Perdidas']].concat(endb ? [['WT', 'Ganadas por tiempo'], ['LT', 'Perdidas por tiempo']] : []);
     var _draw = function draw(f) {
       var sel = rows.filter(function (x) {
-          return f === 'all' || (f === 'lt' ? lostT(x) : f === 'ok' === okOf(x));
+          return fOk(f, x);
         }),
         shown = sel.slice(0, 100);
-      $g('bList').innerHTML = "<p class=\"sumline\" style=\"margin:0 0 6px\"><b>".concat(/^c\d/.test(n) ? '' : n + '. ').concat(lb, "</b></p><div class=\"seg bfilt\">").concat([['all', 'Todas', rows.length], ['ok', 'Aprovechadas', nOk], ['ko', 'No aprovechadas', rows.length - nOk]].concat(endb && nLT ? [['lt', 'Perdidas por tiempo', nLT]] : []).map(function (_ref14) {
-        var _ref15 = _slicedToArray(_ref14, 3),
+      $g('bList').innerHTML = "<p class=\"sumline\" style=\"margin:0 0 6px\"><b>".concat(/^c\d/.test(n) ? '' : n + '. ').concat(lb, "</b></p><div class=\"seg bfilt\">").concat(FL.map(function (_ref14) {
+        var _ref15 = _slicedToArray(_ref14, 2),
           k = _ref15[0],
-          t = _ref15[1],
-          c = _ref15[2];
+          t = _ref15[1];
+        return [k, t, rows.filter(function (x) {
+          return fOk(k, x);
+        }).length];
+      }).filter(function (_ref16) {
+        var _ref17 = _slicedToArray(_ref16, 3),
+          k = _ref17[0],
+          c = _ref17[2];
+        return c || k === f || k === 'all';
+      }).map(function (_ref18) {
+        var _ref19 = _slicedToArray(_ref18, 3),
+          k = _ref19[0],
+          t = _ref19[1],
+          c = _ref19[2];
         return "<button type=\"button\" data-f=\"".concat(k, "\" aria-pressed=\"").concat(k === f, "\">").concat(t, " (").concat(c, ")</button>");
-      }).join(''), "</div>").concat(sel.length > 100 ? '<p class="sumline" style="margin:4px 0">Las 100 más recientes.</p>' : '', "<div class=\"elist\" style=\"margin-top:6px\">").concat(shown.map(function (_ref16, i) {
-        var _ref17 = _slicedToArray(_ref16, 2),
-          r = _ref17[0],
-          o = _ref17[1];
+      }).join(''), "</div>").concat(sel.length > 100 ? '<p class="sumline" style="margin:4px 0">Las 100 más recientes.</p>' : '', "<div class=\"elist\" style=\"margin-top:6px\">").concat(shown.map(function (_ref20, i) {
+        var _ref21 = _slicedToArray(_ref20, 2),
+          r = _ref21[0],
+          o = _ref21[1];
         return "<button type=\"button\" class=\"erow\" data-i=\"".concat(i, "\"><span><b>").concat(fmtDate(r[1]), "</b><br><small>").concat(r[2] === 'w' ? 'blancas' : 'negras', " \xB7 ").concat(RES[r[5]].toLowerCase(), "</small></span><span><b>").concat(Math.floor(o[1] / 2) + 1).concat(o[1] % 2 ? '…' : '.', "</b>").concat(tac ? ' ' + OUT[o[2]] : '', " \xB7 <span class=\"").concat(okOf([r, o]) ? 'okm' : 'kom', "\">").concat(okOf([r, o]) ? 'aprovechada' : 'no aprovechada').concat(endb && !okOf([r, o]) ? r[5] === 'L' && onTime(r) ? ' · por tiempo' : ' · en el tablero' : '', "</span>").concat(endb && o[3] != null ? "<br><small>reloj al empezar el final: ".concat(fclk(o[3]), "</small>") : '', "</span><span></span></button>");
       }).join('') || '<p class="empty">Ninguna partida.</p>', "</div>");
       $g('bList').querySelectorAll('.bfilt button').forEach(function (b) {
@@ -11515,8 +11557,234 @@ var BOOK_DESC = {
       var first = $g('bList').querySelector('.erow');
       if (first) first.click();
     };
-    _draw('all');
+    _draw(f0 || 'all');
   }
+  // ---------- Mis aperturas: games by opening → variation → line (Chess.com names) ----------
+  var OP_KEY = ['Defense', 'Opening', 'Game', 'Gambit', 'Attack', 'System', 'Countergambit', 'Indian', 'Declined', 'Accepted'];
+  function parseEco(slug) {
+    if (!slug) return ['Apertura sin nombre', '', ''];
+    var m = slug.match(/\.\.\.|-?\d+\./),
+      name = (m ? slug.slice(0, m.index) : slug).replace(/-+$/, ''),
+      moves = m ? slug.slice(m.index).replace(/^-/, '').replace(/-/g, ' ') : '';
+    var w = name.split('-').filter(Boolean);
+    var i = w.findIndex(function (x) {
+      return OP_KEY.includes(x);
+    });
+    if (i < 0) return [w.join(' '), '', moves];
+    while (i + 1 < w.length && OP_KEY.includes(w[i + 1])) i++;
+    return [w.slice(0, i + 1).join(' '), w.slice(i + 1).join(' '), moves];
+  }
+  var OP = null,
+    opOpen = {};
+  function openingsOpen() {
+    return _openingsOpen.apply(this, arguments);
+  }
+  function _openingsOpen() {
+    _openingsOpen = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee11() {
+      var mons, years, qs, MN;
+      return _regenerator().w(function (_context11) {
+        while (1) switch (_context11.n) {
+          case 0:
+            _context11.n = 1;
+            return load();
+          case 1:
+            if (CAT) {
+              _context11.n = 2;
+              break;
+            }
+            return _context11.a(2);
+          case 2:
+            if (!$g('opPer').options.length) {
+              mons = _toConsumableArray(new Set(CAT.map(function (r) {
+                return r[1].slice(0, 7);
+              }))).sort().reverse(), years = _toConsumableArray(new Set(mons.map(function (m) {
+                return m.slice(0, 4);
+              }))), qs = _toConsumableArray(new Set(mons.map(qOf)));
+              MN = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+              $g('opPer').innerHTML = '<option value="">Todo el periodo</option>' + "<optgroup label=\"A\xF1os\">".concat(years.map(function (y) {
+                return "<option value=\"y:".concat(y, "\">").concat(y, "</option>");
+              }).join(''), "</optgroup><optgroup label=\"Trimestres\">").concat(qs.map(function (q) {
+                return "<option value=\"q:".concat(q, "\">").concat(q.slice(5), "\xBA trimestre ").concat(q.slice(0, 4), "</option>");
+              }).join(''), "</optgroup><optgroup label=\"Meses\">").concat(mons.map(function (m) {
+                return "<option value=\"m:".concat(m, "\">").concat(MN[+m.slice(5) - 1], " ").concat(m.slice(0, 4), "</option>");
+              }).join(''), "</optgroup>");
+              ['opCol', 'opPer', 'opMin'].forEach(function (id) {
+                return $g(id).onchange = function () {
+                  $g('opList').innerHTML = '';
+                  if ($g('gView').closest('#viewOpen')) $g('gView').hidden = true;
+                  renderOpenings();
+                };
+              });
+            }
+            renderOpenings();
+          case 3:
+            return _context11.a(2);
+        }
+      }, _callee11);
+    }));
+    return _openingsOpen.apply(this, arguments);
+  }
+  function opPerOk(mon) {
+    var v = $g('opPer').value;
+    if (!v) return true;
+    var k = v[0],
+      x = v.slice(2);
+    return k === 'y' ? mon.startsWith(x) : k === 'q' ? qOf(mon) === x : mon === x;
+  }
+  function renderOpenings() {
+    var col = $g('opCol').value,
+      min = +$g('opMin').value,
+      R = CAT.filter(function (r) {
+        return (!col || r[2] === col) && opPerOk(r[1].slice(0, 7));
+      });
+    var T = {};
+    R.forEach(function (r) {
+      var _parseEco = parseEco(r[7]),
+        _parseEco2 = _slicedToArray(_parseEco, 3),
+        a = _parseEco2[0],
+        b = _parseEco2[1],
+        c = _parseEco2[2],
+        k1 = a,
+        k2 = a + '|' + (b || '·'),
+        k3 = k2 + '|' + (c || '·');
+      [k1, k2, k3].forEach(function (k) {
+        (T[k] = T[k] || []).push(r);
+      });
+    });
+    OP = T;
+    var st = function st(rs) {
+      var s = {
+        n: rs.length,
+        W: 0,
+        D: 0,
+        L: 0,
+        WT: 0,
+        LT: 0,
+        elo: 0,
+        err: 0
+      };
+      rs.forEach(function (r) {
+        s[r[5]]++;
+        if (onTimeR(r)) s[r[5] + 'T'] = (s[r[5] + 'T'] || 0) + 1;
+        s.elo += r[4] || 0;
+        s.err += r[9].filter(function (t) {
+          return 'cx'.includes(t[2]);
+        }).length;
+      });
+      return s;
+    };
+    var lab = function lab(k, lv) {
+      var p = k.split('|');
+      var v = p[lv - 1];
+      return v === '·' ? lv === 2 ? '(sin variante)' : '(línea principal)' : v;
+    };
+    var _row = function row(k, lv) {
+      var s = st(T[k]),
+        kids = Object.keys(T).filter(function (x) {
+          return x.split('|').length === lv + 1 && x.startsWith(k + '|') && T[x].length >= min;
+        });
+      var tw = lv < 3 && kids.length ? "<span class=\"tw\">".concat(opOpen[k] ? '▾' : '▸', "</span>") : '<span class="tw"></span>',
+        c = function c(v, f, cls) {
+          return "<td class=\"".concat(cls || '', "\">").concat(v ? "<a class=\"cnum\" data-f=\"".concat(f, "\">").concat(v, "</a>") : v === 0 ? '0' : '', "</td>");
+        };
+      var h = "<tr class=\"l".concat(lv, "\" data-k=\"").concat(esc2(k), "\"><td class=\"nm\">").concat(tw).concat(esc2(lab(k, lv)), "</td>").concat(c("<b>".concat(s.n, "</b>"), 'all')).concat(c(s.W, 'W')).concat(c(s.WT, 'WT')).concat(c(s.D, 'D')).concat(c(s.L, 'L')).concat(c(s.LT, 'LT', s.LT ? 'cell-bad' : ''), "<td class=\"").concat(s.n >= 10 ? 100 * (s.W + s.D / 2) / s.n < 47 ? 'cell-bad' : 100 * (s.W + s.D / 2) / s.n > 53 ? 'cell-good' : '' : '', "\">").concat(Math.round(100 * (s.W + s.D / 2) / s.n), " %</td><td>").concat(Math.round(s.elo / s.n), "</td><td>").concat((100 * s.err / s.n).toFixed(0), "</td></tr>");
+      if (opOpen[k]) kids.sort(function (a, b) {
+        return T[b].length - T[a].length;
+      }).forEach(function (x) {
+        h += _row(x, lv + 1);
+      });
+      return h;
+    };
+    var tops = Object.keys(T).filter(function (k) {
+      return !k.includes('|') && T[k].length >= min;
+    }).sort(function (a, b) {
+      return T[b].length - T[a].length;
+    });
+    $g('opTable').innerHTML = "<p class=\"sumline\">".concat(R.length.toLocaleString('es-ES'), " partidas \xB7 ").concat(tops.length, " aperturas con al menos ").concat(min, " ").concat(min === 1 ? 'partida' : 'partidas', ".</p><table class=\"stbl optree\"><thead><tr><th>Apertura / variante / l\xEDnea</th><th>Partidas</th><th>Ganadas</th><th>\u2026por tiempo</th><th>Tablas</th><th>Perdidas</th><th>\u2026por tiempo</th><th>% puntos</th><th>Elo rival</th><th>Errores graves /100</th></tr></thead><tbody>").concat(tops.map(function (k) {
+      return _row(k, 1);
+    }).join(''), "</tbody></table>");
+    $g('opTable').querySelectorAll('tr[data-k]').forEach(function (tr) {
+      return tr.onclick = function (ev) {
+        var k = tr.dataset.k,
+          a = ev.target.closest('.cnum');
+        if (a) return opList(k, a.dataset.f);
+        if (ev.target.closest('td.nm')) {
+          opOpen[k] = !opOpen[k];
+          renderOpenings();
+        }
+      };
+    });
+  }
+  function opList(k, f0) {
+    var rows = (OP[k] || []).slice().sort(function (a, b) {
+        return a[1] < b[1] ? 1 : -1;
+      }),
+      name = k.split('|').filter(function (x) {
+        return x !== '·';
+      }).join(' · ');
+    var fOk = function fOk(f, r) {
+      return f === 'all' || (f.length === 2 ? r[5] === f[0] && onTimeR(r) : r[5] === f);
+    };
+    var FL = [['all', 'Todas'], ['W', 'Ganadas'], ['WT', 'Ganadas por tiempo'], ['D', 'Tablas'], ['L', 'Perdidas'], ['LT', 'Perdidas por tiempo']];
+    var _draw2 = function draw(f) {
+      var sel = rows.filter(function (r) {
+          return fOk(f, r);
+        }),
+        shown = sel.slice(0, 100);
+      $g('opList').innerHTML = "<p class=\"sumline\" style=\"margin:0 0 6px\"><b>".concat(esc2(name), "</b></p><div class=\"seg bfilt\">").concat(FL.map(function (_ref23) {
+        var _ref24 = _slicedToArray(_ref23, 2),
+          x = _ref24[0],
+          t = _ref24[1];
+        return [x, t, rows.filter(function (r) {
+          return fOk(x, r);
+        }).length];
+      }).filter(function (_ref25) {
+        var _ref26 = _slicedToArray(_ref25, 3),
+          x = _ref26[0],
+          c = _ref26[2];
+        return c || x === f || x === 'all';
+      }).map(function (_ref27) {
+        var _ref28 = _slicedToArray(_ref27, 3),
+          x = _ref28[0],
+          t = _ref28[1],
+          c = _ref28[2];
+        return "<button type=\"button\" data-f=\"".concat(x, "\" aria-pressed=\"").concat(x === f, "\">").concat(t, " (").concat(c, ")</button>");
+      }).join(''), "</div>").concat(sel.length > 100 ? '<p class="sumline" style="margin:4px 0">Las 100 más recientes.</p>' : '', "<div class=\"elist\" style=\"margin-top:6px\">").concat(shown.map(function (r, i) {
+        return "<button type=\"button\" class=\"erow\" data-i=\"".concat(i, "\"><span><b>").concat(fmtDate(r[1]), "</b><br><small>").concat(r[2] === 'w' ? 'blancas' : 'negras', " \xB7 ").concat(RES[r[5]].toLowerCase()).concat(r[6] ? ' por ' + esc2(termTxt(r[6])) : '', " \xB7 ").concat(r[3], " vs ").concat(r[4], "</small></span><span></span><span></span></button>");
+      }).join('') || '<p class="empty">Ninguna partida.</p>', "</div>");
+      $g('opList').querySelectorAll('.bfilt button').forEach(function (b) {
+        return b.onclick = function () {
+          return _draw2(b.dataset.f);
+        };
+      });
+      $g('opList').querySelectorAll('.erow').forEach(function (b) {
+        return b.onclick = /*#__PURE__*/_asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee5() {
+          var r;
+          return _regenerator().w(function (_context5) {
+            while (1) switch (_context5.n) {
+              case 0:
+                $g('opList').querySelectorAll('.erow').forEach(function (x) {
+                  return x.classList.toggle('on', x === b);
+                });
+                r = shown[+b.dataset.i];
+                _context5.n = 1;
+                return openHere($g('opViewHost'), r, null, 0, true);
+              case 1:
+                return _context5.a(2);
+            }
+          }, _callee5);
+        }));
+      });
+      var first = $g('opList').querySelector('.erow');
+      if (first) first.click();
+    };
+    _draw2(f0 || 'all');
+    if (window.innerWidth >= 1100) $g('opList').scrollIntoView({
+      block: 'start',
+      behavior: 'smooth'
+    });
+  }
+  window.openingsOpen = openingsOpen;
   window.tacOpen = tacOpen;
   window.endOpen = endOpen;
   window.bookOpen = bookOpen;
@@ -11569,53 +11837,53 @@ var BOOK_DESC = {
     return _connect.apply(this, arguments);
   }
   function _connect() {
-    _connect = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee10() {
+    _connect = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee12() {
       var _yield$Promise$all, _yield$Promise$all2, db, user, id, _t8;
-      return _regenerator().w(function (_context10) {
-        while (1) switch (_context10.p = _context10.n) {
+      return _regenerator().w(function (_context12) {
+        while (1) switch (_context12.p = _context12.n) {
           case 0:
-            _context10.p = 0;
+            _context12.p = 0;
             if (!(!window.claude || !window.claude.use)) {
-              _context10.n = 1;
+              _context12.n = 1;
               break;
             }
-            return _context10.a(2);
+            return _context12.a(2);
           case 1:
-            _context10.n = 2;
+            _context12.n = 2;
             return Promise.all([window.claude.use('db'), window.claude.use('user')]);
           case 2:
-            _yield$Promise$all = _context10.v;
+            _yield$Promise$all = _context12.v;
             _yield$Promise$all2 = _slicedToArray(_yield$Promise$all, 2);
             db = _yield$Promise$all2[0];
             user = _yield$Promise$all2[1];
             if (!(!db || !user)) {
-              _context10.n = 3;
+              _context12.n = 3;
               break;
             }
-            return _context10.a(2);
+            return _context12.a(2);
           case 3:
-            _context10.n = 4;
+            _context12.n = 4;
             return user.id();
           case 4:
-            id = _context10.v;
+            id = _context12.v;
             if (id) {
-              _context10.n = 5;
+              _context12.n = 5;
               break;
             }
-            return _context10.a(2);
+            return _context12.a(2);
           case 5:
             DB = db;
             UID = id;
-            _context10.n = 7;
+            _context12.n = 7;
             break;
           case 6:
-            _context10.p = 6;
-            _t8 = _context10.v;
+            _context12.p = 6;
+            _t8 = _context12.v;
             DB = null;
           case 7:
-            return _context10.a(2);
+            return _context12.a(2);
         }
-      }, _callee10, null, [[0, 6]]);
+      }, _callee12, null, [[0, 6]]);
     }));
     return _connect.apply(this, arguments);
   }
@@ -11626,26 +11894,26 @@ var BOOK_DESC = {
     return _loadState.apply(this, arguments);
   }
   function _loadState() {
-    _loadState = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee11() {
+    _loadState = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee13() {
       var L, cs, st, any, anyLocal, _i, _Object$keys, k, n, _t9;
-      return _regenerator().w(function (_context11) {
-        while (1) switch (_context11.p = _context11.n) {
+      return _regenerator().w(function (_context13) {
+        while (1) switch (_context13.p = _context13.n) {
           case 0:
             L = local();
-            _context11.n = 1;
+            _context13.n = 1;
             return connect();
           case 1:
             if (DB) {
-              _context11.n = 2;
+              _context13.n = 2;
               break;
             }
-            return _context11.a(2, L);
+            return _context13.a(2, L);
           case 2:
-            _context11.p = 2;
-            _context11.n = 3;
+            _context13.p = 2;
+            _context13.n = 3;
             return root().collection('cycles').get();
           case 3:
-            cs = _context11.v;
+            cs = _context13.v;
             st = {
               level: L.level,
               cycles: {
@@ -11678,43 +11946,43 @@ var BOOK_DESC = {
             });
             dbOn = true;
             if (!(!any && anyLocal)) {
-              _context11.n = 9;
+              _context13.n = 9;
               break;
             }
             _i = 0, _Object$keys = Object.keys(L.cycles);
           case 4:
             if (!(_i < _Object$keys.length)) {
-              _context11.n = 8;
+              _context13.n = 8;
               break;
             }
             k = _Object$keys[_i];
             n = 0;
           case 5:
             if (!(n < L.cycles[k].length)) {
-              _context11.n = 7;
+              _context13.n = 7;
               break;
             }
-            _context11.n = 6;
+            _context13.n = 6;
             return root().collection('cycles').doc(k + '_' + n).set(L.cycles[k][n]);
           case 6:
             n++;
-            _context11.n = 5;
+            _context13.n = 5;
             break;
           case 7:
             _i++;
-            _context11.n = 4;
+            _context13.n = 4;
             break;
           case 8:
-            return _context11.a(2, L);
+            return _context13.a(2, L);
           case 9:
-            return _context11.a(2, st);
+            return _context13.a(2, st);
           case 10:
-            _context11.p = 10;
-            _t9 = _context11.v;
+            _context13.p = 10;
+            _t9 = _context13.v;
             dbOn = false;
-            return _context11.a(2, L);
+            return _context13.a(2, L);
         }
-      }, _callee11, null, [[2, 10]]);
+      }, _callee13, null, [[2, 10]]);
     }));
     return _loadState.apply(this, arguments);
   }
@@ -11757,42 +12025,42 @@ var BOOK_DESC = {
     return _open.apply(this, arguments);
   } // cycles table and progress
   function _open() {
-    _open = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee12() {
+    _open = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee14() {
       var _t0;
-      return _regenerator().w(function (_context12) {
-        while (1) switch (_context12.p = _context12.n) {
+      return _regenerator().w(function (_context14) {
+        while (1) switch (_context14.p = _context14.n) {
           case 0:
             if (S) {
-              _context12.n = 2;
+              _context14.n = 2;
               break;
             }
             $w('wpBox').innerHTML = '<p class="empty">Cargando tus ciclos…</p>';
-            _context12.n = 1;
+            _context14.n = 1;
             return loadState();
           case 1:
-            S = _context12.v;
+            S = _context14.v;
             $w('wpBox').innerHTML = '';
           case 2:
             if (P) {
-              _context12.n = 6;
+              _context14.n = 6;
               break;
             }
             $w('wpBox').innerHTML = '<p class="empty">Cargando ejercicios…</p>';
-            _context12.p = 3;
-            _context12.n = 4;
+            _context14.p = 3;
+            _context14.n = 4;
             return fetch(GAMES_BASE + 'woodpecker.json').then(function (r) {
               if (!r.ok) throw 0;
               return r.json();
             });
           case 4:
-            P = _context12.v;
-            _context12.n = 6;
+            P = _context14.v;
+            _context14.n = 6;
             break;
           case 5:
-            _context12.p = 5;
-            _t0 = _context12.v;
+            _context14.p = 5;
+            _t0 = _context14.v;
             $w('wpBox').innerHTML = '<p class="empty">No se han podido cargar los ejercicios.</p>';
-            return _context12.a(2);
+            return _context14.a(2);
           case 6:
             $w('wpLevel').value = S.level;
             $w('wpLevel').onchange = function () {
@@ -11828,9 +12096,9 @@ var BOOK_DESC = {
             };
             panel();
           case 7:
-            return _context12.a(2);
+            return _context14.a(2);
         }
-      }, _callee12, null, [[3, 5]]);
+      }, _callee14, null, [[3, 5]]);
     }));
     return _open.apply(this, arguments);
   }
@@ -11935,20 +12203,20 @@ var BOOK_DESC = {
     return _tap.apply(this, arguments);
   }
   function _tap() {
-    _tap = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee13(sq) {
+    _tap = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee15(sq) {
       var g, _pc, from, pc, m, u, want, ok;
-      return _regenerator().w(function (_context13) {
-        while (1) switch (_context13.n) {
+      return _regenerator().w(function (_context15) {
+        while (1) switch (_context15.n) {
           case 0:
             if (!(!cur || cur.busy)) {
-              _context13.n = 1;
+              _context15.n = 1;
               break;
             }
-            return _context13.a(2);
+            return _context15.a(2);
           case 1:
             g = new Chess(cur.fen);
             if (cur.sel) {
-              _context13.n = 2;
+              _context15.n = 2;
               break;
             }
             _pc = g.get(sq);
@@ -11956,25 +12224,25 @@ var BOOK_DESC = {
               cur.sel = sq;
               draw();
             }
-            return _context13.a(2);
+            return _context15.a(2);
           case 2:
             from = cur.sel;
             cur.sel = null;
             if (!(from === sq)) {
-              _context13.n = 3;
+              _context15.n = 3;
               break;
             }
             draw();
-            return _context13.a(2);
+            return _context15.a(2);
           case 3:
             pc = g.get(sq);
             if (!(pc && pc.color === g.turn())) {
-              _context13.n = 4;
+              _context15.n = 4;
               break;
             }
             cur.sel = sq;
             draw();
-            return _context13.a(2);
+            return _context15.a(2);
           case 4:
             m = g.move({
               from: from,
@@ -11982,43 +12250,43 @@ var BOOK_DESC = {
               promotion: 'q'
             });
             if (m) {
-              _context13.n = 5;
+              _context15.n = 5;
               break;
             }
             draw();
-            return _context13.a(2);
+            return _context15.a(2);
           case 5:
             u = m.from + m.to + (m.promotion ? m.promotion : ''), want = cur.pv[cur.k];
             if (!(want && (u === want || u.slice(0, 4) === want.slice(0, 4)))) {
-              _context13.n = 6;
+              _context15.n = 6;
               break;
             }
-            return _context13.a(2, advance(g, m));
+            return _context15.a(2, advance(g, m));
           case 6:
             // another move: ask the browser engine whether it is as good as the solution
             cur.busy = true;
             say("Compruebo ".concat(es(m.san), " con el motor\u2026"));
-            _context13.n = 7;
+            _context15.n = 7;
             return altOk(g.fen());
           case 7:
-            ok = _context13.v;
+            ok = _context15.v;
             cur.busy = false;
             if (!ok) {
-              _context13.n = 8;
+              _context15.n = 8;
               break;
             }
             cur.fen = g.fen();
             cur.last = m.from + m.to;
             draw();
-            return _context13.a(2, finish(true, "<b style=\"color:var(--good)\">\xA1Bien! ".concat(es(m.san), "</b> tambi\xE9n ").concat(cur.p[3] === '1/2-1/2' ? 'aguanta' : 'gana', " (no es la l\xEDnea del libro, pero el motor la da por buena).")));
+            return _context15.a(2, finish(true, "<b style=\"color:var(--good)\">\xA1Bien! ".concat(es(m.san), "</b> tambi\xE9n ").concat(cur.p[3] === '1/2-1/2' ? 'aguanta' : 'gana', " (no es la l\xEDnea del libro, pero el motor la da por buena).")));
           case 8:
             cur.fails++;
             draw();
             say("<b style=\"color:var(--bad)\">".concat(es(m.san), " no es.</b> Int\xE9ntalo otra vez o pulsa \xABVer la soluci\xF3n\xBB."));
           case 9:
-            return _context13.a(2);
+            return _context15.a(2);
         }
-      }, _callee13);
+      }, _callee15);
     }));
     return _tap.apply(this, arguments);
   }
@@ -12061,43 +12329,43 @@ var BOOK_DESC = {
     return _altOk.apply(this, arguments);
   }
   function _altOk() {
-    _altOk = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee14(fen) {
+    _altOk = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee16(fen) {
       var r, l, sgn, v, sc;
-      return _regenerator().w(function (_context14) {
-        while (1) switch (_context14.n) {
+      return _regenerator().w(function (_context16) {
+        while (1) switch (_context16.n) {
           case 0:
             if (!(typeof ENGINE === 'undefined')) {
-              _context14.n = 1;
+              _context16.n = 1;
               break;
             }
-            return _context14.a(2, false);
+            return _context16.a(2, false);
           case 1:
-            _context14.n = 2;
+            _context16.n = 2;
             return ENGINE.evaluate(fen, 14);
           case 2:
-            r = _context14.v;
+            r = _context16.v;
             if (!(!r || !r.lines || !r.lines[0])) {
-              _context14.n = 3;
+              _context16.n = 3;
               break;
             }
-            return _context14.a(2, false);
+            return _context16.a(2, false);
           case 3:
             l = r.lines[0], sgn = cur.me === 'w' ? 1 : -1, v = engCp(l) * sgn, sc = cur.p[5] || '0';
             if (!(sc[0] === '#')) {
-              _context14.n = 4;
+              _context16.n = 4;
               break;
             }
-            return _context14.a(2, l.mate != null && l.mate * sgn > 0);
+            return _context16.a(2, l.mate != null && l.mate * sgn > 0);
           case 4:
             if (!(cur.p[3] === '1/2-1/2')) {
-              _context14.n = 5;
+              _context16.n = 5;
               break;
             }
-            return _context14.a(2, v >= -60);
+            return _context16.a(2, v >= -60);
           case 5:
-            return _context14.a(2, v >= Math.min(+sc - 100, 300));
+            return _context16.a(2, v >= Math.min(+sc - 100, 300));
         }
-      }, _callee14);
+      }, _callee16);
     }));
     return _altOk.apply(this, arguments);
   }
@@ -12141,30 +12409,30 @@ var BOOK_DESC = {
     return _open2.apply(this, arguments);
   }
   function _open2() {
-    _open2 = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee15() {
+    _open2 = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee17() {
       var seen, _t1;
-      return _regenerator().w(function (_context15) {
-        while (1) switch (_context15.p = _context15.n) {
+      return _regenerator().w(function (_context17) {
+        while (1) switch (_context17.p = _context17.n) {
           case 0:
             if (G) {
-              _context15.n = 4;
+              _context17.n = 4;
               break;
             }
-            _context15.p = 1;
-            _context15.n = 2;
+            _context17.p = 1;
+            _context17.n = 2;
             return fetch(GAMES_BASE + 'logical.json').then(function (r) {
               if (!r.ok) throw 0;
               return r.json();
             });
           case 2:
-            G = _context15.v;
-            _context15.n = 4;
+            G = _context17.v;
+            _context17.n = 4;
             break;
           case 3:
-            _context15.p = 3;
-            _t1 = _context15.v;
+            _context17.p = 3;
+            _t1 = _context17.v;
             $l('lcList').innerHTML = '<p class="empty">No se han podido cargar las partidas.</p>';
-            return _context15.a(2);
+            return _context17.a(2);
           case 4:
             seen = {};
             try {
@@ -12179,9 +12447,9 @@ var BOOK_DESC = {
               };
             });
           case 5:
-            return _context15.a(2);
+            return _context17.a(2);
         }
-      }, _callee15, null, [[1, 3]]);
+      }, _callee17, null, [[1, 3]]);
     }));
     return _open2.apply(this, arguments);
   }
@@ -12343,42 +12611,42 @@ var BOOK_DESC = {
     return _why.apply(this, arguments);
   }
   function _why() {
-    _why = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee16() {
+    _why = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee18() {
       var v, k, pre, r, _t10;
-      return _regenerator().w(function (_context16) {
-        while (1) switch (_context16.p = _context16.n) {
+      return _regenerator().w(function (_context18) {
+        while (1) switch (_context18.p = _context18.n) {
           case 0:
             if (!(!cur || !cur.ply || typeof SAMPLE === 'undefined' || !SAMPLE)) {
-              _context16.n = 1;
+              _context18.n = 1;
               break;
             }
-            return _context16.a(2);
+            return _context18.a(2);
           case 1:
             v = cur, k = v.ply - 1;
             pre = v.ss.slice(0, k).map(function (s, i) {
               return (i % 2 === 0 ? i / 2 + 1 + '. ' : '') + s;
             }).join(' ');
             $l('lcInfo').innerHTML = 'Preguntando a Claude…';
-            _context16.p = 2;
-            _context16.n = 3;
+            _context18.p = 2;
+            _context18.n = 3;
             return SAMPLE("Eres un entrenador de ajedrez. Partida ".concat(v.g[1], " \u2013 ").concat(v.g[2], " (").concat(v.g[3], "). Jugadas hasta ahora (notaci\xF3n espa\xF1ola): ").concat(pre, ". Explica en espa\xF1ol, tuteando, en 3 o 4 frases y con tus propias palabras, la idea de la jugada ").concat(Math.floor(k / 2) + 1).concat(k % 2 ? '...' : '.', " ").concat(v.ss[k], ": qu\xE9 busca, qu\xE9 amenaza o qu\xE9 prepara, y qu\xE9 principio general ilustra. Si no est\xE1s seguro de un c\xE1lculo concreto, dilo."), {
               onText: function onText(x) {
                 $l('lcInfo').innerHTML = esc2(x.text);
               }
             });
           case 3:
-            r = _context16.v;
+            r = _context18.v;
             $l('lcInfo').innerHTML = "<b>".concat(v.ss[k], ":</b> ").concat(esc2(r.text));
-            _context16.n = 5;
+            _context18.n = 5;
             break;
           case 4:
-            _context16.p = 4;
-            _t10 = _context16.v;
+            _context18.p = 4;
+            _t10 = _context18.v;
             $l('lcInfo').innerHTML = 'Ahora no he podido responder. Inténtalo más tarde.';
           case 5:
-            return _context16.a(2);
+            return _context18.a(2);
         }
-      }, _callee16, null, [[2, 4]]);
+      }, _callee18, null, [[2, 4]]);
     }));
     return _why.apply(this, arguments);
   }
@@ -15122,10 +15390,10 @@ var LIVE_USER = '';
     var a = by['2022'],
       z = by['2026'];
     var rushY = {};
-    SD.rush.forEach(function (_ref21) {
-      var _ref22 = _slicedToArray(_ref21, 2),
-        t = _ref22[0],
-        s = _ref22[1];
+    SD.rush.forEach(function (_ref32) {
+      var _ref33 = _slicedToArray(_ref32, 2),
+        t = _ref33[0],
+        s = _ref33[1];
       var k = new Date(t * 1000).getUTCFullYear();
       (rushY[k] = rushY[k] || []).push(s);
     });
@@ -15140,12 +15408,12 @@ var LIVE_USER = '';
     }, 0)), 'blitz desde oct 2022'], ['Precisión', nf(M.acc(z)) + ' %', "2022: ".concat(nf(M.acc(a)), " %"), M.acc(z) > M.acc(a)], ['Fallos graves / 100 jugadas', nf(M.per(z, 'bl', 'm'), 2), "2022: ".concat(nf(M.per(a, 'bl', 'm'), 2)), M.per(z, 'bl', 'm') < M.per(a, 'bl', 'm')], ['Derrotas por tiempo', nf(M.to(z)) + ' %', "2022: ".concat(nf(M.to(a)), " %"), M.to(z) < M.to(a)], ['Puntuación (últimas 100)', nf(M.score(last100)) + ' %', 'de los puntos posibles'], ['Puzzle Rush (media 2026)', nf(avg(rushY[2026])), "2022: ".concat(nf(avg(rushY[2022])), " \xB7 r\xE9cord ").concat(Math.max.apply(null, SD.rush.map(function (x) {
       return x[1];
     }))), true], ['Problemas puntuados', fInt(SD.puz[SD.puz.length - 1][2]), 'puntuación actual']];
-    $('kpis').innerHTML = k.map(function (_ref23) {
-      var _ref24 = _slicedToArray(_ref23, 4),
-        t = _ref24[0],
-        v = _ref24[1],
-        s = _ref24[2],
-        up = _ref24[3];
+    $('kpis').innerHTML = k.map(function (_ref34) {
+      var _ref35 = _slicedToArray(_ref34, 4),
+        t = _ref35[0],
+        v = _ref35[1],
+        s = _ref35[2],
+        up = _ref35[3];
       return "<div class=\"kpi\"><span>".concat(t, "</span><b>").concat(v, "</b><span>").concat(up == null ? s : "<em class=\"".concat(up ? 'up' : 'down', "\">").concat(up ? '▲' : '▼', "</em> ").concat(s), "</span></div>");
     }).join('');
     drawEloM();
@@ -15339,14 +15607,14 @@ var LIVE_USER = '';
     }, true, 1], ['Puzzle Rush (mejor serie)', r0.length ? Math.max.apply(null, r0) : null, r1.length ? Math.max.apply(null, r1) : null, fInt, true, 1], ['Problemas (puntuación)', pzAt(30), pzAt(0), fInt, true, 10]];
     var good = [],
       bad = [];
-    var tr = rows.map(function (_ref25) {
-      var _ref26 = _slicedToArray(_ref25, 6),
-        lab = _ref26[0],
-        a = _ref26[1],
-        b = _ref26[2],
-        f = _ref26[3],
-        up = _ref26[4],
-        min = _ref26[5];
+    var tr = rows.map(function (_ref36) {
+      var _ref37 = _slicedToArray(_ref36, 6),
+        lab = _ref37[0],
+        a = _ref37[1],
+        b = _ref37[2],
+        f = _ref37[3],
+        up = _ref37[4],
+        min = _ref37[5];
       var cls = '',
         arrow = '';
       if (a != null && b != null && up != null && Math.abs(b - a) >= min && min > 0) {
@@ -15655,11 +15923,11 @@ var LIVE_USER = '';
     var distinct = failRows(weeks[11]).filter(function (x) {
       return x.fails;
     }).length;
-    $('trnKpis').innerHTML = [['Jugadas practicadas', fInt(now[0]), 'esta semana'], ['Fallos', fInt(now[1]), now[0] ? nf(pct(now)) + ' % de las jugadas' : '–'], ['Posiciones con fallo', fInt(distinct), 'distintas, esta semana'], ['Semana pasada', prev[0] ? nf(pct(prev)) + ' %' : '–', prev[0] ? "".concat(prev[1], " fallos en ").concat(prev[0], " jugadas") : 'sin datos']].map(function (_ref27) {
-      var _ref28 = _slicedToArray(_ref27, 3),
-        a = _ref28[0],
-        b = _ref28[1],
-        c = _ref28[2];
+    $('trnKpis').innerHTML = [['Jugadas practicadas', fInt(now[0]), 'esta semana'], ['Fallos', fInt(now[1]), now[0] ? nf(pct(now)) + ' % de las jugadas' : '–'], ['Posiciones con fallo', fInt(distinct), 'distintas, esta semana'], ['Semana pasada', prev[0] ? nf(pct(prev)) + ' %' : '–', prev[0] ? "".concat(prev[1], " fallos en ").concat(prev[0], " jugadas") : 'sin datos']].map(function (_ref38) {
+      var _ref39 = _slicedToArray(_ref38, 3),
+        a = _ref39[0],
+        b = _ref39[1],
+        c = _ref39[2];
       return "<div class=\"kpi\"><span>".concat(a, "</span><b>").concat(b, "</b><span>").concat(c, "</span></div>");
     }).join('');
     var ch = $('trnCharts');
@@ -15811,10 +16079,10 @@ var LIVE_USER = '';
   function tacRows() {
     // row: [q, n, forks 6x(f,m), pins 6x, free 6x, mates 5x(f,m), material f,m, capturing 6, hanging 6]
     var types = [];
-    [['Horquilla de', 2], ['Clavada con', 14], ['Capturar gratis:', 26]].forEach(function (_ref29) {
-      var _ref30 = _slicedToArray(_ref29, 2),
-        nm = _ref30[0],
-        off = _ref30[1];
+    [['Horquilla de', 2], ['Clavada con', 14], ['Capturar gratis:', 26]].forEach(function (_ref40) {
+      var _ref41 = _slicedToArray(_ref40, 2),
+        nm = _ref41[0],
+        off = _ref41[1];
       return PIE.forEach(function (p, i) {
         if (p === 'rey' && nm !== 'Horquilla de') return;
         types.push({
@@ -15866,10 +16134,10 @@ var LIVE_USER = '';
     var pc = function pc(s) {
       return s[0] + s[1] ? 100 * s[0] / (s[0] + s[1]) : null;
     };
-    var list = TC.th.map(function (_ref31) {
-      var _ref32 = _slicedToArray(_ref31, 2),
-        k = _ref32[0],
-        name = _ref32[1];
+    var list = TC.th.map(function (_ref42) {
+      var _ref43 = _slicedToArray(_ref42, 2),
+        k = _ref43[0],
+        name = _ref43[1];
       var ly = sum(lastQ, k),
         all = sum(Q, k);
       return {
@@ -16125,10 +16393,10 @@ var LIVE_USER = '';
     var g = segVal('puzGroup', 'g') || 'M';
     var host = $('puzCharts');
     host.innerHTML = '';
-    var R = SD.rush.map(function (_ref33) {
-      var _ref34 = _slicedToArray(_ref33, 2),
-        t = _ref34[0],
-        s = _ref34[1];
+    var R = SD.rush.map(function (_ref44) {
+      var _ref45 = _slicedToArray(_ref44, 2),
+        t = _ref45[0],
+        s = _ref45[1];
       return {
         date: new Date(t * 1000),
         s: s
@@ -16162,10 +16430,10 @@ var LIVE_USER = '';
         return x.s;
       }),
       last30 = all.slice(-30);
-    $('puzKpis').innerHTML = [['Series jugadas', fInt(all.length)], ['Récord', Math.max.apply(null, all)], ['Media últimas 30', nf(avg(last30))], ['Media primeras 100', nf(avg(all.slice(0, 100)))], ['Problemas puntuados', fInt(SD.puz[SD.puz.length - 1][2]) + ' pts'], ['Máximo puntuados', '2.070']].map(function (_ref35) {
-      var _ref36 = _slicedToArray(_ref35, 2),
-        a = _ref36[0],
-        b = _ref36[1];
+    $('puzKpis').innerHTML = [['Series jugadas', fInt(all.length)], ['Récord', Math.max.apply(null, all)], ['Media últimas 30', nf(avg(last30))], ['Media primeras 100', nf(avg(all.slice(0, 100)))], ['Problemas puntuados', fInt(SD.puz[SD.puz.length - 1][2]) + ' pts'], ['Máximo puntuados', '2.070']].map(function (_ref46) {
+      var _ref47 = _slicedToArray(_ref46, 2),
+        a = _ref47[0],
+        b = _ref47[1];
       return "<div class=\"kpi\"><span>".concat(a, "</span><b>").concat(b, "</b></div>");
     }).join('');
     chart(host, {
@@ -16520,11 +16788,11 @@ var LIVE_USER = '';
     var col = c === 'w' ? 'blancas' : 'negras';
     var yAll = sum(qs, idx),
       y1 = sum(last4, idx);
-    $('opeBookKpis').innerHTML = [['Te sales tú primero', fPct(pct(y1)), "todo: ".concat(fPct(pct(yAll)))], ['Jugada en que te sales tú', f2(me(y1)), "todo: ".concat(f2(me(yAll)))], ['Jugada en que se sale el rival', f2(op(y1)), "todo: ".concat(f2(op(yAll)))], ['Partidas', fInt(y1[0]), "\xFAltimos 4 trimestres con ".concat(col)]].map(function (_ref37) {
-      var _ref38 = _slicedToArray(_ref37, 3),
-        t = _ref38[0],
-        v = _ref38[1],
-        s = _ref38[2];
+    $('opeBookKpis').innerHTML = [['Te sales tú primero', fPct(pct(y1)), "todo: ".concat(fPct(pct(yAll)))], ['Jugada en que te sales tú', f2(me(y1)), "todo: ".concat(f2(me(yAll)))], ['Jugada en que se sale el rival', f2(op(y1)), "todo: ".concat(f2(op(yAll)))], ['Partidas', fInt(y1[0]), "\xFAltimos 4 trimestres con ".concat(col)]].map(function (_ref48) {
+      var _ref49 = _slicedToArray(_ref48, 3),
+        t = _ref49[0],
+        v = _ref49[1],
+        s = _ref49[2];
       return "<div class=\"kpi\"><span>".concat(t, "</span><b>").concat(v, "</b><span>").concat(s, "</span></div>");
     }).join('');
     var rows = idx.map(function (i) {
@@ -16639,18 +16907,18 @@ var LIVE_USER = '';
     return _fetchGames.apply(this, arguments);
   }
   function _fetchGames() {
-    _fetchGames = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee17() {
+    _fetchGames = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee19() {
       var user, st, cache, ar, months, nowKey, todo, i, _iterator3, _step4, _loop4, _t11, _t12;
-      return _regenerator().w(function (_context18) {
-        while (1) switch (_context18.p = _context18.n) {
+      return _regenerator().w(function (_context20) {
+        while (1) switch (_context20.p = _context20.n) {
           case 0:
             user = $('liveUser').value.trim().toLowerCase();
             if (user) {
-              _context18.n = 1;
+              _context20.n = 1;
               break;
             }
             $('liveUser').focus();
-            return _context18.a(2);
+            return _context20.a(2);
           case 1:
             try {
               localStorage.setItem('taller.user', user);
@@ -16664,14 +16932,14 @@ var LIVE_USER = '';
               g: [],
               done: []
             };
-            _context18.p = 2;
-            _context18.n = 3;
+            _context20.p = 2;
+            _context20.n = 3;
             return fetch("https://api.chess.com/pub/player/".concat(encodeURIComponent(user), "/games/archives")).then(function (r) {
               if (!r.ok) throw new Error(r.status === 404 ? 'Usuario no encontrado' : 'Error ' + r.status);
               return r.json();
             });
           case 3:
-            ar = _context18.v;
+            ar = _context20.v;
             months = ar.archives;
             nowKey = months[months.length - 1];
             todo = months.filter(function (m) {
@@ -16679,21 +16947,21 @@ var LIVE_USER = '';
             });
             i = 0;
             _iterator3 = _createForOfIteratorHelper(todo);
-            _context18.p = 4;
+            _context20.p = 4;
             _loop4 = /*#__PURE__*/_regenerator().m(function _loop4() {
               var m, j, key;
-              return _regenerator().w(function (_context17) {
-                while (1) switch (_context17.n) {
+              return _regenerator().w(function (_context19) {
+                while (1) switch (_context19.n) {
                   case 0:
                     m = _step4.value;
                     i++;
                     st.textContent = "Descargando ".concat(i, " de ").concat(todo.length, "\u2026");
-                    _context17.n = 1;
+                    _context19.n = 1;
                     return fetch(m).then(function (r) {
                       return r.json();
                     });
                   case 1:
-                    j = _context17.v;
+                    j = _context19.v;
                     key = m.slice(-7);
                     cache.g = cache.g.filter(function (x) {
                       return x.m !== key;
@@ -16723,31 +16991,31 @@ var LIVE_USER = '';
                     });
                     if (cache.done.indexOf(m) < 0) cache.done.push(m);
                   case 2:
-                    return _context17.a(2);
+                    return _context19.a(2);
                 }
               }, _loop4);
             });
             _iterator3.s();
           case 5:
             if ((_step4 = _iterator3.n()).done) {
-              _context18.n = 7;
+              _context20.n = 7;
               break;
             }
-            return _context18.d(_regeneratorValues(_loop4()), 6);
+            return _context20.d(_regeneratorValues(_loop4()), 6);
           case 6:
-            _context18.n = 5;
+            _context20.n = 5;
             break;
           case 7:
-            _context18.n = 9;
+            _context20.n = 9;
             break;
           case 8:
-            _context18.p = 8;
-            _t11 = _context18.v;
+            _context20.p = 8;
+            _t11 = _context20.v;
             _iterator3.e(_t11);
           case 9:
-            _context18.p = 9;
+            _context20.p = 9;
             _iterator3.f();
-            return _context18.f(9);
+            return _context20.f(9);
           case 10:
             cache.g.sort(function (a, b) {
               return a.t - b.t;
@@ -16756,16 +17024,16 @@ var LIVE_USER = '';
             GAMES = cache.g;
             st.textContent = "".concat(GAMES.length, " partidas blitz \xB7 actualizado");
             renderGames();
-            _context18.n = 12;
+            _context20.n = 12;
             break;
           case 11:
-            _context18.p = 11;
-            _t12 = _context18.v;
+            _context20.p = 11;
+            _t12 = _context20.v;
             st.textContent = 'No he podido descargar: ' + (_t12 && _t12.message ? _t12.message : _t12) + '. Si estás dentro de Claude, prueba la versión del iPad.';
           case 12:
-            return _context18.a(2);
+            return _context20.a(2);
         }
-      }, _callee17, null, [[4, 8, 9, 10], [2, 11]]);
+      }, _callee19, null, [[4, 8, 9, 10], [2, 11]]);
     }));
     return _fetchGames.apply(this, arguments);
   }
@@ -17064,7 +17332,19 @@ var LIVE_USER = '';
     nav.forEach(function (b) {
       return b.setAttribute('aria-selected', b.dataset.main === m);
     });
-    $('viewTrain').hidden = m !== 'train';
+    var apS = 'train';
+    try {
+      apS = localStorage.getItem('taller.apsub') || 'train';
+    } catch (e) {}
+    if ($('apSub')) {
+      $('apSub').hidden = m !== 'train';
+      $('viewOpen').hidden = m !== 'train' || apS !== 'mine';
+      $('apSub').querySelectorAll('button').forEach(function (b) {
+        return b.setAttribute('aria-pressed', b.dataset.s === apS);
+      });
+      if (m === 'train' && apS === 'mine' && window.openingsOpen) window.openingsOpen();
+    }
+    $('viewTrain').hidden = m !== 'train' || apS === 'mine';
     $('viewStats').hidden = m !== 'stats' && m !== 'report';
     document.querySelector('#viewStats .subnav').hidden = m === 'report';
     if ($('viewGames')) {
@@ -17114,6 +17394,14 @@ var LIVE_USER = '';
   nav.forEach(function (b) {
     return b.onclick = function () {
       return showMain(b.dataset.main);
+    };
+  });
+  if ($('apSub')) $('apSub').querySelectorAll('button').forEach(function (b) {
+    return b.onclick = function () {
+      try {
+        localStorage.setItem('taller.apsub', b.dataset.s);
+      } catch (e) {}
+      showMain('train');
     };
   });
   var m0 = 'train';
