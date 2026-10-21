@@ -15,7 +15,7 @@
   .card { padding: 10px 8px !important; }
   body, footer, .note, li, .sumline { overflow-wrap: anywhere; }
   .ggrid > *, .gplay > *, .card > * { min-width: 0; }
-  html, body { overflow-x: clip; }
+  html, body { overflow-x: hidden; overflow-x: clip; }
   .wrap, .stats, .games, .gview, .card { grid-template-columns: minmax(0, 1fr); } .wrap > *, .stats > *, .stats > * > *, .games > * { min-width: 0; } .kpis { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
   .wrap div:not(.mtable2 *):not(.board *), .wrap section, .wrap h3, .wrap h4, .wrap p, .wrap ul, .wrap ol { min-width: 0; } .scorebar { flex-wrap: wrap; }
   select, button, input { max-width: 100%; }
@@ -427,6 +427,13 @@ footer { font-size: 12px; color: var(--muted); max-width: 90ch; }
 .bfilt { flex-wrap: wrap; } .bfilt button { font-size: 12.5px; }
 .okm { color: var(--good); font-weight: 600; } .kom { color: var(--bad); font-weight: 600; }
 .cnum { cursor: pointer; text-decoration: underline dotted; text-underline-offset: 3px; color: inherit; } .cnum:hover { color: var(--walnut); }
+.vgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(46px, 1fr)); gap: 6px; }
+.vcell { border: 1px solid var(--line); background: var(--panel); color: var(--ink); border-radius: 8px; padding: 6px 0 4px; font: 600 14px var(--font-mono); cursor: pointer; display: grid; line-height: 1.1; }
+.vcell small { font-size: 10px; color: var(--muted); font-weight: 400; } .vcell.on { box-shadow: 0 0 0 2px var(--walnut) inset; }
+.vcell.mf { background: var(--good-soft); } .vcell.mb { background: var(--good-soft); border-color: var(--good); } .vcell.me { background: var(--good); color: var(--panel); } .vcell.mo { background: var(--walnut); color: var(--panel); }
+.vcell.me small, .vcell.mo small { color: var(--panel); }
+.vmoves { font-family: var(--font-mono); font-size: 14px; display: grid; gap: 6px; } .vmoves b { font-family: var(--font-body); } .vq { color: var(--walnut); font-weight: 700; }
+.vbank { display: flex; flex-wrap: wrap; gap: 6px; } .vbank .vb { font-family: var(--font-mono); font-size: 15px; min-width: 64px; }
 .optree td.nm { cursor: pointer; } .optree .l2 td.nm { padding-left: 22px; } .optree .optot td { border-top: 1px solid var(--line); background: var(--eng-bg); } .optree .l3 td.nm { padding-left: 44px; font-family: var(--font-mono); font-size: 12.5px; } .optree .eco { color: var(--muted); font-size: 11.5px; margin-left: 4px; } .optree .tw { display: inline-block; width: 14px; color: var(--muted); }
 .elist { display: grid; gap: 6px; }
 .erow { all: unset; cursor: pointer; display: grid; grid-template-columns: 92px 1fr auto; gap: 10px; align-items: center; padding: 8px 12px; background: var(--panel); color: var(--ink); border: 1px solid var(--line); border-radius: 10px; font-size: 13.5px; }
@@ -2226,6 +2233,7 @@ if (typeof define !== 'undefined')
     <button type="button" role="tab" data-main="op" aria-selected="false">Aperturas</button>
     <button type="button" role="tab" data-main="tac" aria-selected="false">Tácticas</button>
     <button type="button" role="tab" data-main="end" aria-selected="false">Finales</button>
+    <button type="button" role="tab" data-main="vis" aria-selected="false">Visualización</button>
     <span class="navsep" aria-hidden="true"></span>
     <button type="button" role="tab" data-main="stats" aria-selected="false">Estadísticas</button>
     <button type="button" role="tab" data-main="games" aria-selected="false">Mis partidas</button>
@@ -2564,6 +2572,19 @@ if (typeof define !== 'undefined')
           </div>
         </div>
       </div>
+    </div>
+  </section>
+  <section class="games" id="viewVis" hidden aria-label="Visualización">
+    <p class="note" style="font-size:13px;color:var(--muted);margin:0">100 mates en 3 sacados de tus partidas. El tablero muestra la posición unas medias jugadas antes (de 1 a 5); esas jugadas solo están escritas y tienes que verlas en la cabeza. Luego juega el mate en ese tablero, tocando la pieza y la casilla. Las jugadas del bando que da mate en la parte a ciegas son buenas: no hay trampas.</p>
+    <div class="sbar"><label for="visMode">Modo</label><select id="visMode"><option value="o">Piezas ocultas (×4)</option><option value="e" selected>Jugadas escritas (×3)</option><option value="b">Banco de jugadas (×2)</option><option value="f">Posición final (×1)</option></select><label for="visLvl">A ciegas</label><select id="visLvl"><option value="">Todas</option><option value="1">1 media jugada</option><option value="2">2 medias jugadas</option><option value="3">3 medias jugadas</option><option value="4">4 medias jugadas</option><option value="5">5 medias jugadas</option></select></div>
+    <p class="sumline" id="visModeTxt" style="margin:0"></p>
+    <div id="visSum"></div>
+    <div class="vgrid" id="visGrid"></div>
+    <div class="card vtrain" id="visTrain" hidden>
+      <div id="visHead"></div>
+      <div class="gplay"><div class="gboardwrap"><div class="board" id="visBoard" aria-label="Tablero del problema"></div></div>
+        <div class="gside"><div id="visMoves" class="vmoves"></div><div class="msg info" id="visInfo"></div><div class="vbank" id="visBank"></div>
+          <div class="controls"><button type="button" class="btn small primary" id="visHide" hidden>Ocultar y empezar</button><button type="button" class="btn small" id="visShow">Ver la solución</button><button type="button" class="btn small" id="visNext" hidden>Siguiente</button></div></div></div>
     </div>
   </section>
   <section class="games" id="viewWp" hidden aria-label="Woodpecker">
@@ -9595,16 +9616,16 @@ function engJudge(_x2, _x3, _x4) {
   return _engJudge.apply(this, arguments);
 } // free exploration from the current position: any legal move for either side
 function _engJudge() {
-  _engJudge = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee20(seq, played, want) {
+  _engJudge = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee23(seq, played, want) {
     var tok, msgEl, before, g1, g2, white, a, b, s, pa, pb, f, diff, txt;
-    return _regenerator().w(function (_context21) {
-      while (1) switch (_context21.n) {
+    return _regenerator().w(function (_context24) {
+      while (1) switch (_context24.n) {
         case 0:
           if (!(!ENG_ON || ENGINE.status() === 'broken' || !want)) {
-            _context21.n = 1;
+            _context24.n = 1;
             break;
           }
-          return _context21.a(2);
+          return _context24.a(2);
         case 1:
           tok = ++engJudgeTok, msgEl = engEl('msg'), before = msgEl.innerHTML;
           g1 = new Chess(), g2 = new Chess();
@@ -9631,33 +9652,33 @@ function _engJudge() {
             to: want.slice(2, 4),
             promotion: 'q'
           });
-          _context21.n = 2;
+          _context24.n = 2;
           return ENGINE.evaluate(g1.fen(), 13);
         case 2:
-          a = _context21.v;
+          a = _context24.v;
           if (!(tok !== engJudgeTok || !a)) {
-            _context21.n = 3;
+            _context24.n = 3;
             break;
           }
-          return _context21.a(2);
+          return _context24.a(2);
         case 3:
-          _context21.n = 4;
+          _context24.n = 4;
           return ENGINE.evaluate(g2.fen(), 13);
         case 4:
-          b = _context21.v;
+          b = _context24.v;
           if (!(tok !== engJudgeTok || !b)) {
-            _context21.n = 5;
+            _context24.n = 5;
             break;
           }
-          return _context21.a(2);
+          return _context24.a(2);
         case 5:
           engKey = null;
           engUpdate(); // resume the panel's analysis
           if (!(msgEl.innerHTML !== before)) {
-            _context21.n = 6;
+            _context24.n = 6;
             break;
           }
-          return _context21.a(2);
+          return _context24.a(2);
         case 6:
           s = function s(x) {
             return (white ? 1 : -1) * engCp(x.lines[0]);
@@ -9672,9 +9693,9 @@ function _engJudge() {
           diff = pb - pa, txt = diff < 40 ? 'para el motor es igual de buena; aun así, apréndete la del plan' : diff < 120 ? 'un poco peor que la del plan' : diff < 300 ? 'claramente peor que la del plan' : 'un error grave';
           msgEl.insertAdjacentHTML('beforeend', "<div class=\"engjudge\">Motor: tu jugada ".concat(f(pa), " \xB7 la del plan ").concat(f(pb), " (desde tu lado): ").concat(txt, ".</div>"));
         case 7:
-          return _context21.a(2);
+          return _context24.a(2);
       }
-    }, _callee20);
+    }, _callee23);
   }));
   return _engJudge.apply(this, arguments);
 }
@@ -12744,6 +12765,541 @@ var BOOK_DESC = {
   window.lcOpen = open;
 })();
 
+// ---------- Visualización: 100 mates en 3 de tus partidas con 1–5 medias jugadas a ciegas antes ----------
+// The board shows the position N half-moves before the mate; those moves are only written. The solver enters the
+// mate on that (old) board by tapping origin and destination. Modes, from most to fewest points: hidden pieces,
+// written moves, move bank (choose among candidates), final position (the board shows the position after the lead-in).
+(function () {
+  var $v = function $v(id) {
+    return document.getElementById(id);
+  };
+  var MODES = {
+    o: ['Piezas ocultas', 4, 'Ves la posición inicial; al empezar, las piezas desaparecen. Todo de memoria.'],
+    e: ['Jugadas escritas', 3, 'El tablero se queda en la posición inicial; las jugadas solo están escritas.'],
+    b: ['Banco de jugadas', 2, 'Igual, pero eliges cada jugada entre varias candidatas.'],
+    f: ['Posición final', 1, 'El tablero muestra la posición después de las jugadas escritas: solo hay que encontrar el mate.']
+  };
+  var P = null,
+    S = null,
+    cur = null;
+  // storage: artifact db in claude.ai (data/users/<id>/vis/state), localStorage elsewhere and as local copy
+  var DB = null,
+    UID = null,
+    dbOn = false;
+  var local = function local() {
+    var s = null;
+    try {
+      s = JSON.parse(localStorage.getItem('taller.vis') || 'null');
+    } catch (e) {}
+    return s || {
+      mode: 'e',
+      lvl: '',
+      best: {},
+      log: []
+    };
+  };
+  function loadState() {
+    return _loadState2.apply(this, arguments);
+  }
+  function _loadState2() {
+    _loadState2 = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee20() {
+      var L, _yield$Promise$all5, _yield$Promise$all6, db, user, id, d, x, _t11, _t12, _t13;
+      return _regenerator().w(function (_context20) {
+        while (1) switch (_context20.p = _context20.n) {
+          case 0:
+            L = local();
+            _context20.p = 1;
+            if (!(window.claude && window.claude.use)) {
+              _context20.n = 5;
+              break;
+            }
+            _context20.n = 2;
+            return Promise.all([window.claude.use('db'), window.claude.use('user')]);
+          case 2:
+            _yield$Promise$all5 = _context20.v;
+            _yield$Promise$all6 = _slicedToArray(_yield$Promise$all5, 2);
+            db = _yield$Promise$all6[0];
+            user = _yield$Promise$all6[1];
+            _t11 = db && user;
+            if (!_t11) {
+              _context20.n = 4;
+              break;
+            }
+            _context20.n = 3;
+            return user.id();
+          case 3:
+            _t11 = _context20.v;
+          case 4:
+            id = _t11;
+            if (id) {
+              DB = db;
+              UID = id;
+            }
+          case 5:
+            _context20.n = 7;
+            break;
+          case 6:
+            _context20.p = 6;
+            _t12 = _context20.v;
+            DB = null;
+          case 7:
+            if (DB) {
+              _context20.n = 8;
+              break;
+            }
+            return _context20.a(2, L);
+          case 8:
+            _context20.p = 8;
+            _context20.n = 9;
+            return DB.doc('data/users/' + UID + '/vis/state').get();
+          case 9:
+            d = _context20.v;
+            dbOn = true;
+            x = d && d.exists !== false && d.data ? d.data() : null;
+            if (!(x && x.best)) {
+              _context20.n = 10;
+              break;
+            }
+            Object.keys(L.best).forEach(function (k) {
+              if (!x.best[k] || L.best[k].p > x.best[k].p) x.best[k] = L.best[k];
+            });
+            return _context20.a(2, Object.assign({
+              mode: L.mode,
+              lvl: L.lvl,
+              log: []
+            }, x));
+          case 10:
+            return _context20.a(2, L);
+          case 11:
+            _context20.p = 11;
+            _t13 = _context20.v;
+            dbOn = false;
+            return _context20.a(2, L);
+        }
+      }, _callee20, null, [[8, 11], [1, 6]]);
+    }));
+    return _loadState2.apply(this, arguments);
+  }
+  var writing = Promise.resolve();
+  var save = function save() {
+    try {
+      localStorage.setItem('taller.vis', JSON.stringify(S));
+    } catch (e) {}
+    if (!dbOn) return;
+    var body = JSON.parse(JSON.stringify({
+      best: S.best,
+      log: S.log.slice(-500)
+    }));
+    writing = writing.then(function () {
+      return DB.doc('data/users/' + UID + '/vis/state').set(body);
+    }).catch(function () {});
+  };
+  var mate = function mate(c) {
+    return c.in_checkmate ? c.in_checkmate() : c.isCheckmate();
+  };
+  var uci = function uci(u) {
+    return {
+      from: u.slice(0, 2),
+      to: u.slice(2, 4),
+      promotion: u[4] || 'q'
+    };
+  };
+  var sanOf = function sanOf(fen, u) {
+    var c = new Chess(fen),
+      m = c.move(uci(u));
+    return m ? m.san : u;
+  };
+  var num = function num(ply0, i, san) {
+    var p = ply0 + i,
+      w = p % 2 === 0;
+    return (w ? p / 2 + 1 + '. ' : i === 0 ? Math.floor(p / 2) + 1 + '… ' : '') + es(san);
+  };
+  var ply0Of = function ply0Of(fen) {
+    var f = fen.split(' ');
+    return (+f[5] - 1) * 2 + (f[1] === 'b' ? 1 : 0);
+  };
+  var pts = function pts(p, mode, errs) {
+    return errs > 1 ? 0 : Math.round((2 + p.n) * MODES[mode][1] / (errs ? 2 : 1));
+  };
+  function open() {
+    return _open3.apply(this, arguments);
+  }
+  function _open3() {
+    _open3 = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee21() {
+      var _t14;
+      return _regenerator().w(function (_context21) {
+        while (1) switch (_context21.p = _context21.n) {
+          case 0:
+            if (P) {
+              _context21.n = 4;
+              break;
+            }
+            $v('visGrid').innerHTML = '<p class="empty">Cargando problemas…</p>';
+            _context21.p = 1;
+            _context21.n = 2;
+            return fetch(GAMES_BASE + 'visual.json').then(function (r) {
+              if (!r.ok) throw 0;
+              return r.json();
+            });
+          case 2:
+            P = _context21.v;
+            _context21.n = 4;
+            break;
+          case 3:
+            _context21.p = 3;
+            _t14 = _context21.v;
+            $v('visGrid').innerHTML = '<p class="empty">No se han podido cargar los problemas.</p>';
+            return _context21.a(2);
+          case 4:
+            if (S) {
+              _context21.n = 6;
+              break;
+            }
+            _context21.n = 5;
+            return loadState();
+          case 5:
+            S = _context21.v;
+            $v('visMode').value = S.mode;
+            $v('visLvl').value = S.lvl || '';
+          case 6:
+            grid();
+          case 7:
+            return _context21.a(2);
+        }
+      }, _callee21, null, [[1, 3]]);
+    }));
+    return _open3.apply(this, arguments);
+  }
+  function grid() {
+    var lv = $v('visLvl').value,
+      set = P.filter(function (p) {
+        return !lv || p.n === +lv;
+      }),
+      tot = Object.keys(S.best).reduce(function (a, k) {
+        return a + S.best[k].p;
+      }, 0);
+    var byN = [1, 2, 3, 4, 5].map(function (n) {
+      var xs = P.filter(function (p) {
+        return p.n === n;
+      });
+      return "<td>".concat(xs.filter(function (p) {
+        return S.best[p.k];
+      }).length, " / ").concat(xs.length, "</td>");
+    }).join('');
+    $v('visSum').innerHTML = "<div class=\"tscroll\"><table class=\"stbl nophx\"><thead><tr><th>A ciegas</th><th>1</th><th>2</th><th>3</th><th>4</th><th>5</th></tr></thead><tbody><tr><td>Resueltos</td>".concat(byN, "</tr></tbody></table></div><p class=\"sumline\">Puntos: <b>").concat(tot, "</b>. Cada problema punt\xFAa (2 + jugadas a ciegas) \xD7 ").concat(MODES.o[1], " / ").concat(MODES.e[1], " / ").concat(MODES.b[1], " / ").concat(MODES.f[1], " seg\xFAn el modo, la mitad con un fallo; cuenta tu mejor intento.</p>");
+    $v('visGrid').innerHTML = set.map(function (p) {
+      var b = S.best[p.k];
+      return "<button type=\"button\" class=\"vcell".concat(b ? ' m' + b.m : '').concat(cur && cur.p === p ? ' on' : '', "\" data-k=\"").concat(p.k, "\" title=\"").concat(p.n, " ").concat(p.n === 1 ? 'jugada' : 'jugadas', " a ciegas").concat(b ? ' · resuelto: ' + MODES[b.m][0] : '', "\">").concat(p.k, "<small>").concat(p.n, "</small></button>");
+    }).join('');
+    $v('visGrid').querySelectorAll('.vcell').forEach(function (b) {
+      return b.onclick = function () {
+        return start(P.find(function (p) {
+          return p.k === +b.dataset.k;
+        }));
+      };
+    });
+  }
+  function start(p) {
+    var mode = $v('visMode').value,
+      c = new Chess(p.fen),
+      fens = [p.fen];
+    p.lead.forEach(function (s) {
+      c.move(s);
+      fens.push(c.fen());
+    });
+    cur = {
+      p: p,
+      mode: mode,
+      fens: fens,
+      pos: c.fen(),
+      step: 0,
+      errs: 0,
+      sel: null,
+      done: false,
+      shown: mode !== 'o',
+      line: [],
+      anim: null
+    };
+    $v('visTrain').hidden = false;
+    grid();
+    paint();
+    setTimeout(function () {
+      return $v('visTrain').scrollIntoView({
+        block: 'start',
+        behavior: 'smooth'
+      });
+    }, 50);
+  }
+  function boardFen() {
+    var v = cur;
+    if (v.anim != null) return v.anim;
+    if (v.done) return v.endFen;
+    if (v.mode === 'f') return v.pos;
+    return v.fens[0];
+  }
+  function paint(msg) {
+    var v = cur,
+      p = v.p,
+      flip = p.col === 'b',
+      hide = v.mode === 'o' && v.shown === 'hidden' && !v.done && v.anim == null;
+    window.drawBoardG($v('visBoard'), boardFen(), flip, {
+      sel: v.sel,
+      last: v.lastU || null,
+      arrows: []
+    });
+    if (hide) $v('visBoard').querySelectorAll('img').forEach(function (i) {
+      return i.remove();
+    });
+    var p0 = ply0Of(p.fen),
+      lead = p.lead.map(function (s, i) {
+        return num(p0, i, s);
+      }).join(' '),
+      p1 = p0 + p.lead.length;
+    var sol = v.line.map(function (s, i) {
+      return num(p1, i, s);
+    }).join(' ');
+    $v('visHead').innerHTML = "<h3 style=\"margin:0\">Problema ".concat(p.k, " \xB7 mate en 3</h3><p class=\"sumline\">").concat(p.n, " ").concat(p.n === 1 ? 'media jugada' : 'medias jugadas', " a ciegas \xB7 juegan las ").concat(p.col === 'w' ? 'blancas' : 'negras', " \xB7 ").concat(MODES[v.mode][0], " \xB7 de ").concat(p.mine ? 'una partida tuya' : 'una partida tuya (el mate era del rival)', ", ").concat(p.ym, "</p>");
+    $v('visMoves').innerHTML = "<div class=\"vlead\"><b>Jugadas a ciegas:</b> ".concat(lead, "</div><div class=\"vsol\"><b>Tu mate:</b> ").concat(sol || '<span class="muted">—</span>').concat(!v.done && v.step < 3 ? ' <span class="vq">?</span>' : '', "</div>");
+    var info = msg || '';
+    if (!info) {
+      if (v.mode === 'o' && v.shown !== 'hidden' && !v.done) info = 'Memoriza la posición y pulsa <b>Ocultar y empezar</b>.';else if (!v.done) info = v.mode === 'b' ? 'Elige tu jugada.' : v.mode === 'o' ? 'Toca la casilla de la pieza y la de destino, de memoria.' : 'Toca la pieza y la casilla de destino' + (v.mode === 'f' ? '.' : ' (en el tablero antiguo: las piezas están donde estaban antes de las jugadas escritas).');
+    }
+    $v('visInfo').innerHTML = info;
+    $v('visHide').hidden = !(v.mode === 'o' && v.shown !== 'hidden' && !v.done);
+    $v('visShow').textContent = v.done ? 'Repetir la animación' : 'Ver la solución';
+    $v('visNext').hidden = !v.done;
+    bank();
+  }
+  function bank() {
+    var v = cur,
+      host = $v('visBank');
+    if (v.mode !== 'b' || v.done || v.step >= 3) {
+      host.innerHTML = '';
+      return;
+    }
+    var c = new Chess(v.pos),
+      ok = v.p.sol[v.step * 2],
+      moves = c.moves({
+        verbose: true
+      }),
+      seed = v.p.k * 7 + v.step;
+    var okSan = c.move(uci(ok)).san;
+    c.undo();
+    var others = moves.filter(function (m) {
+      return m.san !== okSan;
+    }).map(function (m, i) {
+      return [m, (/[+#]/.test(m.san) ? 0 : /x/.test(m.san) ? 1 : 2) * 1000 + (i * 37 + seed * 11) % 97];
+    }).sort(function (a, b) {
+      return a[1] - b[1];
+    }).slice(0, 5).map(function (x) {
+      return x[0].san;
+    });
+    var all = others.concat([okSan]).map(function (s, i) {
+      return [s, (s.charCodeAt(0) * 13 + i * 7 + seed) % 29];
+    }).sort(function (a, b) {
+      return a[1] - b[1];
+    }).map(function (x) {
+      return x[0];
+    });
+    host.innerHTML = all.map(function (s) {
+      return "<button type=\"button\" class=\"btn small vb\" data-s=\"".concat(s, "\">").concat(es(s), "</button>");
+    }).join('');
+    host.querySelectorAll('.vb').forEach(function (b) {
+      return b.onclick = function () {
+        var k = new Chess(v.pos),
+          m = k.move(b.dataset.s);
+        if (m) tryMove(m.from + m.to + (m.promotion || ''));
+      };
+    });
+  }
+  function tap(sq) {
+    var v = cur;
+    if (!v || v.done || v.anim != null || v.mode === 'b' || v.mode === 'o' && v.shown !== 'hidden') return;
+    if (!v.sel) {
+      v.sel = sq;
+      paint();
+      return;
+    }
+    if (v.sel === sq) {
+      v.sel = null;
+      paint();
+      return;
+    }
+    var from = v.sel;
+    v.sel = null;
+    var c = new Chess(v.pos),
+      pc = c.get(from);
+    var m = c.move({
+      from: from,
+      to: sq,
+      promotion: 'q'
+    });
+    if (!m) {
+      var t = c.get(sq);
+      if (t && t.color === c.turn()) {
+        v.sel = sq;
+        paint();
+      } else paint(pc ? 'Esa jugada no es legal en la posición actual.' : 'En la posición actual no hay ninguna pieza tuya en ' + from + '. Recuerda dónde está cada pieza después de las jugadas escritas.');
+      return;
+    }
+    tryMove(m.from + m.to + (m.promotion || ''));
+  }
+  function tryMove(u) {
+    var v = cur,
+      p = v.p,
+      c = new Chess(v.pos),
+      san = c.move(uci(u)).san;
+    var reply = null,
+      good = false;
+    if (v.step === 0) good = u.slice(0, 4) === p.sol[0].slice(0, 4), reply = p.sol[1];else if (v.step === 1) {
+      if (u.slice(0, 4) === p.sol[2].slice(0, 4)) {
+        good = true;
+        reply = p.sol[3];
+      } else {
+        var a = Object.keys(p.alt || {}).find(function (k) {
+          return k.slice(0, 4) === u.slice(0, 4);
+        });
+        if (a != null) {
+          good = true;
+          reply = p.alt[a] || null;
+        }
+      }
+    } else good = mate(c);
+    if (!good) {
+      v.errs++;
+      if (v.errs >= 2) return finish(false, "<b style=\"color:var(--bad)\">".concat(es(san), "</b> tampoco. Mira la soluci\xF3n en el tablero."));
+      return paint("<b style=\"color:var(--bad)\">".concat(es(san), "</b> no es. Te queda un intento para esta jugada."));
+    }
+    v.line.push(san);
+    v.step++;
+    if (mate(c)) {
+      v.pos = c.fen();
+      return finish(true);
+    }
+    if (reply) {
+      var r = c.move(uci(reply));
+      v.line.push(r.san);
+    }
+    v.pos = c.fen();
+    v.lastU = v.mode === 'f' ? reply : null;
+    paint("<b style=\"color:var(--good)\">".concat(es(san), "</b> \u2713. ").concat(reply ? 'Responden ' + es(v.line[v.line.length - 1]) + '.' : ''));
+  }
+  function finish(ok, msg) {
+    var v = cur,
+      p = v.p;
+    v.done = true;
+    var got = ok ? pts(p, v.mode, v.errs) : 0;
+    if (!ok) {
+      var c = new Chess(v.fens[v.fens.length - 1]);
+      v.line = p.sol.map(function (u) {
+        return c.move(uci(u)).san;
+      });
+      v.endFen = c.fen();
+    } else v.endFen = v.pos;
+    S.log.push({
+      k: p.k,
+      m: v.mode,
+      ok: ok,
+      e: v.errs,
+      d: new Date().toISOString().slice(0, 10)
+    });
+    if (got && (!S.best[p.k] || got > S.best[p.k].p)) S.best[p.k] = {
+      p: got,
+      m: v.mode,
+      d: new Date().toISOString().slice(0, 10)
+    };
+    save();
+    grid();
+    paint(ok ? "<b style=\"color:var(--good)\">\xA1Mate!</b> ".concat(v.errs ? 'Con un fallo: ' : '', "+").concat(got, " puntos. Pulsa \xABRepetir la animaci\xF3n\xBB para verlo en el tablero.") : msg);
+    animate();
+  }
+  function animate() {
+    var v = cur,
+      p = v.p,
+      seq = p.lead.concat([]),
+      c = new Chess(p.fen),
+      frames = [[p.fen, null]];
+    seq.forEach(function (s) {
+      var m = c.move(s);
+      frames.push([c.fen(), m.from + m.to]);
+    });
+    p.sol.forEach(function (u) {
+      var m = c.move(uci(u));
+      if (m) frames.push([c.fen(), m.from + m.to]);
+    });
+    var i = 0;
+    clearInterval(v.timer);
+    v.timer = setInterval(function () {
+      if (cur !== v) return clearInterval(v.timer);
+      if (i >= frames.length) {
+        clearInterval(v.timer);
+        v.anim = null;
+        v.lastU = null;
+        paint($v('visInfo').innerHTML);
+        return;
+      }
+      v.anim = frames[i][0];
+      v.lastU = frames[i][1];
+      var keep = $v('visInfo').innerHTML;
+      paint(keep);
+      i++;
+    }, 900);
+  }
+  $v('visBoard').addEventListener('click', function (ev) {
+    var s = ev.target.closest('.sq');
+    if (s) tap(s.dataset.sq);
+  });
+  $v('visHide').onclick = function () {
+    if (!cur) return;
+    cur.shown = 'hidden';
+    paint();
+  };
+  $v('visShow').onclick = function () {
+    if (!cur) return;
+    if (!cur.done) {
+      cur.errs = 2;
+      finish(false, 'Esta es la solución.');
+    } else animate();
+  };
+  $v('visNext').onclick = function () {
+    if (!cur) return;
+    var lv = $v('visLvl').value,
+      set = P.filter(function (p) {
+        return !lv || p.n === +lv;
+      }),
+      i = set.indexOf(cur.p),
+      nx = set.slice(i + 1).concat(set.slice(0, i + 1)).find(function (p) {
+        return !S.best[p.k] || S.best[p.k].m !== 'o';
+      }) || set[(i + 1) % set.length];
+    start(nx);
+  };
+  $v('visMode').onchange = function () {
+    S.mode = $v('visMode').value;
+    $v('visModeTxt').textContent = MODES[S.mode][2];
+    save();
+    if (cur && !cur.done) start(cur.p);
+  };
+  $v('visLvl').onchange = function () {
+    S.lvl = $v('visLvl').value;
+    save();
+    grid();
+  };
+  $v('visModeTxt').textContent = MODES.e[2];
+  window.visOpen = /*#__PURE__*/_asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee19() {
+    return _regenerator().w(function (_context19) {
+      while (1) switch (_context19.n) {
+        case 0:
+          _context19.n = 1;
+          return open();
+        case 1:
+          $v('visModeTxt').textContent = MODES[S.mode][2];
+        case 2:
+          return _context19.a(2);
+      }
+    }, _callee19);
+  }));
+})();
+
 // ---------- reset scores (while testing) ----------
 (function () {
   var b = document.getElementById('resetBtn');
@@ -15455,10 +16011,10 @@ var LIVE_USER = '';
     var a = by['2022'],
       z = by['2026'];
     var rushY = {};
-    SD.rush.forEach(function (_ref32) {
-      var _ref33 = _slicedToArray(_ref32, 2),
-        t = _ref33[0],
-        s = _ref33[1];
+    SD.rush.forEach(function (_ref33) {
+      var _ref34 = _slicedToArray(_ref33, 2),
+        t = _ref34[0],
+        s = _ref34[1];
       var k = new Date(t * 1000).getUTCFullYear();
       (rushY[k] = rushY[k] || []).push(s);
     });
@@ -15473,12 +16029,12 @@ var LIVE_USER = '';
     }, 0)), 'blitz desde oct 2022'], ['Precisión', nf(M.acc(z)) + ' %', "2022: ".concat(nf(M.acc(a)), " %"), M.acc(z) > M.acc(a)], ['Fallos graves / 100 jugadas', nf(M.per(z, 'bl', 'm'), 2), "2022: ".concat(nf(M.per(a, 'bl', 'm'), 2)), M.per(z, 'bl', 'm') < M.per(a, 'bl', 'm')], ['Derrotas por tiempo', nf(M.to(z)) + ' %', "2022: ".concat(nf(M.to(a)), " %"), M.to(z) < M.to(a)], ['Puntuación (últimas 100)', nf(M.score(last100)) + ' %', 'de los puntos posibles'], ['Puzzle Rush (media 2026)', nf(avg(rushY[2026])), "2022: ".concat(nf(avg(rushY[2022])), " \xB7 r\xE9cord ").concat(Math.max.apply(null, SD.rush.map(function (x) {
       return x[1];
     }))), true], ['Problemas puntuados', fInt(SD.puz[SD.puz.length - 1][2]), 'puntuación actual']];
-    $('kpis').innerHTML = k.map(function (_ref34) {
-      var _ref35 = _slicedToArray(_ref34, 4),
-        t = _ref35[0],
-        v = _ref35[1],
-        s = _ref35[2],
-        up = _ref35[3];
+    $('kpis').innerHTML = k.map(function (_ref35) {
+      var _ref36 = _slicedToArray(_ref35, 4),
+        t = _ref36[0],
+        v = _ref36[1],
+        s = _ref36[2],
+        up = _ref36[3];
       return "<div class=\"kpi\"><span>".concat(t, "</span><b>").concat(v, "</b><span>").concat(up == null ? s : "<em class=\"".concat(up ? 'up' : 'down', "\">").concat(up ? '▲' : '▼', "</em> ").concat(s), "</span></div>");
     }).join('');
     drawEloM();
@@ -15672,14 +16228,14 @@ var LIVE_USER = '';
     }, true, 1], ['Puzzle Rush (mejor serie)', r0.length ? Math.max.apply(null, r0) : null, r1.length ? Math.max.apply(null, r1) : null, fInt, true, 1], ['Problemas (puntuación)', pzAt(30), pzAt(0), fInt, true, 10]];
     var good = [],
       bad = [];
-    var tr = rows.map(function (_ref36) {
-      var _ref37 = _slicedToArray(_ref36, 6),
-        lab = _ref37[0],
-        a = _ref37[1],
-        b = _ref37[2],
-        f = _ref37[3],
-        up = _ref37[4],
-        min = _ref37[5];
+    var tr = rows.map(function (_ref37) {
+      var _ref38 = _slicedToArray(_ref37, 6),
+        lab = _ref38[0],
+        a = _ref38[1],
+        b = _ref38[2],
+        f = _ref38[3],
+        up = _ref38[4],
+        min = _ref38[5];
       var cls = '',
         arrow = '';
       if (a != null && b != null && up != null && Math.abs(b - a) >= min && min > 0) {
@@ -15988,11 +16544,11 @@ var LIVE_USER = '';
     var distinct = failRows(weeks[11]).filter(function (x) {
       return x.fails;
     }).length;
-    $('trnKpis').innerHTML = [['Jugadas practicadas', fInt(now[0]), 'esta semana'], ['Fallos', fInt(now[1]), now[0] ? nf(pct(now)) + ' % de las jugadas' : '–'], ['Posiciones con fallo', fInt(distinct), 'distintas, esta semana'], ['Semana pasada', prev[0] ? nf(pct(prev)) + ' %' : '–', prev[0] ? "".concat(prev[1], " fallos en ").concat(prev[0], " jugadas") : 'sin datos']].map(function (_ref38) {
-      var _ref39 = _slicedToArray(_ref38, 3),
-        a = _ref39[0],
-        b = _ref39[1],
-        c = _ref39[2];
+    $('trnKpis').innerHTML = [['Jugadas practicadas', fInt(now[0]), 'esta semana'], ['Fallos', fInt(now[1]), now[0] ? nf(pct(now)) + ' % de las jugadas' : '–'], ['Posiciones con fallo', fInt(distinct), 'distintas, esta semana'], ['Semana pasada', prev[0] ? nf(pct(prev)) + ' %' : '–', prev[0] ? "".concat(prev[1], " fallos en ").concat(prev[0], " jugadas") : 'sin datos']].map(function (_ref39) {
+      var _ref40 = _slicedToArray(_ref39, 3),
+        a = _ref40[0],
+        b = _ref40[1],
+        c = _ref40[2];
       return "<div class=\"kpi\"><span>".concat(a, "</span><b>").concat(b, "</b><span>").concat(c, "</span></div>");
     }).join('');
     var ch = $('trnCharts');
@@ -16144,10 +16700,10 @@ var LIVE_USER = '';
   function tacRows() {
     // row: [q, n, forks 6x(f,m), pins 6x, free 6x, mates 5x(f,m), material f,m, capturing 6, hanging 6]
     var types = [];
-    [['Horquilla de', 2], ['Clavada con', 14], ['Capturar gratis:', 26]].forEach(function (_ref40) {
-      var _ref41 = _slicedToArray(_ref40, 2),
-        nm = _ref41[0],
-        off = _ref41[1];
+    [['Horquilla de', 2], ['Clavada con', 14], ['Capturar gratis:', 26]].forEach(function (_ref41) {
+      var _ref42 = _slicedToArray(_ref41, 2),
+        nm = _ref42[0],
+        off = _ref42[1];
       return PIE.forEach(function (p, i) {
         if (p === 'rey' && nm !== 'Horquilla de') return;
         types.push({
@@ -16199,10 +16755,10 @@ var LIVE_USER = '';
     var pc = function pc(s) {
       return s[0] + s[1] ? 100 * s[0] / (s[0] + s[1]) : null;
     };
-    var list = TC.th.map(function (_ref42) {
-      var _ref43 = _slicedToArray(_ref42, 2),
-        k = _ref43[0],
-        name = _ref43[1];
+    var list = TC.th.map(function (_ref43) {
+      var _ref44 = _slicedToArray(_ref43, 2),
+        k = _ref44[0],
+        name = _ref44[1];
       var ly = sum(lastQ, k),
         all = sum(Q, k);
       return {
@@ -16458,10 +17014,10 @@ var LIVE_USER = '';
     var g = segVal('puzGroup', 'g') || 'M';
     var host = $('puzCharts');
     host.innerHTML = '';
-    var R = SD.rush.map(function (_ref44) {
-      var _ref45 = _slicedToArray(_ref44, 2),
-        t = _ref45[0],
-        s = _ref45[1];
+    var R = SD.rush.map(function (_ref45) {
+      var _ref46 = _slicedToArray(_ref45, 2),
+        t = _ref46[0],
+        s = _ref46[1];
       return {
         date: new Date(t * 1000),
         s: s
@@ -16495,10 +17051,10 @@ var LIVE_USER = '';
         return x.s;
       }),
       last30 = all.slice(-30);
-    $('puzKpis').innerHTML = [['Series jugadas', fInt(all.length)], ['Récord', Math.max.apply(null, all)], ['Media últimas 30', nf(avg(last30))], ['Media primeras 100', nf(avg(all.slice(0, 100)))], ['Problemas puntuados', fInt(SD.puz[SD.puz.length - 1][2]) + ' pts'], ['Máximo puntuados', '2.070']].map(function (_ref46) {
-      var _ref47 = _slicedToArray(_ref46, 2),
-        a = _ref47[0],
-        b = _ref47[1];
+    $('puzKpis').innerHTML = [['Series jugadas', fInt(all.length)], ['Récord', Math.max.apply(null, all)], ['Media últimas 30', nf(avg(last30))], ['Media primeras 100', nf(avg(all.slice(0, 100)))], ['Problemas puntuados', fInt(SD.puz[SD.puz.length - 1][2]) + ' pts'], ['Máximo puntuados', '2.070']].map(function (_ref47) {
+      var _ref48 = _slicedToArray(_ref47, 2),
+        a = _ref48[0],
+        b = _ref48[1];
       return "<div class=\"kpi\"><span>".concat(a, "</span><b>").concat(b, "</b></div>");
     }).join('');
     chart(host, {
@@ -16853,11 +17409,11 @@ var LIVE_USER = '';
     var col = c === 'w' ? 'blancas' : 'negras';
     var yAll = sum(qs, idx),
       y1 = sum(last4, idx);
-    $('opeBookKpis').innerHTML = [['Te sales tú primero', fPct(pct(y1)), "todo: ".concat(fPct(pct(yAll)))], ['Jugada en que te sales tú', f2(me(y1)), "todo: ".concat(f2(me(yAll)))], ['Jugada en que se sale el rival', f2(op(y1)), "todo: ".concat(f2(op(yAll)))], ['Partidas', fInt(y1[0]), "\xFAltimos 4 trimestres con ".concat(col)]].map(function (_ref48) {
-      var _ref49 = _slicedToArray(_ref48, 3),
-        t = _ref49[0],
-        v = _ref49[1],
-        s = _ref49[2];
+    $('opeBookKpis').innerHTML = [['Te sales tú primero', fPct(pct(y1)), "todo: ".concat(fPct(pct(yAll)))], ['Jugada en que te sales tú', f2(me(y1)), "todo: ".concat(f2(me(yAll)))], ['Jugada en que se sale el rival', f2(op(y1)), "todo: ".concat(f2(op(yAll)))], ['Partidas', fInt(y1[0]), "\xFAltimos 4 trimestres con ".concat(col)]].map(function (_ref49) {
+      var _ref50 = _slicedToArray(_ref49, 3),
+        t = _ref50[0],
+        v = _ref50[1],
+        s = _ref50[2];
       return "<div class=\"kpi\"><span>".concat(t, "</span><b>").concat(v, "</b><span>").concat(s, "</span></div>");
     }).join('');
     var rows = idx.map(function (i) {
@@ -16972,18 +17528,18 @@ var LIVE_USER = '';
     return _fetchGames.apply(this, arguments);
   }
   function _fetchGames() {
-    _fetchGames = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee19() {
-      var user, st, cache, ar, months, nowKey, todo, i, _iterator3, _step4, _loop4, _t11, _t12;
-      return _regenerator().w(function (_context20) {
-        while (1) switch (_context20.p = _context20.n) {
+    _fetchGames = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee22() {
+      var user, st, cache, ar, months, nowKey, todo, i, _iterator3, _step4, _loop4, _t15, _t16;
+      return _regenerator().w(function (_context23) {
+        while (1) switch (_context23.p = _context23.n) {
           case 0:
             user = $('liveUser').value.trim().toLowerCase();
             if (user) {
-              _context20.n = 1;
+              _context23.n = 1;
               break;
             }
             $('liveUser').focus();
-            return _context20.a(2);
+            return _context23.a(2);
           case 1:
             try {
               localStorage.setItem('taller.user', user);
@@ -16997,14 +17553,14 @@ var LIVE_USER = '';
               g: [],
               done: []
             };
-            _context20.p = 2;
-            _context20.n = 3;
+            _context23.p = 2;
+            _context23.n = 3;
             return fetch("https://api.chess.com/pub/player/".concat(encodeURIComponent(user), "/games/archives")).then(function (r) {
               if (!r.ok) throw new Error(r.status === 404 ? 'Usuario no encontrado' : 'Error ' + r.status);
               return r.json();
             });
           case 3:
-            ar = _context20.v;
+            ar = _context23.v;
             months = ar.archives;
             nowKey = months[months.length - 1];
             todo = months.filter(function (m) {
@@ -17012,21 +17568,21 @@ var LIVE_USER = '';
             });
             i = 0;
             _iterator3 = _createForOfIteratorHelper(todo);
-            _context20.p = 4;
+            _context23.p = 4;
             _loop4 = /*#__PURE__*/_regenerator().m(function _loop4() {
               var m, j, key;
-              return _regenerator().w(function (_context19) {
-                while (1) switch (_context19.n) {
+              return _regenerator().w(function (_context22) {
+                while (1) switch (_context22.n) {
                   case 0:
                     m = _step4.value;
                     i++;
                     st.textContent = "Descargando ".concat(i, " de ").concat(todo.length, "\u2026");
-                    _context19.n = 1;
+                    _context22.n = 1;
                     return fetch(m).then(function (r) {
                       return r.json();
                     });
                   case 1:
-                    j = _context19.v;
+                    j = _context22.v;
                     key = m.slice(-7);
                     cache.g = cache.g.filter(function (x) {
                       return x.m !== key;
@@ -17056,31 +17612,31 @@ var LIVE_USER = '';
                     });
                     if (cache.done.indexOf(m) < 0) cache.done.push(m);
                   case 2:
-                    return _context19.a(2);
+                    return _context22.a(2);
                 }
               }, _loop4);
             });
             _iterator3.s();
           case 5:
             if ((_step4 = _iterator3.n()).done) {
-              _context20.n = 7;
+              _context23.n = 7;
               break;
             }
-            return _context20.d(_regeneratorValues(_loop4()), 6);
+            return _context23.d(_regeneratorValues(_loop4()), 6);
           case 6:
-            _context20.n = 5;
+            _context23.n = 5;
             break;
           case 7:
-            _context20.n = 9;
+            _context23.n = 9;
             break;
           case 8:
-            _context20.p = 8;
-            _t11 = _context20.v;
-            _iterator3.e(_t11);
+            _context23.p = 8;
+            _t15 = _context23.v;
+            _iterator3.e(_t15);
           case 9:
-            _context20.p = 9;
+            _context23.p = 9;
             _iterator3.f();
-            return _context20.f(9);
+            return _context23.f(9);
           case 10:
             cache.g.sort(function (a, b) {
               return a.t - b.t;
@@ -17089,16 +17645,16 @@ var LIVE_USER = '';
             GAMES = cache.g;
             st.textContent = "".concat(GAMES.length, " partidas blitz \xB7 actualizado");
             renderGames();
-            _context20.n = 12;
+            _context23.n = 12;
             break;
           case 11:
-            _context20.p = 11;
-            _t12 = _context20.v;
-            st.textContent = 'No he podido descargar: ' + (_t12 && _t12.message ? _t12.message : _t12) + '. Si estás dentro de Claude, prueba la versión del iPad.';
+            _context23.p = 11;
+            _t16 = _context23.v;
+            st.textContent = 'No he podido descargar: ' + (_t16 && _t16.message ? _t16.message : _t16) + '. Si estás dentro de Claude, prueba la versión del iPad.';
           case 12:
-            return _context20.a(2);
+            return _context23.a(2);
         }
-      }, _callee19, null, [[4, 8, 9, 10], [2, 11]]);
+      }, _callee22, null, [[4, 8, 9, 10], [2, 11]]);
     }));
     return _fetchGames.apply(this, arguments);
   }
@@ -17426,6 +17982,10 @@ var LIVE_USER = '';
       $('viewBook').hidden = !m.startsWith('bk-');
       if (m.startsWith('bk-') && window.bookOpen) window.bookOpen(m.slice(3));
     }
+    if ($('viewVis')) {
+      $('viewVis').hidden = m !== 'vis';
+      if (m === 'vis' && window.visOpen) window.visOpen();
+    }
     if ($('viewLc')) {
       $('viewLc').hidden = m !== 'lc';
       if (m === 'lc' && window.lcOpen) window.lcOpen();
@@ -17533,7 +18093,7 @@ if (!window.PointerEvent) {
       for (var j = 0; j < (c.colSpan || 1); j++) { var s = sub.shift(); if (s) out.push({ th: s, label: c.textContent + ' · ' + s.textContent, grp: c }); } });
     return out; }
   function fix(t) {
-    if (t.getAttribute('data-ph')) return; var C = heads(t); if (C.length < 5) return; t.setAttribute('data-ph', '1'); t.className += ' phx';
+    if (t.getAttribute('data-ph') || /nophx/.test(t.className)) return; var C = heads(t); if (C.length < 5) return; t.setAttribute('data-ph', '1'); t.className += ' phx';
     var pct = -1; C.forEach(function (h, i) { if (pct < 0 && i > 1 && /%/.test(h.th.textContent)) pct = i; });
     var keep = function (i) { return i === 0 || i === 1 || i === pct; };
     var gv = []; C.forEach(function (h, i) { if (!keep(i)) h.th.className += ' phh'; else if (h.grp) gv.push(h.grp); });
