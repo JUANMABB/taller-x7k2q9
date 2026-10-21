@@ -432,6 +432,7 @@ footer { font-size: 12px; color: var(--muted); max-width: 90ch; }
 .vcell small { font-size: 10px; color: var(--muted); font-weight: 400; } .vcell.on { box-shadow: 0 0 0 2px var(--walnut) inset; }
 .vcell.mf { background: var(--good-soft); } .vcell.mb { background: var(--good-soft); border-color: var(--good); } .vcell.me { background: var(--good); color: var(--panel); } .vcell.mo { background: var(--walnut); color: var(--panel); }
 .vcell.me small, .vcell.mo small { color: var(--panel); }
+.vbad { color: var(--bad); font-weight: 700; text-decoration: underline; } .vctl #visDel, .vctl #visCheck { min-width: 110px; min-height: 44px; font-size: 16px; }
 .vmoves { font-family: var(--font-mono); font-size: 14px; display: grid; gap: 6px; } .vmoves b { font-family: var(--font-body); } .vq { color: var(--walnut); font-weight: 700; }
 .vbank { display: flex; flex-wrap: wrap; gap: 6px; } .vbank .vb { font-family: var(--font-mono); font-size: 15px; min-width: 64px; }
 .optree td.nm { cursor: pointer; } .optree .l2 td.nm { padding-left: 22px; } .optree .optot td { border-top: 1px solid var(--line); background: var(--eng-bg); } .optree .l3 td.nm { padding-left: 44px; font-family: var(--font-mono); font-size: 12.5px; } .optree .eco { color: var(--muted); font-size: 11.5px; margin-left: 4px; } .optree .tw { display: inline-block; width: 14px; color: var(--muted); }
@@ -2575,7 +2576,7 @@ if (typeof define !== 'undefined')
     </div>
   </section>
   <section class="games" id="viewVis" hidden aria-label="Visualización">
-    <p class="note" style="font-size:13px;color:var(--muted);margin:0">100 mates en 3 sacados de tus partidas. El tablero muestra la posición unas medias jugadas antes (de 1 a 5); esas jugadas solo están escritas y tienes que verlas en la cabeza. Luego juega el mate en ese tablero, tocando la pieza y la casilla. Las jugadas del bando que da mate en la parte a ciegas son buenas: no hay trampas.</p>
+    <p class="note" style="font-size:13px;color:var(--muted);margin:0">100 mates en 3 sacados de tus partidas. El tablero muestra la posición unas medias jugadas antes (de 1 a 5); esas jugadas solo están escritas y tienes que verlas en la cabeza. Luego escribe toda la línea del mate en ese tablero (tus jugadas y la mejor defensa del rival), tocando la pieza y la casilla; ⌫ borra la última jugada y ✓ comprueba la línea entera. Las jugadas del bando que da mate en la parte a ciegas son buenas: no hay trampas.</p>
     <div class="sbar"><label for="visMode">Modo</label><select id="visMode"><option value="o">Piezas ocultas (×4)</option><option value="e" selected>Jugadas escritas (×3)</option><option value="b">Banco de jugadas (×2)</option><option value="f">Posición final (×1)</option></select><label for="visLvl">A ciegas</label><select id="visLvl"><option value="">Todas</option><option value="1">1 media jugada</option><option value="2">2 medias jugadas</option><option value="3">3 medias jugadas</option><option value="4">4 medias jugadas</option><option value="5">5 medias jugadas</option></select></div>
     <p class="sumline" id="visModeTxt" style="margin:0"></p>
     <div id="visSum"></div>
@@ -2584,7 +2585,7 @@ if (typeof define !== 'undefined')
       <div id="visHead"></div>
       <div class="gplay"><div class="gboardwrap"><div class="board" id="visBoard" aria-label="Tablero del problema"></div></div>
         <div class="gside"><div id="visMoves" class="vmoves"></div><div class="msg info" id="visInfo"></div><div class="vbank" id="visBank"></div>
-          <div class="controls"><button type="button" class="btn small primary" id="visHide" hidden>Ocultar y empezar</button><button type="button" class="btn small" id="visShow">Ver la solución</button><button type="button" class="btn small" id="visNext" hidden>Siguiente</button></div></div></div>
+          <div class="controls vctl"><button type="button" class="btn small primary" id="visHide" hidden>Ocultar y empezar</button><button type="button" class="btn small" id="visDel">⌫ Borrar</button><button type="button" class="btn small primary" id="visCheck">✓ Comprobar</button><button type="button" class="btn small" id="visShow">Ver la solución</button><button type="button" class="btn small" id="visNext" hidden>Siguiente</button></div></div></div>
     </div>
   </section>
   <section class="games" id="viewWp" hidden aria-label="Woodpecker">
@@ -12999,6 +13000,9 @@ var BOOK_DESC = {
       };
     });
   }
+  // The whole line is entered blind (your moves and the rival's best defence) and checked at once.
+  // ⌫ removes the last move (or the selected square); ✓ checks the line: first move = the only one that mates in 3,
+  // each rival move must be a real defence (no mate in 1 left if he could avoid it), each of your moves must keep a forced mate, last = mate.
   function start(p) {
     var mode = $v('visMode').value,
       c = new Chess(p.fen),
@@ -13007,18 +13011,19 @@ var BOOK_DESC = {
       c.move(s);
       fens.push(c.fen());
     });
+    clearInterval(cur && cur.timer);
     cur = {
       p: p,
       mode: mode,
       fens: fens,
-      pos: c.fen(),
-      step: 0,
+      base: c.fen(),
+      line: [],
       errs: 0,
       sel: null,
       done: false,
       shown: mode !== 'o',
-      line: [],
-      anim: null
+      anim: null,
+      bad: -1
     };
     $v('visTrain').hidden = false;
     grid();
@@ -13030,11 +13035,21 @@ var BOOK_DESC = {
       });
     }, 50);
   }
+  var posOf = function posOf(v, n) {
+    var c = new Chess(v.base);
+    v.line.slice(0, n == null ? v.line.length : n).forEach(function (x) {
+      return c.move(uci(x.u));
+    });
+    return c;
+  };
+  var ended = function ended(v) {
+    return v.line.length >= 5 || mate(posOf(v));
+  };
   function boardFen() {
     var v = cur;
     if (v.anim != null) return v.anim;
     if (v.done) return v.endFen;
-    if (v.mode === 'f') return v.pos;
+    if (v.mode === 'f') return posOf(v).fen();
     return v.fens[0];
   }
   function paint(msg) {
@@ -13055,17 +13070,24 @@ var BOOK_DESC = {
         return num(p0, i, s);
       }).join(' '),
       p1 = p0 + p.lead.length;
-    var sol = v.line.map(function (s, i) {
-      return num(p1, i, s);
+    var sol = v.line.map(function (x, i) {
+      return "<span class=\"".concat(i === v.bad ? 'vbad' : '', "\">").concat(num(p1, i, x.san), "</span>");
     }).join(' ');
+    var yours = v.line.length % 2 === 0,
+      pend = !v.done && !ended(v) ? v.sel ? " <span class=\"vq\">".concat(v.sel, "\u2192?</span>") : " <span class=\"vq\">?</span>" : '';
     $v('visHead').innerHTML = "<h3 style=\"margin:0\">Problema ".concat(p.k, " \xB7 mate en 3</h3><p class=\"sumline\">").concat(p.n, " ").concat(p.n === 1 ? 'media jugada' : 'medias jugadas', " a ciegas \xB7 juegan las ").concat(p.col === 'w' ? 'blancas' : 'negras', " \xB7 ").concat(MODES[v.mode][0], " \xB7 de ").concat(p.mine ? 'una partida tuya' : 'una partida tuya (el mate era del rival)', ", ").concat(p.ym, "</p>");
-    $v('visMoves').innerHTML = "<div class=\"vlead\"><b>Jugadas a ciegas:</b> ".concat(lead, "</div><div class=\"vsol\"><b>Tu mate:</b> ").concat(sol || '<span class="muted">—</span>').concat(!v.done && v.step < 3 ? ' <span class="vq">?</span>' : '', "</div>");
+    $v('visMoves').innerHTML = "<div class=\"vlead\"><b>Jugadas a ciegas:</b> ".concat(lead, "</div><div class=\"vsol\"><b>Tu l\xEDnea:</b> ").concat(sol || (pend ? '' : '<span class="muted">—</span>')).concat(pend, "</div>");
     var info = msg || '';
-    if (!info) {
-      if (v.mode === 'o' && v.shown !== 'hidden' && !v.done) info = 'Memoriza la posición y pulsa <b>Ocultar y empezar</b>.';else if (!v.done) info = v.mode === 'b' ? 'Elige tu jugada.' : v.mode === 'o' ? 'Toca la casilla de la pieza y la de destino, de memoria.' : 'Toca la pieza y la casilla de destino' + (v.mode === 'f' ? '.' : ' (en el tablero antiguo: las piezas están donde estaban antes de las jugadas escritas).');
+    if (!info && !v.done) {
+      if (v.mode === 'o' && v.shown !== 'hidden') info = 'Memoriza la posición y pulsa <b>Ocultar y empezar</b>.';else if (ended(v)) info = 'Línea completa. Pulsa <b>✓ Comprobar</b> (o ⌫ para cambiar la última jugada).';else info = (yours ? '<b>Tu jugada.</b> ' : '<b>La mejor defensa del rival.</b> ') + (v.mode === 'b' ? 'Elígela abajo.' : v.mode === 'f' ? 'Toca la pieza y la casilla.' : 'Toca la pieza y la casilla en el tablero antiguo' + (v.mode === 'o' ? ', de memoria.' : ': las piezas están donde estaban antes de las jugadas escritas.'));
     }
     $v('visInfo').innerHTML = info;
+    var live = !v.done && !(v.mode === 'o' && v.shown !== 'hidden');
     $v('visHide').hidden = !(v.mode === 'o' && v.shown !== 'hidden' && !v.done);
+    $v('visDel').hidden = !live;
+    $v('visDel').disabled = !v.line.length && !v.sel;
+    $v('visCheck').hidden = !live;
+    $v('visCheck').disabled = !v.line.length;
     $v('visShow').textContent = v.done ? 'Repetir la animación' : 'Ver la solución';
     $v('visNext').hidden = !v.done;
     bank();
@@ -13073,29 +13095,42 @@ var BOOK_DESC = {
   function bank() {
     var v = cur,
       host = $v('visBank');
-    if (v.mode !== 'b' || v.done || v.step >= 3) {
+    if (v.mode !== 'b' || v.done || ended(v)) {
       host.innerHTML = '';
       return;
     }
-    var c = new Chess(v.pos),
-      ok = v.p.sol[v.step * 2],
-      moves = c.moves({
-        verbose: true
+    var c = posOf(v),
+      i = v.line.length,
+      main = v.line.every(function (x, j) {
+        return x.u.slice(0, 4) === v.p.sol[j].slice(0, 4);
       }),
-      seed = v.p.k * 7 + v.step;
-    var okSan = c.move(uci(ok)).san;
-    c.undo();
-    var others = moves.filter(function (m) {
-      return m.san !== okSan;
-    }).map(function (m, i) {
-      return [m, (/[+#]/.test(m.san) ? 0 : /x/.test(m.san) ? 1 : 2) * 1000 + (i * 37 + seed * 11) % 97];
+      seed = v.p.k * 7 + i;
+    var must = [];
+    if (main && v.p.sol[i]) must.push(c.move(uci(v.p.sol[i])).san), c.undo();
+    if (!main && i % 2 === 0) {
+      var mm = c.moves({
+        verbose: true
+      }).find(function (m) {
+        c.move(m);
+        var ok = mate(c);
+        c.undo();
+        return ok;
+      });
+      if (mm) must.push(mm.san);
+    }
+    var others = c.moves({
+      verbose: true
+    }).filter(function (m) {
+      return !must.includes(m.san);
+    }).map(function (m, j) {
+      return [m.san, (/[+#]/.test(m.san) ? 0 : /x/.test(m.san) ? 1 : 2) * 1000 + (j * 37 + seed * 11) % 97];
     }).sort(function (a, b) {
       return a[1] - b[1];
-    }).slice(0, 5).map(function (x) {
-      return x[0].san;
+    }).slice(0, 6 - must.length).map(function (x) {
+      return x[0];
     });
-    var all = others.concat([okSan]).map(function (s, i) {
-      return [s, (s.charCodeAt(0) * 13 + i * 7 + seed) % 29];
+    var all = others.concat(must).map(function (s, j) {
+      return [s, (s.charCodeAt(0) * 13 + j * 7 + seed) % 29];
     }).sort(function (a, b) {
       return a[1] - b[1];
     }).map(function (x) {
@@ -13106,15 +13141,26 @@ var BOOK_DESC = {
     }).join('');
     host.querySelectorAll('.vb').forEach(function (b) {
       return b.onclick = function () {
-        var k = new Chess(v.pos),
+        var k = posOf(v),
           m = k.move(b.dataset.s);
-        if (m) tryMove(m.from + m.to + (m.promotion || ''));
+        if (m) add(m);
       };
     });
   }
+  function add(m) {
+    var v = cur;
+    v.line.push({
+      u: m.from + m.to + (m.promotion || ''),
+      san: m.san
+    });
+    v.bad = -1;
+    v.sel = null;
+    v.lastU = v.mode === 'f' ? m.from + m.to : null;
+    paint();
+  }
   function tap(sq) {
     var v = cur;
-    if (!v || v.done || v.anim != null || v.mode === 'b' || v.mode === 'o' && v.shown !== 'hidden') return;
+    if (!v || v.done || v.anim != null || v.mode === 'b' || v.mode === 'o' && v.shown !== 'hidden' || ended(v)) return;
     if (!v.sel) {
       v.sel = sq;
       paint();
@@ -13125,77 +13171,129 @@ var BOOK_DESC = {
       paint();
       return;
     }
-    var from = v.sel;
+    var from = v.sel,
+      c = posOf(v),
+      pc = c.get(from),
+      m = c.move({
+        from: from,
+        to: sq,
+        promotion: 'q'
+      });
+    if (m) return add(m);
+    var t = c.get(sq);
+    if (t && t.color === c.turn()) {
+      v.sel = sq;
+      return paint();
+    }
     v.sel = null;
-    var c = new Chess(v.pos),
-      pc = c.get(from);
-    var m = c.move({
-      from: from,
-      to: sq,
-      promotion: 'q'
-    });
-    if (!m) {
-      var t = c.get(sq);
-      if (t && t.color === c.turn()) {
-        v.sel = sq;
-        paint();
-      } else paint(pc ? 'Esa jugada no es legal en la posición actual.' : 'En la posición actual no hay ninguna pieza tuya en ' + from + '. Recuerda dónde está cada pieza después de las jugadas escritas.');
-      return;
-    }
-    tryMove(m.from + m.to + (m.promotion || ''));
+    paint(pc && pc.color === c.turn() ? 'Esa jugada no es legal en la posición actual. Bórrala con ⌫ o elige otra.' : "En la posici\xF3n actual no hay ninguna pieza ".concat(c.turn() === v.p.col ? 'tuya' : 'del rival', " en ").concat(from, ". Recuerda d\xF3nde est\xE1 cada pieza despu\xE9s de las jugadas escritas."));
   }
-  function tryMove(u) {
-    var v = cur,
-      p = v.p,
-      c = new Chess(v.pos),
-      san = c.move(uci(u)).san;
-    var reply = null,
-      good = false;
-    if (v.step === 0) good = u.slice(0, 4) === p.sol[0].slice(0, 4), reply = p.sol[1];else if (v.step === 1) {
-      if (u.slice(0, 4) === p.sol[2].slice(0, 4)) {
-        good = true;
-        reply = p.sol[3];
-      } else {
-        var a = Object.keys(p.alt || {}).find(function (k) {
-          return k.slice(0, 4) === u.slice(0, 4);
-        });
-        if (a != null) {
-          good = true;
-          reply = p.alt[a] || null;
+  // local verification (no engine needed): mate in 1 available / every reply allows mate in 1
+  var hasMate1 = function hasMate1(c) {
+    return c.moves({
+      verbose: true
+    }).some(function (m) {
+      c.move(m);
+      var ok = mate(c);
+      c.undo();
+      return ok;
+    });
+  };
+  var forcesMate1 = function forcesMate1(c) {
+    if (mate(c)) return true;
+    var rs = c.moves({
+      verbose: true
+    });
+    if (!rs.length) return false;
+    return rs.every(function (r) {
+      c.move(r);
+      var ok = hasMate1(c);
+      c.undo();
+      return ok;
+    });
+  };
+  function verify(v) {
+    // → [index of the first wrong move (or line length if incomplete) or -1 if correct, message]
+    var c = new Chess(v.base),
+      L = v.line;
+    var _loop3 = function _loop3() {
+        var before = new Chess(c.fen());
+        c.move(uci(L[i].u));
+        if (i % 2 === 0) {
+          // your move
+          if (i === 0 && L[0].u.slice(0, 4) !== v.p.sol[0].slice(0, 4)) return {
+            v: [0, "<b>".concat(es(L[0].san), "</b> no da mate en 3. La primera jugada es la clave: vuelve a pensarla.")]
+          };
+          if (mate(c)) return {
+            v: [-1, '']
+          };
+          if (i === 2 && !forcesMate1(c)) return {
+            v: [2, "<b>".concat(es(L[2].san), "</b> no fuerza el mate: el rival tiene una defensa.")]
+          };
+          if (i === 4) return {
+            v: [4, "<b>".concat(es(L[4].san), "</b> no es mate.")]
+          };
+        } else {
+          // the rival's defence: must avoid mate in 1 if he can
+          var _escape = before.moves({
+            verbose: true
+          }).some(function (r) {
+            before.move(r);
+            var lost = hasMate1(before);
+            before.undo();
+            return !lost;
+          });
+          if (_escape && hasMate1(c)) return {
+            v: [i, "El rival no jugar\xEDa <b>".concat(es(L[i].san), "</b>: tiene una defensa mejor. Busca su mejor respuesta.")]
+          };
         }
-      }
-    } else good = mate(c);
-    if (!good) {
-      v.errs++;
-      if (v.errs >= 2) return finish(false, "<b style=\"color:var(--bad)\">".concat(es(san), "</b> tampoco. Mira la soluci\xF3n en el tablero."));
-      return paint("<b style=\"color:var(--bad)\">".concat(es(san), "</b> no es. Te queda un intento para esta jugada."));
+      },
+      _ret2;
+    for (var i = 0; i < L.length; i++) {
+      _ret2 = _loop3();
+      if (_ret2) return _ret2.v;
     }
-    v.line.push(san);
-    v.step++;
-    if (mate(c)) {
-      v.pos = c.fen();
-      return finish(true);
-    }
-    if (reply) {
-      var r = c.move(uci(reply));
-      v.line.push(r.san);
-    }
-    v.pos = c.fen();
-    v.lastU = v.mode === 'f' ? reply : null;
-    paint("<b style=\"color:var(--good)\">".concat(es(san), "</b> \u2713. ").concat(reply ? 'Responden ' + es(v.line[v.line.length - 1]) + '.' : ''));
+    return [L.length, L.length % 2 === 1 ? 'Falta la respuesta del rival y el resto del mate.' : 'La línea no termina en mate todavía: complétala hasta el mate.'];
+  }
+  function check() {
+    var v = cur;
+    if (!v || v.done || !v.line.length) return;
+    var _verify = verify(v),
+      _verify2 = _slicedToArray(_verify, 2),
+      bad = _verify2[0],
+      msg = _verify2[1];
+    if (bad < 0) return finish(true);
+    if (bad >= v.line.length) return paint(msg); // incomplete: not a mistake, keep going
+    v.errs++;
+    v.bad = bad;
+    if (v.errs >= 2) return finish(false, msg + ' Segundo fallo: aquí tienes la solución.');
+    paint(msg + " Te queda un intento: borra con \u232B desde la jugada marcada y corr\xEDgela.");
   }
   function finish(ok, msg) {
     var v = cur,
       p = v.p;
     v.done = true;
+    v.sel = null;
     var got = ok ? pts(p, v.mode, v.errs) : 0;
-    if (!ok) {
-      var c = new Chess(v.fens[v.fens.length - 1]);
-      v.line = p.sol.map(function (u) {
-        return c.move(uci(u)).san;
+    var c = new Chess(v.base);
+    if (ok) {
+      v.line.forEach(function (x) {
+        return c.move(uci(x.u));
       });
-      v.endFen = c.fen();
-    } else v.endFen = v.pos;
+    } else {
+      v.line = p.sol.map(function (u) {
+        var m = c.move(uci(u));
+        return {
+          u: u,
+          san: m.san
+        };
+      });
+      v.bad = -1;
+    }
+    v.endFen = c.fen();
+    v.played = v.line.map(function (x) {
+      return x.u;
+    });
     S.log.push({
       k: p.k,
       m: v.mode,
@@ -13210,7 +13308,7 @@ var BOOK_DESC = {
     };
     save();
     grid();
-    paint(ok ? "<b style=\"color:var(--good)\">\xA1Mate!</b> ".concat(v.errs ? 'Con un fallo: ' : '', "+").concat(got, " puntos. Pulsa \xABRepetir la animaci\xF3n\xBB para verlo en el tablero.") : msg);
+    paint(ok ? "<b style=\"color:var(--good)\">\xA1Mate!</b> ".concat(v.errs ? 'Con un fallo: ' : '', "+").concat(got, " puntos.") : msg);
     animate();
   }
   function animate() {
@@ -13223,7 +13321,7 @@ var BOOK_DESC = {
       var m = c.move(s);
       frames.push([c.fen(), m.from + m.to]);
     });
-    p.sol.forEach(function (u) {
+    (v.played || p.sol).forEach(function (u) {
       var m = c.move(uci(u));
       if (m) frames.push([c.fen(), m.from + m.to]);
     });
@@ -13261,6 +13359,15 @@ var BOOK_DESC = {
       finish(false, 'Esta es la solución.');
     } else animate();
   };
+  $v('visDel').onclick = function () {
+    var v = cur;
+    if (!v || v.done) return;
+    if (v.sel) v.sel = null;else v.line.pop();
+    v.bad = -1;
+    v.lastU = null;
+    paint();
+  };
+  $v('visCheck').onclick = check;
   $v('visNext').onclick = function () {
     if (!cur) return;
     var lv = $v('visLvl').value,
@@ -16714,7 +16821,7 @@ var LIVE_USER = '';
         });
       });
     });
-    var _loop3 = function _loop3(k) {
+    var _loop4 = function _loop4(k) {
       types.push({
         name: 'Mate en ' + (k + 1),
         get: function get(r) {
@@ -16723,7 +16830,7 @@ var LIVE_USER = '';
       });
     };
     for (var k = 0; k < 4; k++) {
-      _loop3(k);
+      _loop4(k);
     }
     types.push({
       name: 'Ganar material',
@@ -17529,7 +17636,7 @@ var LIVE_USER = '';
   }
   function _fetchGames() {
     _fetchGames = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee22() {
-      var user, st, cache, ar, months, nowKey, todo, i, _iterator3, _step4, _loop4, _t15, _t16;
+      var user, st, cache, ar, months, nowKey, todo, i, _iterator3, _step4, _loop5, _t15, _t16;
       return _regenerator().w(function (_context23) {
         while (1) switch (_context23.p = _context23.n) {
           case 0:
@@ -17569,7 +17676,7 @@ var LIVE_USER = '';
             i = 0;
             _iterator3 = _createForOfIteratorHelper(todo);
             _context23.p = 4;
-            _loop4 = /*#__PURE__*/_regenerator().m(function _loop4() {
+            _loop5 = /*#__PURE__*/_regenerator().m(function _loop5() {
               var m, j, key;
               return _regenerator().w(function (_context22) {
                 while (1) switch (_context22.n) {
@@ -17614,7 +17721,7 @@ var LIVE_USER = '';
                   case 2:
                     return _context22.a(2);
                 }
-              }, _loop4);
+              }, _loop5);
             });
             _iterator3.s();
           case 5:
@@ -17622,7 +17729,7 @@ var LIVE_USER = '';
               _context23.n = 7;
               break;
             }
-            return _context23.d(_regeneratorValues(_loop4()), 6);
+            return _context23.d(_regeneratorValues(_loop5()), 6);
           case 6:
             _context23.n = 5;
             break;
